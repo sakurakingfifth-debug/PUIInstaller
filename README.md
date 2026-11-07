@@ -1,5 +1,7 @@
 # PUI Installer
 
+我懒，所以README.md是大肥鱼写的。
+
 用 **PUI 设计系统**重写的系统安装器，替换 ColorOS 17 / Android 17 上的
 `com.android.packageinstaller`（AOSP PackageInstaller 17.7.4）。
 
