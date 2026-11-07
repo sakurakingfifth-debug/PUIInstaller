@@ -1,0 +1,81 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+    <style name="Theme.PuiInstaller" parent="@android:style/Theme.Material.Light.NoActionBar">
+        <item name="android:windowBackground">@color/pui_bg</item>
+        <item name="android:colorAccent">@color/pui_magenta</item>
+        <item name="android:statusBarColor">@android:color/transparent</item>
+        <item name="android:navigationBarColor">@android:color/transparent</item>
+        <item name="android:windowLightStatusBar">true</item>
+        <item name="android:windowLightNavigationBar">true</item>
+        <item name="android:windowLayoutInDisplayCutoutMode">shortEdges</item>
+        <item name="android:windowActionModeOverlay">true</item>
+    </style>
+
+
+    <!--
+      启动画面（androidx core-splashscreen）。
+      冷启动时系统先画这个主题：品牌色圆底 + 应用图标，等首帧准备好再切到 postSplashScreenTheme。
+      图标用 ic_splash_logo（自带洋红圆底）：不能只给白色字形，
+      部分 ROM 会忽略 windowSplashScreenIconBackgroundColor，白字直接糊在浅色底上。
+    -->
+    <style name="Theme.PuiInstaller.Splash" parent="Theme.SplashScreen">
+        <item name="windowSplashScreenBackground">@color/pui_bg</item>
+        <item name="windowSplashScreenAnimatedIcon">@drawable/ic_splash_blank</item>
+        <item name="windowSplashScreenAnimationDuration">400</item>
+        <item name="postSplashScreenTheme">@style/Theme.PuiInstaller</item>
+    </style>
+
+    <!-- 安装 / 卸载页：进出用淡入淡出，避免从文件管理器跳过来时「横向推入」的割裂感 -->
+    <style name="Theme.PuiInstaller.Transparent" parent="Theme.PuiInstaller">
+        <item name="android:windowAnimationStyle">@style/Animation.PuiInstaller.Fade</item>
+    </style>
+
+    <!-- 实时通知模式：完全不可见的宿主窗口，连启动预览都不要 -->
+    <style name="Theme.PuiInstaller.Invisible" parent="@android:style/Theme.Material.NoActionBar">
+        <item name="android:windowIsTranslucent">true</item>
+        <item name="android:windowBackground">@android:color/transparent</item>
+        <item name="android:backgroundDimEnabled">false</item>
+        <item name="android:windowIsFloating">false</item>
+        <item name="android:windowDisablePreview">true</item>
+        <item name="android:windowAnimationStyle">@null</item>
+        <item name="android:windowNoTitle">true</item>
+        <item name="android:windowLayoutInDisplayCutoutMode">shortEdges</item>
+    </style>
+
+    <!-- 点结果通知时的小窗：透明底 + 系统遮罩，看起来就是浮在桌面上的对话框 -->
+    <style name="Theme.PuiInstaller.Dialog" parent="Theme.PuiInstaller">
+        <item name="android:windowIsTranslucent">true</item>
+        <item name="android:windowBackground">@android:color/transparent</item>
+        <item name="android:windowIsFloating">false</item>
+        <item name="android:backgroundDimEnabled">true</item>
+        <item name="android:windowDisablePreview">true</item>
+        <item name="android:windowAnimationStyle">@style/Animation.PuiInstaller.Fade</item>
+    </style>
+
+    <!-- 浮窗安装页：窗口半透明，由系统对身后的内容做背景模糊 -->
+    <style name="Theme.PuiInstaller.Sheet" parent="Theme.PuiInstaller">
+        <item name="android:windowIsTranslucent">true</item>
+        <item name="android:windowBackground">@android:color/transparent</item>
+        <item name="android:backgroundDimEnabled">false</item>
+        <item name="android:windowIsFloating">false</item>
+        <item name="android:windowAnimationStyle">@style/Animation.PuiInstaller.Sheet</item>
+        <item name="android:windowLightStatusBar">false</item>
+        <item name="android:windowLightNavigationBar">false</item>
+    </style>
+
+    <style name="Animation.PuiInstaller.Sheet" parent="@android:style/Animation.Activity">
+        <item name="android:activityOpenEnterAnimation">@anim/sheet_slide_in</item>
+        <item name="android:activityOpenExitAnimation">@android:anim/fade_out</item>
+        <item name="android:activityCloseEnterAnimation">@android:anim/fade_in</item>
+        <item name="android:activityCloseExitAnimation">@anim/sheet_slide_out</item>
+    </style>
+
+    <style name="Animation.PuiInstaller.Fade" parent="@android:style/Animation.Activity">
+        <item name="android:activityOpenEnterAnimation">@android:anim/fade_in</item>
+        <item name="android:activityOpenExitAnimation">@android:anim/fade_out</item>
+        <item name="android:activityCloseEnterAnimation">@android:anim/fade_in</item>
+        <item name="android:activityCloseExitAnimation">@android:anim/fade_out</item>
+    </style>
+
+</resources>

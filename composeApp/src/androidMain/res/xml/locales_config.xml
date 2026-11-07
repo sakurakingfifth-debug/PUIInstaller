@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  系统「应用语言」里可选的语种。
+  粤语用 BCP-47 的 yue，区分繁/简和地区，和 values-b+yue+... 目录一一对应。
+-->
+<locale-config xmlns:android="http://schemas.android.com/apk/res/android">
+    <locale android:name="zh-Hans" />
+    <locale android:name="zh-Hant-TW" />
+    <locale android:name="zh-Hant-HK" />
+    <locale android:name="yue-Hant-CN" />
+    <locale android:name="yue-Hant-HK" />
+    <locale android:name="yue-Hans-CN" />
+    <locale android:name="en" />
+</locale-config>

@@ -1,0 +1,30 @@
+# —— Gradle ——
+.gradle/
+build/
+**/build/
+.kotlin/
+local.properties
+
+# —— 构建产物 ——
+out/
+*.apk
+*.aab
+*.ap_
+*.dex
+
+# —— 签名 / 密钥（绝对不要提交）——
+*.jks
+*.keystore
+*.p12
+signing.properties
+
+# —— IDE ——
+.idea/
+*.iml
+.DS_Store
+Thumbs.db
+
+# —— 临时文件 ——
+*.log
+*.hprof
+captures/

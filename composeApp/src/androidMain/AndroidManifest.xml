@@ -1,0 +1,224 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools">
+
+    <!-- 系统安装器能力：替换 /system_ext/priv-app/PackageInstaller 后由 privapp 白名单授予 -->
+    <uses-permission android:name="android.permission.INSTALL_PACKAGES" />
+    <uses-permission android:name="android.permission.DELETE_PACKAGES" />
+    <uses-permission android:name="android.permission.READ_INSTALL_SESSIONS" />
+
+    <!-- 普通安装器能力 -->
+    <uses-permission android:name="android.permission.REQUEST_INSTALL_PACKAGES" />
+    <uses-permission android:name="android.permission.QUERY_ALL_PACKAGES" />
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+    <!-- 进阶功能「忽略电池优化」：后台管理严格的 ROM 上，实时通知的安装会被掐掉 -->
+    <uses-permission android:name="android.permission.REQUEST_IGNORE_BATTERY_OPTIMIZATIONS" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_SPECIAL_USE" />
+    <!-- 实时活动（Android 16 Live Updates）；ColorOS 16 的流体云复用同一套 API -->
+    <uses-permission android:name="android.permission.POST_PROMOTED_NOTIFICATIONS" />
+
+    <!-- 「安装后删除安装包」：源文件在公共目录时，需要能直接删文件 -->
+    <uses-permission
+        android:name="android.permission.MANAGE_EXTERNAL_STORAGE"
+        tools:ignore="ScopedStorage" />
+
+    <!-- 注册应用商店（Registered App Store）声明，见 README / 应用商店能力页 -->
+    <uses-permission android:name="android.permission.INSTALL_PACKAGES_AS_REGISTERED_APP_STORE" />
+
+    <application
+        android:name=".InstallerApp"
+        android:allowBackup="false"
+        android:forceQueryable="true"
+        android:icon="@mipmap/ic_launcher"
+        android:label="@string/app_name"
+        android:localeConfig="@xml/locales_config"
+        android:roundIcon="@mipmap/ic_launcher"
+        android:supportsRtl="true"
+        android:theme="@style/Theme.PuiInstaller">
+
+        <!-- 桌面入口：功能面板 -->
+        <activity
+            android:name=".ui.MainActivity"
+            android:exported="true"
+            android:launchMode="singleTop"
+            android:theme="@style/Theme.PuiInstaller.Splash"
+            android:windowSoftInputMode="adjustResize">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity>
+
+        <!-- 安装页：接管 .apk 打开、INSTALL_PACKAGE、以及系统会话确认 -->
+        <!-- 默认挂浮窗主题：ActivityManager 在启动时就用清单主题判断任务是否 translucent，
+             代码里再 setTheme 已经来不及（会变成黑底、后面界面被隐藏） -->
+
+        <service
+            android:name=".core.LiveInstallService"
+            android:exported="false"
+            android:foregroundServiceType="specialUse">
+            <property
+                android:name="android.app.PROPERTY_SPECIAL_USE_FGS_SUBTYPE"
+                android:value="Installing an APK with no UI; progress is shown in a live notification" />
+        </service>
+
+        <receiver
+            android:name=".core.InstallActionReceiver"
+            android:exported="false" />
+
+        <activity
+            android:name=".ui.InstallActivity"
+            android:exported="true"
+            android:launchMode="singleTop"
+            android:theme="@style/Theme.PuiInstaller.Sheet"
+            android:windowSoftInputMode="adjustResize"
+            android:taskAffinity=""
+            android:excludeFromRecents="true">
+
+            <!-- 文件管理器 / 浏览器点开 apk -->
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <data android:scheme="content" />
+                <data android:mimeType="application/vnd.android.package-archive" />
+            </intent-filter>
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <data android:scheme="file" />
+                <data android:mimeType="application/vnd.android.package-archive" />
+            </intent-filter>
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <data android:scheme="file" android:pathPattern=".*\\.apk" />
+            </intent-filter>
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <data android:scheme="content" android:pathPattern=".*\\.apk" />
+            </intent-filter>
+
+            <!-- 旧式安装入口。注意：intent 带 type 时，filter 必须也声明 mimeType，
+                 只写 scheme 是匹配不上的（酷安就是 INSTALL_PACKAGE + content + apk type） -->
+            <intent-filter>
+                <action android:name="android.intent.action.INSTALL_PACKAGE" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <data android:scheme="content" />
+                <data android:mimeType="application/vnd.android.package-archive" />
+            </intent-filter>
+            <intent-filter>
+                <action android:name="android.intent.action.INSTALL_PACKAGE" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <data android:scheme="file" />
+                <data android:mimeType="application/vnd.android.package-archive" />
+            </intent-filter>
+            <intent-filter>
+                <action android:name="android.intent.action.INSTALL_PACKAGE" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <data android:scheme="content" />
+            </intent-filter>
+            <intent-filter>
+                <action android:name="android.intent.action.INSTALL_PACKAGE" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <data android:scheme="package" />
+            </intent-filter>
+            <intent-filter>
+                <action android:name="android.intent.action.INSTALL_PACKAGE" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <data android:scheme="file" />
+            </intent-filter>
+
+            <!-- 系统把「其他应用创建的安装会话」交给默认安装器确认 -->
+            <intent-filter>
+                <action android:name="android.content.pm.action.CONFIRM_INSTALL" />
+                <category android:name="android.intent.category.DEFAULT" />
+            </intent-filter>
+        </activity>
+
+        <!-- 卸载 / 应用信息页：DELETE、UNINSTALL_PACKAGE、SHOW_APP_INFO -->
+        <activity
+            android:name=".ui.UninstallActivity"
+            android:exported="true"
+            android:launchMode="singleTop"
+            android:theme="@style/Theme.PuiInstaller.Transparent">
+
+            <intent-filter>
+                <action android:name="android.intent.action.DELETE" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <data android:scheme="package" />
+            </intent-filter>
+            <intent-filter>
+                <action android:name="android.intent.action.UNINSTALL_PACKAGE" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <data android:scheme="package" />
+            </intent-filter>
+            <!-- LibChecker 等工具「打开应用信息」走这个 action -->
+            <intent-filter>
+                <action android:name="android.intent.action.SHOW_APP_INFO" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <data android:scheme="package" />
+            </intent-filter>
+            <intent-filter>
+                <action android:name="android.intent.action.APPLICATION_DETAILS_SETTINGS" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <data android:scheme="package" />
+            </intent-filter>
+        </activity>
+
+        <activity
+            android:name=".ui.AppStoreActivity"
+            android:exported="false"
+            android:theme="@style/Theme.PuiInstaller" />
+
+        <activity
+            android:name=".ui.LogActivity"
+            android:exported="false"
+            android:theme="@style/Theme.PuiInstaller.Transparent" />
+
+        <activity
+            android:name=".ui.HistoryDetailActivity"
+            android:exported="false"
+            android:theme="@style/Theme.PuiInstaller.Transparent" />
+
+        <activity
+            android:name=".ui.SignatureActivity"
+            android:exported="false"
+            android:theme="@style/Theme.PuiInstaller.Transparent" />
+
+        <activity
+            android:name=".ui.AdvancedActivity"
+            android:exported="false"
+            android:theme="@style/Theme.PuiInstaller.Transparent" />
+
+        <activity
+            android:name=".ui.LanguageActivity"
+            android:exported="false"
+            android:theme="@style/Theme.PuiInstaller.Transparent" />
+
+        <activity
+            android:name=".ui.InstallSettingsActivity"
+            android:exported="false"
+            android:theme="@style/Theme.PuiInstaller" />
+
+        <activity
+            android:name=".ui.AppearanceActivity"
+            android:exported="false"
+            android:theme="@style/Theme.PuiInstaller.Transparent" />
+
+        <activity
+            android:name=".ui.CorePatchActivity"
+            android:exported="false"
+            android:theme="@style/Theme.PuiInstaller.Transparent" />
+
+        <receiver
+            android:name=".core.InstallResultReceiver"
+            android:exported="false" />
+
+        <receiver
+            android:name=".core.UninstallResultReceiver"
+            android:exported="false" />
+    </application>
+
+</manifest>

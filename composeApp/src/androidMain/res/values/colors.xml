@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="pui_bg">#F0F1F3</color>
+    <color name="pui_bg_dark">#000000</color>
+    <color name="pui_magenta">#BE3455</color>
+</resources>
