@@ -265,7 +265,8 @@ private fun AdvancedScreen(activity: ComponentActivity) {
                 Spacer(Modifier.height(18.dp))
                 PuiGroup(title = null) {
                     PuiSwitchRow(
-                        icon = PuiIcon.Trash,
+                        icon = null,
+                        iconPainter = painterResource(R.drawable.ic_trash_bin_trash),
                         title = tr("彻底卸载系统应用", "Remove system apps completely"),
                         titleBadge = { DangerBadge(tr("高危操作", "High risk")) },
                         subtitle = tr(
