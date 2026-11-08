@@ -111,7 +111,7 @@ class Settings private constructor(private val sp: SharedPreferences) {
     /**
      * 受管安装器包（来源预设），一行一个。非空时只允许这些应用发起安装。
      *
-     * 默认给三个常见来源（shell / Play 商店 / 应用市场），安装器自己也始终放行，
+     * 默认给两个常见来源（adb shell / Play 商店），安装器自己也始终放行，
      * 所以应用内的「选择安装包」不受影响。清空列表 = 不限制。
      */
     var managedInstallerPackagesRaw: String by string(
@@ -178,14 +178,37 @@ class Settings private constructor(private val sp: SharedPreferences) {
 
     /**
      * 老版本没有「来源预设」这一项，读出来是空串。这里只在**从没播种过**时补上出厂值，
-     * 用户自己清空过列表（seeded 已置位）就不再干预。
+     * 用户自己清空过列表（seeded 已置位）就不再干预；出厂值本身变化靠 rev 号做一次性迁移。
      */
     private fun seedSourceDefaults() {
-        if (sp.getBoolean("managed_sources_seeded", false)) return
-        if (sp.getString("managed_installer_packages", null).isNullOrBlank()) {
-            managedInstallerPackagesRaw = DEFAULT_SOURCES
+        // rev 记录出厂默认改到第几版：0/1 = 老的三个来源，2 = 去掉 heytap 应用市场
+        val seeded = sp.getBoolean("managed_sources_seeded", false)
+        var rev = sp.getInt("managed_sources_rev", if (seeded) 1 else 0)
+
+        if (rev < 1) {
+            if (sp.getString("managed_installer_packages", null).isNullOrBlank()) {
+                managedInstallerPackagesRaw = DEFAULT_SOURCES
+            }
+            rev = 1
         }
-        sp.edit().putBoolean("managed_sources_seeded", true).apply()
+
+        // rev 2：出厂默认里去掉了 com.heytap.market（只有 OPPO 系机器才有，别家装了也没用），
+        // 已经播种过的设备跟着清一次，用户之后再加回来就不动了
+        if (rev < 2) {
+            val cur = sp.getString("managed_installer_packages", "").orEmpty()
+            if (cur.lineSequence().any { it.trim().equals(HEYTAP_MARKET, ignoreCase = true) }) {
+                managedInstallerPackagesRaw = cur.lineSequence()
+                    .filterNot { it.trim().equals(HEYTAP_MARKET, ignoreCase = true) }
+                    .joinToString("\n")
+                    .trim()
+            }
+            rev = 2
+        }
+
+        sp.edit()
+            .putBoolean("managed_sources_seeded", true)
+            .putInt("managed_sources_rev", rev)
+            .apply()
     }
 
     private fun bool(key: String, default: Boolean) = Pref(sp.getBoolean(key, default)) {
@@ -210,8 +233,11 @@ class Settings private constructor(private val sp: SharedPreferences) {
     }
 
     companion object {
-        /** 来源预设的出厂值：adb shell、Play 商店、应用市场。 */
-        const val DEFAULT_SOURCES = "com.android.shell\ncom.android.vending\ncom.heytap.market"
+        /** 来源预设的出厂值：adb shell、Play 商店。 */
+        const val DEFAULT_SOURCES = "com.android.shell\ncom.android.vending"
+
+        /** OPPO 系自带的应用市场，rev 2 起不再预置。 */
+        const val HEYTAP_MARKET = "com.heytap.market"
 
         @Volatile
         private var instance: Settings? = null
