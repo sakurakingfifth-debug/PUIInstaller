@@ -11,6 +11,7 @@ import androidx.lifecycle.lifecycleScope
 import com.panl.installer.R
 import com.panl.installer.core.ApkInspector
 import com.panl.installer.core.ApkStaging
+import com.panl.installer.core.BiometricInstallActivity
 import com.panl.installer.core.LiveInstallService
 import com.panl.installer.core.Notifications
 import com.panl.installer.core.Settings
@@ -97,6 +98,15 @@ class InstallActivity : ComponentActivity() {
                         this@InstallActivity,
                         tr("读取安装包失败", "Failed to read the APK"),
                         tr("无法打开 $uri", "Can't open $uri")
+                    )
+                } else if (
+                    // 「自动安装」有两种来源：intent 里的 extra，或者设置里那个开关
+                    (auto || Settings.get(this@InstallActivity).autoInstallLive) &&
+                    Settings.get(this@InstallActivity).biometricBeforeInstall
+                ) {
+                    // 自动安装 + 生物识别：先过认证，再交给服务（服务里没有界面，弹不了认证框）
+                    BiometricInstallActivity.start(
+                        this@InstallActivity, info.file, info.label, info.packageName, uri
                     )
                 } else {
                     LiveInstallService.start(this@InstallActivity, info, uri, auto)

@@ -32,6 +32,16 @@
     </style>
 
     <!-- 实时通知模式：完全不可见的宿主窗口，连启动预览都不要 -->
+    <!-- 生物识别中转：透明窗口 + 系统遮罩，保证窗口「可见」，认证框才挂得住 -->
+    <style name="Theme.PuiInstaller.Auth" parent="@android:style/Theme.Material.NoActionBar">
+        <item name="android:windowIsTranslucent">true</item>
+        <item name="android:windowBackground">@android:color/transparent</item>
+        <item name="android:backgroundDimEnabled">true</item>
+        <item name="android:windowAnimationStyle">@null</item>
+        <item name="android:windowNoTitle">true</item>
+        <item name="android:windowDisablePreview">true</item>
+    </style>
+
     <style name="Theme.PuiInstaller.Invisible" parent="@android:style/Theme.Material.NoActionBar">
         <item name="android:windowIsTranslucent">true</item>
         <item name="android:windowBackground">@android:color/transparent</item>

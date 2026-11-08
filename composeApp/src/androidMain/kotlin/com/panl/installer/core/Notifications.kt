@@ -440,16 +440,30 @@ object Notifications {
         sourceUri: android.net.Uri?
     ) {
         val nm = context.getSystemService(NotificationManager::class.java) ?: return
-        val confirm = PendingIntent.getForegroundService(
-            context, 1001,
-            Intent(context, LiveInstallService::class.java)
-                .setAction(LiveInstallService.ACTION_START)
-                .putExtra(LiveInstallService.EXTRA_FILE, file.absolutePath)
-                .putExtra(LiveInstallService.EXTRA_LABEL, label)
-                .putExtra(LiveInstallService.EXTRA_PACKAGE, packageName)
-                .putExtra(LiveInstallService.EXTRA_URI, sourceUri?.toString()),
-            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
-        )
+        val startIntent = Intent(context, LiveInstallService::class.java)
+            .setAction(LiveInstallService.ACTION_START)
+            .putExtra(LiveInstallService.EXTRA_FILE, file.absolutePath)
+            .putExtra(LiveInstallService.EXTRA_LABEL, label)
+            .putExtra(LiveInstallService.EXTRA_PACKAGE, packageName)
+            .putExtra(LiveInstallService.EXTRA_URI, sourceUri?.toString())
+        // 开了生物识别就先去认证中转站；否则直接叫服务（服务没有界面，弹不出认证框）
+        val confirm = if (Settings.get(context).biometricBeforeInstall) {
+            PendingIntent.getActivity(
+                context, 1001,
+                Intent(context, BiometricInstallActivity::class.java)
+                    .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                    .putExtra(LiveInstallService.EXTRA_FILE, file.absolutePath)
+                    .putExtra(LiveInstallService.EXTRA_LABEL, label)
+                    .putExtra(LiveInstallService.EXTRA_PACKAGE, packageName)
+                    .putExtra(LiveInstallService.EXTRA_URI, sourceUri?.toString()),
+                PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+            )
+        } else {
+            PendingIntent.getForegroundService(
+                context, 1001, startIntent,
+                PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+            )
+        }
         val cancel = PendingIntent.getForegroundService(
             context, 1002,
             Intent(context, LiveInstallService::class.java)

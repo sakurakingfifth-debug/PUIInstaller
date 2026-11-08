@@ -218,11 +218,27 @@ class LiveInstallService : Service() {
 
         /** 入口：Activity 已经把 APK 落到缓存，这里只传路径。 */
         fun start(context: Context, info: ApkInfo, sourceUri: Uri?, autoStart: Boolean) {
+            startRaw(context, info.file, info.label, info.packageName, sourceUri, autoStart)
+        }
+
+        /**
+         * 直接按「文件 + 文案」启动。
+         *
+         * 给 [BiometricInstallActivity] 用：认证通过后手上只有路径和包名，没有 ApkInfo。
+         */
+        fun startRaw(
+            context: Context,
+            file: File,
+            label: String,
+            packageName: String,
+            sourceUri: Uri?,
+            autoStart: Boolean
+        ) {
             val intent = Intent(context, LiveInstallService::class.java)
                 .setAction(if (autoStart) ACTION_START else ACTION_PREPARE)
-                .putExtra(EXTRA_FILE, info.file.absolutePath)
-                .putExtra(EXTRA_LABEL, info.label)
-                .putExtra(EXTRA_PACKAGE, info.packageName)
+                .putExtra(EXTRA_FILE, file.absolutePath)
+                .putExtra(EXTRA_LABEL, label)
+                .putExtra(EXTRA_PACKAGE, packageName)
                 .putExtra(EXTRA_URI, sourceUri?.toString())
             runCatching { context.startForegroundService(intent) }
                 .onFailure { Log.e(TAG, "startForegroundService failed: ${it.javaClass.simpleName} ${it.message}") }

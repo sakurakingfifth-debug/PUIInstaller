@@ -83,6 +83,14 @@
             android:name=".core.InstallActionReceiver"
             android:exported="false" />
 
+        <!-- 实时通知模式的生物识别中转：不可见，认证通过才把活交给服务 -->
+        <activity
+            android:name=".core.BiometricInstallActivity"
+            android:excludeFromRecents="true"
+            android:exported="false"
+            android:taskAffinity=""
+            android:theme="@style/Theme.PuiInstaller.Auth" />
+
         <!-- 拨号盘暗号 *#*#078#*#*：切换桌面图标显隐 -->
         <receiver
             android:name=".core.SecretCodeReceiver"
