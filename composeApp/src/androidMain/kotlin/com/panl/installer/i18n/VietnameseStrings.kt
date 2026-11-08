@@ -375,7 +375,7 @@ internal val vietnameseOverrides: Map<String, String> = mapOf(
     "已恢复到出厂版本" to "Đã trở về phiên bản gốc",
     "没有可卸载的更新" to "Không có bản cập nhật để xóa",
     "系统设置" to "Cài đặt hệ thống",
-    "在应用列表里显示系统应用，可以卸载它们的更新" to "Hiện ứng dụng hệ thống trong danh sách để xóa bản cập nhật của chúng",
+    "在应用列表里显示系统应用" to "Hiện ứng dụng hệ thống trong danh sách",
     "注意事项" to "Lưu ý",
     "卸载更新后会回退到 ColorOS 的系统安装器，且卸载更新安装器后需要重启手机才可以恢复正常安装使用。" to "Sau khi gỡ bản cập nhật sẽ quay về trình cài đặt hệ thống ColorOS, và bạn cần khởi động lại điện thoại để cài đặt bình thường trở lại.",
     "强制删除" to "Buộc xóa (root)",
@@ -449,4 +449,7 @@ internal val vietnameseOverrides: Map<String, String> = mapOf(
     "请认证以确认本次安装操作" to "Xác thực để xác nhận lần cài đặt này",
     "等待设备认证…" to "Đang chờ xác thực…",
     "认证未通过，安装已取消" to "Xác thực thất bại — đã hủy cài đặt",
+    "卸载系统应用" to "Gỡ ứng dụng hệ thống",
+    "允许把预装应用也卸掉（需要 ROOT，风险自负）" to "Cho phép gỡ cả ứng dụng cài sẵn (cần ROOT, tự chịu rủi ro)",
+    "卸载失败，检查一下 ROOT 授权" to "Gỡ cài đặt thất bại — kiểm tra quyền ROOT",
 )

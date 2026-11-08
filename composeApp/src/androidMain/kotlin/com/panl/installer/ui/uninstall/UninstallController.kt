@@ -36,6 +36,8 @@ sealed interface UninstallUiState {
 
 class UninstallController(private val activity: ComponentActivity) {
 
+    private val settings = com.panl.installer.core.Settings.get(activity)
+
     var state by mutableStateOf<UninstallUiState>(UninstallUiState.Loading)
         private set
 
@@ -82,9 +84,8 @@ class UninstallController(private val activity: ComponentActivity) {
             selfBlocked = true
             return
         }
-        // 系统应用的本体删不掉（除非 ROOT 强删），只能把更新摘掉回到出厂版本。
-        // 没有更新就没什么可卸的，先说清楚，别让用户白点一次。
-        if (app.isSystem && !app.hasUpdates) {
+        // 系统应用默认只能摘更新；开了「卸载系统应用」就走 root 整包卸（对当前用户）。
+        if (app.isSystem && !settings.allowUninstallSystemApps && !app.hasUpdates) {
             noUpdatesVisible = true
             return
         }
@@ -140,6 +141,35 @@ class UninstallController(private val activity: ComponentActivity) {
             state = UninstallUiState.Failed(app, tr("缺少 DELETE_PACKAGES 权限，无法静默卸载", "Missing DELETE_PACKAGES — can't uninstall silently"))
             return
         }
+        // 系统应用 + 允许卸系统应用：普通接口只能摘更新，这里用 root 对当前用户整包卸掉
+        if (app.isSystem && settings.allowUninstallSystemApps) {
+            activity.lifecycleScope.launch {
+                state = UninstallUiState.Working(app)
+                val (ok, out) = withContext(Dispatchers.IO) {
+                    RootShell.run("pm uninstall --user 0 ${app.packageName}")
+                }
+                val success = ok && out.contains("Success")
+                if (!success) {
+                    com.panl.installer.core.InstallerLog.record(
+                        activity, "UNINSTALL", "卸载系统应用失败 ${app.packageName}: ${out.take(120)}"
+                    )
+                }
+                state = if (success) {
+                    UninstallUiState.Done(app)
+                } else {
+                    UninstallUiState.Failed(
+                        app,
+                        // 别把输出塞进 tr 的 key 里，否则查不到译文
+                        tr(
+                            "卸载失败，检查一下 ROOT 授权",
+                            "Uninstall failed — check ROOT access"
+                        ) + "\n" + out.take(120)
+                    )
+                }
+            }
+            return
+        }
+
         InstallEngine.UninstallBus.outcome = null
         activity.lifecycleScope.launch {
             state = UninstallUiState.Working(app)

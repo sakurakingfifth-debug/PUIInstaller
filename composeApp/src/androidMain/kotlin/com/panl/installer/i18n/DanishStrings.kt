@@ -375,7 +375,7 @@ internal val danishOverrides: Map<String, String> = mapOf(
     "已恢复到出厂版本" to "Gendannet til fabriksversionen",
     "没有可卸载的更新" to "Ingen opdateringer at fjerne",
     "系统设置" to "Systemindstillinger",
-    "在应用列表里显示系统应用，可以卸载它们的更新" to "Vis systemapps på listen, så deres opdateringer kan fjernes",
+    "在应用列表里显示系统应用" to "Vis systemapps i listen",
     "注意事项" to "Bemærk",
     "卸载更新后会回退到 ColorOS 的系统安装器，且卸载更新安装器后需要重启手机才可以恢复正常安装使用。" to "Når opdateringerne fjernes, falder den tilbage til ColorOS' systeminstallationsprogram; du skal genstarte telefonen, før installation virker igen.",
     "强制删除" to "Tving sletning (root)",
@@ -449,4 +449,7 @@ internal val danishOverrides: Map<String, String> = mapOf(
     "请认证以确认本次安装操作" to "Godkend for at bekræfte denne installation",
     "等待设备认证…" to "Venter på enhedsgodkendelse…",
     "认证未通过，安装已取消" to "Godkendelse mislykkedes — installationen blev annulleret",
+    "卸载系统应用" to "Afinstallér systemapps",
+    "允许把预装应用也卸掉（需要 ROOT，风险自负）" to "Tillad at fjerne forudinstallerede apps (kræver ROOT, på eget ansvar)",
+    "卸载失败，检查一下 ROOT 授权" to "Afinstallation mislykkedes — tjek ROOT-adgang",
 )

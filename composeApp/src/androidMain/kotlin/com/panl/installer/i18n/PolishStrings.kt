@@ -375,7 +375,7 @@ internal val polishOverrides: Map<String, String> = mapOf(
     "已恢复到出厂版本" to "Przywrócono wersję fabryczną",
     "没有可卸载的更新" to "Brak aktualizacji do usunięcia",
     "系统设置" to "Ustawienia systemowe",
-    "在应用列表里显示系统应用，可以卸载它们的更新" to "Pokazuj aplikacje systemowe na liście, aby usuwać ich aktualizacje",
+    "在应用列表里显示系统应用" to "Pokaż aplikacje systemowe na liście",
     "注意事项" to "Uwagi",
     "卸载更新后会回退到 ColorOS 的系统安装器，且卸载更新安装器后需要重启手机才可以恢复正常安装使用。" to "Po usunięciu aktualizacji wróci systemowy instalator ColorOS; aby instalacja znów działała, trzeba zrestartować telefon.",
     "强制删除" to "Wymuś usunięcie (root)",
@@ -449,4 +449,7 @@ internal val polishOverrides: Map<String, String> = mapOf(
     "请认证以确认本次安装操作" to "Uwierzytelnij się, aby potwierdzić instalację",
     "等待设备认证…" to "Oczekiwanie na uwierzytelnienie…",
     "认证未通过，安装已取消" to "Uwierzytelnienie nie powiodło się — instalacja anulowana",
+    "卸载系统应用" to "Odinstaluj aplikacje systemowe",
+    "允许把预装应用也卸掉（需要 ROOT，风险自负）" to "Zezwól na usuwanie preinstalowanych aplikacji (wymaga ROOT, na własne ryzyko)",
+    "卸载失败，检查一下 ROOT 授权" to "Odinstalowanie nie powiodło się — sprawdź dostęp ROOT",
 )

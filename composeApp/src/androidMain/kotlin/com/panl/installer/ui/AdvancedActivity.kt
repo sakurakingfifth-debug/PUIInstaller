@@ -225,13 +225,24 @@ private fun AdvancedScreen(activity: ComponentActivity) {
                         icon = PuiIcon.Grid,
                         title = tr("显示系统应用", "Show system apps"),
                         subtitle = tr(
-                            "在应用列表里显示系统应用，可以卸载它们的更新",
-                            "List system apps so their updates can be removed"
+                            "在应用列表里显示系统应用",
+                            "List system apps in the app list"
                         ),
                         checked = settings.showSystemApps,
+                        onChange = { settings.showSystemApps = it },
+                        showDivider = true
+                    )
+                    PuiSwitchRow(
+                        icon = PuiIcon.Trash,
+                        title = tr("卸载系统应用", "Uninstall system apps"),
+                        subtitle = tr(
+                            "允许把预装应用也卸掉（需要 ROOT，风险自负）",
+                            "Allow removing preinstalled apps too (requires ROOT, at your own risk)"
+                        ),
+                        checked = settings.allowUninstallSystemApps,
                         onChange = { on ->
                             // 打开才弹风险确认；关闭直接生效
-                            if (on) showSystemWarning = true else settings.showSystemApps = false
+                            if (on) showSystemWarning = true else settings.allowUninstallSystemApps = false
                         },
                         showDivider = false
                     )
@@ -352,7 +363,7 @@ private fun AdvancedScreen(activity: ComponentActivity) {
             danger = true,
             onDismiss = { showSystemWarning = false },
             onConfirm = {
-                settings.showSystemApps = true
+                settings.allowUninstallSystemApps = true
                 showSystemWarning = false
             }
         )

@@ -375,7 +375,7 @@ internal val dutchOverrides: Map<String, String> = mapOf(
     "已恢复到出厂版本" to "Teruggezet naar de fabrieksversie",
     "没有可卸载的更新" to "Geen updates om te verwijderen",
     "系统设置" to "Systeeminstellingen",
-    "在应用列表里显示系统应用，可以卸载它们的更新" to "Systeemapps in de lijst tonen om hun updates te verwijderen",
+    "在应用列表里显示系统应用" to "Systeemapps in de lijst tonen",
     "注意事项" to "Let op",
     "卸载更新后会回退到 ColorOS 的系统安装器，且卸载更新安装器后需要重启手机才可以恢复正常安装使用。" to "Na het verwijderen van de updates valt het terug op de ColorOS-systeeminstaller; je moet de telefoon opnieuw opstarten voordat installeren weer werkt.",
     "强制删除" to "Geforceerd verwijderen (root)",
@@ -449,4 +449,7 @@ internal val dutchOverrides: Map<String, String> = mapOf(
     "请认证以确认本次安装操作" to "Verifieer om deze installatie te bevestigen",
     "等待设备认证…" to "Wachten op verificatie…",
     "认证未通过，安装已取消" to "Verificatie mislukt — installatie geannuleerd",
+    "卸载系统应用" to "Systeemapps verwijderen",
+    "允许把预装应用也卸掉（需要 ROOT，风险自负）" to "Vooraf geïnstalleerde apps verwijderen toestaan (vereist ROOT, op eigen risico)",
+    "卸载失败，检查一下 ROOT 授权" to "Verwijderen mislukt — controleer ROOT-toegang",
 )

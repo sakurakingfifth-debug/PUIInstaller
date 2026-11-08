@@ -104,6 +104,15 @@ class Settings private constructor(private val sp: SharedPreferences) {
     var apk1Support: Boolean by bool("apk1_support", true)
 
     /**
+     * 允许卸载系统应用（含预装）。
+     *
+     * 系统应用的 APK 在 /system 里，普通卸载接口只能摘掉更新；开了这个开关就走
+     * root 的 `pm uninstall --user 0`，对当前用户整包卸掉（和设置里的「卸载」一个效果）。
+     * 危险操作，默认关。
+     */
+    var allowUninstallSystemApps: Boolean by bool("allow_uninstall_system_apps", false)
+
+    /**
      * 安装前要求生物识别（指纹 / 面容 / 锁屏密码）确认。
      *
      * 移植自 InstallerX-Revived 的 require_biometric_auth：防止手机在解锁状态被人

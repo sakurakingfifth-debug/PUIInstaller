@@ -163,8 +163,11 @@ fun UninstallScreen(controller: UninstallController, onClose: () -> Unit) {
                         )
                         Spacer(Modifier.height(22.dp))
                         Text(
-                            if (state.app.isSystem) tr("已卸载更新", "Updates removed")
-                            else tr("已卸载", "Uninstalled"),
+                            if (state.app.isSystem && !settings.allowUninstallSystemApps) {
+                                tr("已卸载更新", "Updates removed")
+                            } else {
+                                tr("已卸载", "Uninstalled")
+                            },
                             style = MaterialTheme.typography.headlineSmall,
                             color = MaterialTheme.colorScheme.onSurface
                         )
@@ -174,7 +177,7 @@ fun UninstallScreen(controller: UninstallController, onClose: () -> Unit) {
                             style = MaterialTheme.typography.bodyLarge,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
-                        if (state.app.isSystem) {
+                        if (state.app.isSystem && !settings.allowUninstallSystemApps) {
                             Spacer(Modifier.height(4.dp))
                             Text(
                                 tr("已恢复到出厂版本", "Reverted to the factory version"),
@@ -318,7 +321,8 @@ fun UninstallScreen(controller: UninstallController, onClose: () -> Unit) {
 
     if (controller.confirmVisible) {
         val app = (state as? UninstallUiState.Ready)?.app
-        val systemApp = app?.isSystem == true
+        // 开了「卸载系统应用」之后，系统应用也是整包卸，文案按普通应用走
+        val systemApp = app?.isSystem == true && !settings.allowUninstallSystemApps
         PuiDialog(
             scrim = !settings.noScrim,
             title = if (systemApp) tr("卸载更新？", "Remove updates?")
@@ -387,6 +391,7 @@ private fun ReadyBody(
     warnAosp: Boolean,
     topPad: Dp
 ) {
+    val settings = Settings.get(LocalContext.current)
     // 16 KB 页兼容性：装完的包要读 APK 里的 .so，异步跑一次
     var supports16K by remember(app.packageName) { mutableStateOf<Boolean?>(null) }
     var abiLabel by remember(app.packageName) { mutableStateOf("") }
@@ -529,7 +534,11 @@ private fun ReadyBody(
         }
 
         BottomActionBar(
-            primaryText = if (app.isSystem) tr("卸载更新", "Remove updates") else tr("卸载", "Uninstall"),
+            primaryText = if (app.isSystem && !settings.allowUninstallSystemApps) {
+                tr("卸载更新", "Remove updates")
+            } else {
+                tr("卸载", "Uninstall")
+            },
             onPrimary = { controller.requestUninstall() },
             secondaryText = tr("打开", "Open"),
             onSecondary = { controller.openApp() },

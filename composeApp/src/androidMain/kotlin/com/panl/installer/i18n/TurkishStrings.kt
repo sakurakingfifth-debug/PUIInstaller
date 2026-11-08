@@ -375,7 +375,7 @@ internal val turkishOverrides: Map<String, String> = mapOf(
     "已恢复到出厂版本" to "Fabrika sürümüne döndürüldü",
     "没有可卸载的更新" to "Kaldırılacak güncelleme yok",
     "系统设置" to "Sistem ayarları",
-    "在应用列表里显示系统应用，可以卸载它们的更新" to "Sistem uygulamalarını listede göster, güncellemeleri kaldırılabilsin",
+    "在应用列表里显示系统应用" to "Sistem uygulamalarını listede göster",
     "注意事项" to "Dikkat edilmesi gerekenler",
     "卸载更新后会回退到 ColorOS 的系统安装器，且卸载更新安装器后需要重启手机才可以恢复正常安装使用。" to "Güncellemeler kaldırıldığında ColorOS sistem yükleyicisine dönülür; normal kurulum için telefonu yeniden başlatmanız gerekir.",
     "强制删除" to "Zorla sil (root)",
@@ -449,4 +449,7 @@ internal val turkishOverrides: Map<String, String> = mapOf(
     "请认证以确认本次安装操作" to "Bu kurulumu onaylamak için doğrula",
     "等待设备认证…" to "Cihaz doğrulaması bekleniyor…",
     "认证未通过，安装已取消" to "Doğrulama başarısız — kurulum iptal edildi",
+    "卸载系统应用" to "Sistem uygulamalarını kaldır",
+    "允许把预装应用也卸掉（需要 ROOT，风险自负）" to "Önceden yüklü uygulamaların kaldırılmasına izin ver (ROOT gerekir, risk size ait)",
+    "卸载失败，检查一下 ROOT 授权" to "Kaldırma başarısız — ROOT erişimini kontrol edin",
 )

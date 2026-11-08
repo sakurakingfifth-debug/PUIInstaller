@@ -375,7 +375,7 @@ internal val frenchOverrides: Map<String, String> = mapOf(
     "已恢复到出厂版本" to "Revenu à la version d'usine",
     "没有可卸载的更新" to "Aucune mise à jour à supprimer",
     "系统设置" to "Paramètres système",
-    "在应用列表里显示系统应用，可以卸载它们的更新" to "Afficher les apps système dans la liste pour supprimer leurs mises à jour",
+    "在应用列表里显示系统应用" to "Afficher les apps système dans la liste",
     "注意事项" to "Remarques",
     "卸载更新后会回退到 ColorOS 的系统安装器，且卸载更新安装器后需要重启手机才可以恢复正常安装使用。" to "La suppression des mises à jour revient à l'installateur système ColorOS ; un redémarrage du téléphone est nécessaire pour installer normalement.",
     "强制删除" to "Forcer la suppression (root)",
@@ -449,4 +449,7 @@ internal val frenchOverrides: Map<String, String> = mapOf(
     "请认证以确认本次安装操作" to "Authentifiez-vous pour confirmer cette installation",
     "等待设备认证…" to "En attente de l'authentification…",
     "认证未通过，安装已取消" to "Authentification échouée — installation annulée",
+    "卸载系统应用" to "Désinstaller les apps système",
+    "允许把预装应用也卸掉（需要 ROOT，风险自负）" to "Autoriser la suppression des apps préinstallées (nécessite ROOT, à vos risques)",
+    "卸载失败，检查一下 ROOT 授权" to "Désinstallation échouée — vérifiez l'accès ROOT",
 )

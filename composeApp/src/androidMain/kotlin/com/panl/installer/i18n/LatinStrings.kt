@@ -375,7 +375,7 @@ internal val latinOverrides: Map<String, String> = mapOf(
     "已恢复到出厂版本" to "Ad versionem fabricalem redactum",
     "没有可卸载的更新" to "Nullae renovationes removendae",
     "系统设置" to "Optiones systematis",
-    "在应用列表里显示系统应用，可以卸载它们的更新" to "Applicationes systematis in indice monstra ut renovationes removeantur",
+    "在应用列表里显示系统应用" to "App systematis in indice monstrare",
     "注意事项" to "Notanda",
     "卸载更新后会回退到 ColorOS 的系统安装器，且卸载更新安装器后需要重启手机才可以恢复正常安装使用。" to "Post renovationes remotas ad installatorem systematis ColorOS reditur; ut installatio rursus fungatur, telephonum iterum incipiendum est.",
     "强制删除" to "Vi delere (radix)",
@@ -449,4 +449,7 @@ internal val latinOverrides: Map<String, String> = mapOf(
     "请认证以确认本次安装操作" to "Authentica ut hanc installationem confirmes",
     "等待设备认证…" to "Authenticatio exspectatur…",
     "认证未通过，安装已取消" to "Authenticatio defecit — installatio sublata",
+    "卸载系统应用" to "App systematis deinstallare",
+    "允许把预装应用也卸掉（需要 ROOT，风险自负）" to "App praeinstallatas removere permittere (ROOT postulat, periculo tuo)",
+    "卸载失败，检查一下 ROOT 授权" to "Deinstalatio defecit — ROOT potestatem inspice",
 )
