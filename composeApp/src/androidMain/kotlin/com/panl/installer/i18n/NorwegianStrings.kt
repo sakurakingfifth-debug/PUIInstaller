@@ -453,7 +453,7 @@ internal val norwegianOverrides: Map<String, String> = mapOf(
     "允许把预装应用也卸掉" to "Tillat å fjerne forhåndsinstallerte apper",
     "卸载失败，检查一下 ROOT 授权" to "Avinstallasjon mislyktes — sjekk ROOT-tilgang",
     "彻底卸载系统应用" to "Fjern systemapper helt",
-    "连系统分区里的 APK 一起抹掉（挂载遮罩，重启后生效）" to "Fjerner også APK-en i systempartisjonen (mount-maske, etter omstart)",
+    "操作不可逆，操作前请三思" to "Handlingen kan ikke angres – tenk deg om",
     "卸载系统自带应用的操作极其危险，卸载后不可逆，且极容易导致无法开机。打开这个开关后，如果卸载任一一个系统APP导致无法开机或者其他使用异常，本安装器概不负责。" to "Det er svært farlig og irreversibelt å fjerne systemapper, og det kan lett hindre enheten i å starte. Hvis du slår dette på og fjerning av en systemapp gir oppstartsfeil eller andre problemer, tar dette installasjonsprogrammet intet ansvar.",
     "已彻底卸载" to "Fjernet helt",
     "已对所有用户卸载。重启后系统分区里的 APK 也会被遮罩掉。" to "Avinstallert for alle brukere. Etter en omstart maskeres også APK-en i systempartisjonen.",

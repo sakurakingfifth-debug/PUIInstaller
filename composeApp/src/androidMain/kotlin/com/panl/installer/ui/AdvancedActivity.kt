@@ -269,8 +269,8 @@ private fun AdvancedScreen(activity: ComponentActivity) {
                         title = tr("彻底卸载系统应用", "Remove system apps completely"),
                         titleBadge = { DangerBadge(tr("高危操作", "High risk")) },
                         subtitle = tr(
-                            "连系统分区里的 APK 一起抹掉（挂载遮罩，重启后生效）",
-                            "Also wipe the APK in the system partition (mount mask, takes effect after reboot)"
+                            "操作不可逆，操作前请三思",
+                            "Irreversible — think twice before proceeding"
                         ),
                         checked = settings.deepUninstallSystemApps,
                         onChange = { on ->

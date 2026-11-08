@@ -453,7 +453,7 @@ internal val portugueseOverrides: Map<String, String> = mapOf(
     "允许把预装应用也卸掉" to "Permitir remover apps pré-instalados",
     "卸载失败，检查一下 ROOT 授权" to "Falha ao desinstalar — verifique o acesso ROOT",
     "彻底卸载系统应用" to "Remover apps do sistema por completo",
-    "连系统分区里的 APK 一起抹掉（挂载遮罩，重启后生效）" to "Apaga também o APK da partição do sistema (máscara de montagem, após reiniciar)",
+    "操作不可逆，操作前请三思" to "Ação irreversível, pense bem antes",
     "卸载系统自带应用的操作极其危险，卸载后不可逆，且极容易导致无法开机。打开这个开关后，如果卸载任一一个系统APP导致无法开机或者其他使用异常，本安装器概不负责。" to "Desinstalar apps do sistema é extremamente perigoso e irreversível, e pode facilmente impedir a inicialização. Se ativar isto e a remoção de uma app do sistema causar falha de arranque ou outros problemas, este instalador não se responsabiliza.",
     "已彻底卸载" to "Removido por completo",
     "已对所有用户卸载。重启后系统分区里的 APK 也会被遮罩掉。" to "Desinstalado para todos os usuários. Após reiniciar, o APK da partição do sistema também será ocultado.",
