@@ -41,6 +41,7 @@ import com.panl.installer.core.RootCheck
 import com.panl.installer.core.RootState
 import com.panl.installer.R
 import com.panl.installer.core.Settings
+import com.panl.installer.core.LauncherIcon
 import com.panl.installer.core.SystemTweaks
 import com.panl.installer.i18n.tr
 import com.panl.installer.ui.theme.InstallerTheme
@@ -96,6 +97,7 @@ private fun AdvancedScreen() {
         onDispose { lifecycleOwner.lifecycle.removeObserver(observer) }
     }
     val verifyDisabled = remember(tweakTick) { SystemTweaks.isVerificationDisabled(context) }
+    val launcherHidden = remember(tweakTick) { LauncherIcon.isHidden(context) }
     val ignoringBattery = remember(tweakTick) { SystemTweaks.isIgnoringBatteryOptimizations(context) }
     val scope = rememberCoroutineScope()
     LaunchedEffect(rootTick) {
@@ -248,6 +250,26 @@ private fun AdvancedScreen() {
                         ),
                         checked = settings.safeMode,
                         onChange = { settings.safeMode = it },
+                        showDivider = false
+                    )
+                }
+            }
+
+            item {
+                Spacer(Modifier.height(18.dp))
+                PuiGroup(title = null) {
+                    PuiSwitchRow(
+                        icon = PuiIcon.Moon,
+                        title = tr("隐藏桌面图标", "Hide launcher icon"),
+                        subtitle = tr(
+                            "拨号输入 *#*#078#*#* 可随时切换",
+                            "Dial *#*#078#*#* anytime to toggle"
+                        ),
+                        checked = launcherHidden,
+                        onChange = { on ->
+                            LauncherIcon.setHidden(context, on)
+                            tweakTick++
+                        },
                         showDivider = false
                     )
                 }

@@ -26,6 +26,10 @@ import com.panl.installer.ui.MainActivity
 object Notifications {
 
     const val CHANNEL_ID = "install_status"
+
+    /** 隐藏桌面图标后留一条静默提示，保证任何 ROM 上都有路可退。 */
+    private const val CHANNEL_HIDDEN = "launcher_hidden"
+    private const val HIDDEN_ID = 9200
     const val CHANNEL_LIVE = "install_live"
 
     /** 完成时「弹出来」用的实时通知渠道：带提示音，系统会把它展开一下。 */
@@ -64,6 +68,19 @@ object Notifications {
 
     fun createChannel(context: Context) {
         val nm = context.getSystemService(NotificationManager::class.java) ?: return
+        nm.createNotificationChannel(
+            NotificationChannel(
+                CHANNEL_HIDDEN,
+                tr("桌面图标", "Launcher icon"),
+                NotificationManager.IMPORTANCE_LOW
+            ).apply {
+                description = tr(
+                    "桌面图标隐藏后留一条提示，随时可以恢复",
+                    "Shown while the launcher icon is hidden so it can be restored anytime"
+                )
+                setShowBadge(false)
+            }
+        )
         nm.createNotificationChannel(
             NotificationChannel(
                 CHANNEL_ID,
@@ -340,6 +357,51 @@ object Notifications {
             Intent(context, MainActivity::class.java),
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
         )
+
+    /**
+     * 桌面图标隐藏后的安全网。
+     *
+     * 拨号暗号在部分 ROM（含 ColorOS）上收不到 —— 那条广播带
+     * `CONTROL_INCALL_EXPERIENCE` 签名权限。所以藏图标的同时留一条静默通知，
+     * 点一下就能打开应用或直接恢复，避免「图标没了、暗号又不灵」直接失联。
+     */
+    fun showIconHidden(context: Context) {
+        val nm = context.getSystemService(NotificationManager::class.java) ?: return
+        val toggle = PendingIntent.getBroadcast(
+            context, 1004,
+            Intent(context, SecretCodeReceiver::class.java)
+                .setAction(SecretCodeReceiver.ACTION_TOGGLE_ICON),
+            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+        )
+        val open = PendingIntent.getActivity(
+            context, 1005,
+            Intent(context, MainActivity::class.java),
+            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+        )
+        val builder = Notification.Builder(context, CHANNEL_HIDDEN)
+            .setSmallIcon(R.drawable.ic_stat_install)
+            .setContentTitle(tr("桌面图标已隐藏", "Launcher icon hidden"))
+            .setContentText(
+                tr("点按打开应用，或点「恢复」放回桌面", "Tap to open the app, or tap Restore to put it back")
+            )
+            .setContentIntent(open)
+            .setAutoCancel(true)
+            .setOnlyAlertOnce(true)
+            .setShowWhen(false)
+            .addAction(
+                Notification.Action.Builder(
+                    Icon.createWithResource(context, R.drawable.ic_stat_import),
+                    tr("恢复", "Restore"),
+                    toggle
+                ).build()
+            )
+        runCatching { nm.notify(HIDDEN_ID, builder.build()) }
+    }
+
+    fun cancelIconHidden(context: Context) {
+        val nm = context.getSystemService(NotificationManager::class.java) ?: return
+        runCatching { nm.cancel(HIDDEN_ID) }
+    }
 
     // ---------------- 实时通知模式：先问一句「装不装」 ----------------
 

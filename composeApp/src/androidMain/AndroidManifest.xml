@@ -37,18 +37,28 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.PuiInstaller">
 
-        <!-- 桌面入口：功能面板 -->
+        <!-- 功能面板。桌面入口挂在下面的 activity-alias 上，这样能单独把图标藏起来 -->
         <activity
             android:name=".ui.MainActivity"
             android:exported="true"
             android:launchMode="singleTop"
             android:theme="@style/Theme.PuiInstaller.Splash"
-            android:windowSoftInputMode="adjustResize">
+            android:windowSoftInputMode="adjustResize" />
+
+        <!-- 桌面图标本体：隐藏功能就是禁用这个别名，MainActivity 本身不受影响 -->
+        <activity-alias
+            android:name=".ui.LauncherAlias"
+            android:enabled="true"
+            android:exported="true"
+            android:icon="@mipmap/ic_launcher"
+            android:label="@string/app_name"
+            android:roundIcon="@mipmap/ic_launcher"
+            android:targetActivity=".ui.MainActivity">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
-        </activity>
+        </activity-alias>
 
         <!-- 安装页：接管 .apk 打开、INSTALL_PACKAGE、以及系统会话确认 -->
         <!-- 默认挂浮窗主题：ActivityManager 在启动时就用清单主题判断任务是否 translucent，
@@ -66,6 +76,18 @@
         <receiver
             android:name=".core.InstallActionReceiver"
             android:exported="false" />
+
+        <!-- 拨号盘暗号 *#*#078#*#*：切换桌面图标显隐 -->
+        <receiver
+            android:name=".core.SecretCodeReceiver"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.provider.Telephony.SECRET_CODE" />
+                <data
+                    android:scheme="android_secret_code"
+                    android:host="078" />
+            </intent-filter>
+        </receiver>
 
         <activity
             android:name=".ui.InstallActivity"
