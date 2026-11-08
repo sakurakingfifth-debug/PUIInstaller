@@ -28,9 +28,10 @@ import kotlinx.coroutines.withContext
 /**
  * 安装页宿主。所有「装东西」的入口最终都落到这里。
  *
- * 两种形态（设置里可切）：
+ * 三种形态（设置里可切）：
  *  - 浮窗：窗口半透明 + `FLAG_BLUR_BEHIND`，系统把身后的界面糊掉，卡片贴底或居中；
- *  - 全屏：传统整页。
+ *  - 全屏：传统整页；
+ *  - 浮窗 + 通知：浮窗只做确认，点「安装」后关掉浮窗，安装交给 [LiveInstallService]。
  *
  * 形态必须在 `setTheme` 阶段定下来（translucent 是窗口属性，中途改不了），
  * 所以这里在 `super.onCreate` 之前先读一次设置。
@@ -47,11 +48,16 @@ class InstallActivity : ComponentActivity() {
 
     private lateinit var controller: InstallController
 
+    // 「浮窗+通知」也是浮窗，只是点安装之后交给服务
     private val sheetStyle: Boolean
-        get() = Settings.get(this).installStyle == STYLE_SHEET
+        get() = Settings.get(this).installStyle.let { it == STYLE_SHEET || it == STYLE_SHEET_LIVE }
 
     private val liveStyle: Boolean
         get() = Settings.get(this).installStyle == STYLE_LIVE
+
+    /** 点「安装」后转实时通知（浮窗只做确认）。 */
+    private val handOffStyle: Boolean
+        get() = Settings.get(this).installStyle == STYLE_SHEET_LIVE
 
     override fun onCreate(savedInstanceState: Bundle?) {
         val sheet = sheetStyle
@@ -101,7 +107,7 @@ class InstallActivity : ComponentActivity() {
         }
 
 
-        controller = InstallController(this)
+        controller = InstallController(this, handOffToLive = handOffStyle)
         setContent {
             InstallerTheme {
                 if (sheetStyle) {
@@ -140,6 +146,9 @@ class InstallActivity : ComponentActivity() {
     companion object {
         const val STYLE_SHEET = "Sheet"
         const val STYLE_LIVE = "Live"
+
+        /** 浮窗确认 + 实时通知安装。 */
+        const val STYLE_SHEET_LIVE = "SheetLive"
         const val STYLE_FULL = "Full"
     }
 }

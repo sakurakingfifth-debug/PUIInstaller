@@ -428,4 +428,5 @@ internal val latinOverrides: Map<String, String> = mapOf(
     "如果安装器经常被后台管理关闭，请打开。" to "Hoc accende si installator in fundo saepe clauditur.",
     "需要 ROOT 权限" to "ROOT necessarium",
     "修改系统的安装校验开关需要 ROOT 授权，当前没有拿到权限，设置没有改动。" to "Mutare verificationem systematis ROOT postulat. Nihil mutatum est.",
+    "浮窗+通知" to "Fenestra+notificatio",
 )

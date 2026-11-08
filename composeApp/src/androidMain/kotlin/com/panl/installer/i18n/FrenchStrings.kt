@@ -428,4 +428,5 @@ internal val frenchOverrides: Map<String, String> = mapOf(
     "如果安装器经常被后台管理关闭，请打开。" to "Activez ceci si l'installateur est souvent tué en arrière-plan.",
     "需要 ROOT 权限" to "ROOT requis",
     "修改系统的安装校验开关需要 ROOT 授权，当前没有拿到权限，设置没有改动。" to "Modifier la vérification système nécessite ROOT. Rien n'a été changé.",
+    "浮窗+通知" to "Fenêtre+notification",
 )

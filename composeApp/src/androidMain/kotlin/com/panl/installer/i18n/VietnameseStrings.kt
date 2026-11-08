@@ -428,4 +428,5 @@ internal val vietnameseOverrides: Map<String, String> = mapOf(
     "如果安装器经常被后台管理关闭，请打开。" to "Bật nếu trình cài đặt thường bị đóng khi chạy nền.",
     "需要 ROOT 权限" to "Cần ROOT",
     "修改系统的安装校验开关需要 ROOT 授权，当前没有拿到权限，设置没有改动。" to "Đổi xác minh hệ thống cần ROOT. Không có gì bị thay đổi.",
+    "浮窗+通知" to "Cửa sổ+thông báo",
 )

@@ -428,4 +428,5 @@ internal val dutchOverrides: Map<String, String> = mapOf(
     "如果安装器经常被后台管理关闭，请打开。" to "Zet dit aan als de installer vaak op de achtergrond wordt afgesloten.",
     "需要 ROOT 权限" to "ROOT vereist",
     "修改系统的安装校验开关需要 ROOT 授权，当前没有拿到权限，设置没有改动。" to "De systeemverificatie wijzigen vereist ROOT. Er is niets gewijzigd.",
+    "浮窗+通知" to "Venster+melding",
 )

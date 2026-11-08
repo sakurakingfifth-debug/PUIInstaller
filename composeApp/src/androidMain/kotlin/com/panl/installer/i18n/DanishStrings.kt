@@ -428,4 +428,5 @@ internal val danishOverrides: Map<String, String> = mapOf(
     "如果安装器经常被后台管理关闭，请打开。" to "Slå til, hvis installationsprogrammet ofte lukkes i baggrunden.",
     "需要 ROOT 权限" to "ROOT påkrævet",
     "修改系统的安装校验开关需要 ROOT 授权，当前没有拿到权限，设置没有改动。" to "Ændring af systemkontrollen kræver ROOT. Intet blev ændret.",
+    "浮窗+通知" to "Vindue+notifikation",
 )

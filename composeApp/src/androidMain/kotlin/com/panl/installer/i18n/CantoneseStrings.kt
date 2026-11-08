@@ -217,4 +217,5 @@ internal val cantoneseOverrides: Map<String, String> = mapOf(
     "如果安装器经常被后台管理关闭，请打开。" to "如果安裝器成日俾後台管理殺咗，就開咗佢。",
     "需要 ROOT 权限" to "需要 ROOT 權限",
     "修改系统的安装校验开关需要 ROOT 授权，当前没有拿到权限，设置没有改动。" to "改系統安裝校驗要 ROOT 授權，而家攞唔到權限，設定冇改到。",
+    "浮窗+通知" to "浮窗+通知",
 )

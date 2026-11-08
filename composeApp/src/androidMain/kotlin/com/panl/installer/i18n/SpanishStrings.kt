@@ -428,4 +428,5 @@ internal val spanishOverrides: Map<String, String> = mapOf(
     "如果安装器经常被后台管理关闭，请打开。" to "Actívalo si el instalador se cierra a menudo en segundo plano.",
     "需要 ROOT 权限" to "Se requiere ROOT",
     "修改系统的安装校验开关需要 ROOT 授权，当前没有拿到权限，设置没有改动。" to "Cambiar la verificación del sistema requiere ROOT. No se cambió nada.",
+    "浮窗+通知" to "Ventana+notificación",
 )

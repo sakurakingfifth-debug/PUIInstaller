@@ -168,17 +168,20 @@ private fun InstallSettingsScreen() {
                             items = listOf(
                                 tr("浮窗", "Sheet"),
                                 tr("全屏", "Full screen"),
-                                tr("实时通知", "Live notification")
+                                tr("实时通知", "Live"),
+                                tr("浮窗+通知", "Sheet+live")
                             ),
                             selectedIndex = when (settings.installStyle) {
                                 "Sheet" -> 0
                                 "Live" -> 2
+                                "SheetLive" -> 3
                                 else -> 1
                             },
                             onSelect = {
                                 settings.installStyle = when (it) {
                                     0 -> "Sheet"
                                     2 -> "Live"
+                                    3 -> "SheetLive"
                                     else -> "Full"
                                 }
                             }
@@ -194,11 +197,16 @@ private fun InstallSettingsScreen() {
                             items = listOf(tr("居中", "Center"), tr("底部", "Bottom")),
                             selectedIndex = if (settings.sheetPosition == "Center") 0 else 1,
                             onSelect = { settings.sheetPosition = if (it == 0) "Center" else "Bottom" },
-                            enabled = settings.installStyle == "Sheet"
+                            enabled = settings.installStyle == "Sheet" ||
+                                settings.installStyle == "SheetLive"
                         )
                         Spacer(Modifier.height(14.dp))
-                        // 只有实时通知样式下这两项才有意义，禁用时整行（图标 + 文字 + 开关）一起压淡
+                        // 「自动安装」只对纯实时通知有意义（浮窗+通知本来就要点一下安装）；
+                        // 「完成后弹出通知」两种走服务的样式都有效
                         val liveDim = if (settings.installStyle == "Live") 1f else 0.45f
+                        val popupActive = settings.installStyle == "Live" ||
+                            settings.installStyle == "SheetLive"
+                        val popupDim = if (popupActive) 1f else 0.45f
                         Row(
                             Modifier.fillMaxWidth(),
                             verticalAlignment = Alignment.CenterVertically
@@ -230,26 +238,26 @@ private fun InstallSettingsScreen() {
                             Modifier.fillMaxWidth(),
                             verticalAlignment = Alignment.CenterVertically
                         ) {
-                            RowIcon(R.drawable.ic_popup_notify, settings.installStyle == "Live")
+                            RowIcon(R.drawable.ic_popup_notify, popupActive)
                             Column(Modifier.weight(1f)) {
                                 Text(
                                     tr("完成后弹出通知", "Popup when done"),
                                     style = MaterialTheme.typography.titleMedium,
-                                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = liveDim)
+                                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = popupDim)
                                 )
                                 Text(
                                     tr(
-                                        "自动安装结束后弹出横幅提醒",
-                                        "Show a banner when an automatic install finishes"
+                                        "安装结束后弹出横幅提醒",
+                                        "Show a banner when an install finishes"
                                     ),
                                     style = MaterialTheme.typography.bodyMedium,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = liveDim)
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = popupDim)
                                 )
                             }
                             PuiSwitch(
                                 checked = settings.popupOnDone,
                                 onChange = { settings.popupOnDone = it },
-                                enabled = settings.installStyle == "Live"
+                                enabled = popupActive
                             )
                         }
                     }

@@ -15,6 +15,7 @@ import com.panl.installer.core.ApkInspector
 import com.panl.installer.core.ApkStaging
 import com.panl.installer.core.InstallEngine
 import com.panl.installer.core.InstallHistory
+import com.panl.installer.core.LiveInstallService
 import com.panl.installer.core.InstallerLog
 import com.panl.installer.core.Notifications
 import com.panl.installer.core.Settings
@@ -62,7 +63,14 @@ sealed interface InstallUiState {
  * 之所以不塞进 Activity：这套流程要跨多个挂起点（复制、写会话、等广播），
  * 放在一起才看得清状态是怎么迁移的。
  */
-class InstallController(private val activity: ComponentActivity) {
+class InstallController(
+    private val activity: ComponentActivity,
+    /**
+     * 「浮窗 + 通知」样式：浮窗只负责确认，点「安装」后把活交给 [LiveInstallService]，
+     * 界面立刻关掉，进度和结果都在实时通知里。
+     */
+    private val handOffToLive: Boolean = false
+) {
 
     private val TAG = "InstallController"
 
@@ -78,6 +86,8 @@ class InstallController(private val activity: ComponentActivity) {
 
     private var sourceUri: Uri? = null
     private var stagedFile: File? = null
+    /** 已经交给前台服务了：退出时别删缓存副本，服务还要读它。 */
+    private var handedOff = false
     private var installedInfo: ApkInfo? = null
 
     private val settings get() = Settings.get(activity)
@@ -190,6 +200,15 @@ class InstallController(private val activity: ComponentActivity) {
                     "The signature doesn't match the installed version, so it can't be installed over it. Uninstall the old version first."
                 )
             )
+            return
+        }
+
+        // 浮窗 + 通知：签名预检过了就直接交给前台服务，浮窗马上消失。
+        // 会话创建、进度、结果通知、历史记录、删源文件都由服务负责。
+        if (handOffToLive) {
+            handedOff = true
+            LiveInstallService.start(activity, info, sourceUri, autoStart = true)
+            runCatching { activity.finish() }
             return
         }
 
@@ -548,6 +567,8 @@ class InstallController(private val activity: ComponentActivity) {
     }
 
     fun cleanupOnExit() {
+        // 交给服务之后这份缓存还有用，删了服务就读不到了
+        if (handedOff) return
         stagedFile?.delete()
     }
 
