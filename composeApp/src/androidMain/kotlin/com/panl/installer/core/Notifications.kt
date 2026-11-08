@@ -373,7 +373,9 @@ object Notifications {
                 .setAction(LiveInstallService.ACTION_CANCEL),
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
         )
-        val icon = Icon.createWithResource(context, R.drawable.ic_stat_install)
+        // 两个按钮各用各的图标：安装 = 收件箱箭头，取消 = 撤销
+        val installIcon = Icon.createWithResource(context, R.drawable.ic_stat_import)
+        val cancelIcon = Icon.createWithResource(context, R.drawable.ic_stat_undo)
 
         val builder = Notification.Builder(context, CHANNEL_LIVE)
             .setSmallIcon(R.drawable.ic_stat_install)
@@ -384,8 +386,8 @@ object Notifications {
             .setOnlyAlertOnce(true)
             .setShowWhen(false)
             .setContentIntent(confirm)
-            .addAction(Notification.Action.Builder(icon, tr("安装", "Install"), confirm).build())
-            .addAction(Notification.Action.Builder(icon, tr("取消", "Cancel"), cancel).build())
+            .addAction(Notification.Action.Builder(installIcon, tr("安装", "Install"), confirm).build())
+            .addAction(Notification.Action.Builder(cancelIcon, tr("取消", "Cancel"), cancel).build())
 
         if (Build.VERSION.SDK_INT >= 36) {
             builder.setShortCriticalText(tr("待安装", "Ready"))
