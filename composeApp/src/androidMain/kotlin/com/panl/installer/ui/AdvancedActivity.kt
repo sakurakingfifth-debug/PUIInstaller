@@ -37,6 +37,7 @@ import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import kotlinx.coroutines.launch
 import com.panl.installer.ui.components.puiCardBackdropBlur
+import com.panl.installer.ui.main.DangerBadge
 import com.panl.installer.core.RootCheck
 import com.panl.installer.core.RootState
 import com.panl.installer.R
@@ -262,6 +263,7 @@ private fun AdvancedScreen(activity: ComponentActivity) {
                     PuiSwitchRow(
                         icon = PuiIcon.Trash,
                         title = tr("彻底卸载系统应用", "Remove system apps completely"),
+                        titleBadge = { DangerBadge(tr("高危操作", "High risk")) },
                         subtitle = tr(
                             "连系统分区里的 APK 一起抹掉（挂载遮罩，重启后生效）",
                             "Also wipe the APK in the system partition (mount mask, takes effect after reboot)"
@@ -367,8 +369,8 @@ private fun AdvancedScreen(activity: ComponentActivity) {
             scrim = !settings.noScrim,
             title = tr("风险提示", "Warning"),
             text = tr(
-                "彻底卸载会把系统分区里的 APK 一起遮罩掉，重启后应用从系统里彻底消失。系统关键应用被删可能导致无法开机，本安装器概不负责。",
-                "This also masks the APK inside the system partition, so the app disappears from the system entirely after a reboot. Removing critical system apps can prevent the device from booting — this installer takes no responsibility."
+                "卸载系统自带应用的操作极其危险，卸载后不可逆，且极容易导致无法开机。打开这个开关后，如果卸载任一一个系统APP导致无法开机或者其他使用异常，本安装器概不负责。",
+                "Uninstalling built-in system apps is extremely dangerous and irreversible, and can easily prevent the device from booting. If you enable this and uninstalling any system app causes a boot failure or other problems, this installer takes no responsibility."
             ),
             confirmText = tr("仍要打开", "Enable anyway"),
             dismissText = tr("取消", "Cancel"),

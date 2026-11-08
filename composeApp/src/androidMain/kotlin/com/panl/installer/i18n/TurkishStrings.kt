@@ -454,8 +454,9 @@ internal val turkishOverrides: Map<String, String> = mapOf(
     "卸载失败，检查一下 ROOT 授权" to "Kaldırma başarısız — ROOT erişimini kontrol edin",
     "彻底卸载系统应用" to "Sistem uygulamalarını tamamen kaldır",
     "连系统分区里的 APK 一起抹掉（挂载遮罩，重启后生效）" to "Sistem bölümündeki APK'yı da siler (bağlama maskesi, yeniden başlatmadan sonra)",
-    "彻底卸载会把系统分区里的 APK 一起遮罩掉，重启后应用从系统里彻底消失。系统关键应用被删可能导致无法开机，本安装器概不负责。" to "Bu, sistem bölümündeki APK'yı da gizler; uygulama yeniden başlatmadan sonra tamamen kaybolur. Kritik sistem uygulamalarını kaldırmak cihazın açılmamasına yol açabilir — sorumluluk kabul edilmez.",
+    "卸载系统自带应用的操作极其危险，卸载后不可逆，且极容易导致无法开机。打开这个开关后，如果卸载任一一个系统APP导致无法开机或者其他使用异常，本安装器概不负责。" to "Sistem uygulamalarını kaldırmak son derece tehlikeli ve geri alınamaz; cihazın açılmamasına kolayca yol açabilir. Bunu açtıktan sonra bir sistem uygulamasının kaldırılması açılış hatasına veya başka sorunlara yol açarsa bu yükleyici sorumluluk kabul etmez.",
     "已彻底卸载" to "Tamamen kaldırıldı",
     "已对所有用户卸载。重启后系统分区里的 APK 也会被遮罩掉。" to "Tüm kullanıcılar için kaldırıldı. Yeniden başlatmadan sonra sistem bölümündeki APK da gizlenecek.",
     "卸载失败：ROOT 没权限，也没能写入挂载遮罩" to "Kaldırma başarısız — ROOT erişimi yok ve maske yazılamadı",
+    "高危操作" to "Çok riskli",
 )

@@ -319,6 +319,32 @@ fun SettingsScreen(topPad: Dp) {
     }
 }
 
+/** 高危操作徽标：和 [BetaBadge] 一个版式，但整体走 error 色，一眼能看出是危险项。 */
+@Composable
+internal fun DangerBadge(text: String) {
+    val scheme = MaterialTheme.colorScheme
+    Row(
+        Modifier
+            .clip(RoundedCornerShape(8.dp))
+            .border(1.dp, scheme.error.copy(alpha = 0.45f), RoundedCornerShape(7.dp))
+            .padding(horizontal = 6.dp, vertical = 3.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Image(
+            painter = painterResource(R.drawable.ic_danger),
+            contentDescription = null,
+            modifier = Modifier.size(12.dp),
+            colorFilter = ColorFilter.tint(scheme.error)
+        )
+        Spacer(Modifier.width(3.dp))
+        Text(
+            text,
+            style = MaterialTheme.typography.labelMedium,
+            color = scheme.error
+        )
+    }
+}
+
 /** 标题后面的小徽标：细边框 + 烧瓶图标 + 一行小字，用来标 Beta 这类状态。 */
 @Composable
 internal fun BetaBadge(text: String) {

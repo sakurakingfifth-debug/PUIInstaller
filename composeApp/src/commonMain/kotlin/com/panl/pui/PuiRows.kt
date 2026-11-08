@@ -164,7 +164,9 @@ fun PuiSwitchRow(
     checked: Boolean,
     onChange: (Boolean) -> Unit,
     showDivider: Boolean,
-    enabled: Boolean = true
+    enabled: Boolean = true,
+    /** 标题**下方**的小徽标（高危这类）。放在标题右边会把标题挤断行，所以单起一行。 */
+    titleBadge: (@Composable () -> Unit)? = null
 ) {
     val dim = if (enabled) 1f else 0.45f
     Column {
@@ -202,6 +204,10 @@ fun PuiSwitchRow(
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = dim)
                     )
+                }
+                if (titleBadge != null) {
+                    Spacer(Modifier.height(6.dp))
+                    titleBadge()
                 }
             }
             Spacer(Modifier.width(12.dp))

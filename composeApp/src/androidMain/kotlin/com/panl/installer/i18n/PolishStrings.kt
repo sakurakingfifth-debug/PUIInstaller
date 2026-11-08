@@ -454,8 +454,9 @@ internal val polishOverrides: Map<String, String> = mapOf(
     "卸载失败，检查一下 ROOT 授权" to "Odinstalowanie nie powiodło się — sprawdź dostęp ROOT",
     "彻底卸载系统应用" to "Całkowicie usuń aplikacje systemowe",
     "连系统分区里的 APK 一起抹掉（挂载遮罩，重启后生效）" to "Usuwa też APK z partycji systemowej (maska montowania, po restarcie)",
-    "彻底卸载会把系统分区里的 APK 一起遮罩掉，重启后应用从系统里彻底消失。系统关键应用被删可能导致无法开机，本安装器概不负责。" to "Maskuje też APK w partycji systemowej, więc aplikacja zniknie całkowicie po restarcie. Usunięcie kluczowych aplikacji systemowych może uniemożliwić uruchomienie — brak odpowiedzialności.",
+    "卸载系统自带应用的操作极其危险，卸载后不可逆，且极容易导致无法开机。打开这个开关后，如果卸载任一一个系统APP导致无法开机或者其他使用异常，本安装器概不负责。" to "Usuwanie aplikacji systemowych jest skrajnie niebezpieczne i nieodwracalne, łatwo może uniemożliwić uruchomienie. Jeśli to włączysz, a usunięcie aplikacji systemowej spowoduje brak bootowania lub inne problemy, instalator nie ponosi odpowiedzialności.",
     "已彻底卸载" to "Usunięto całkowicie",
     "已对所有用户卸载。重启后系统分区里的 APK 也会被遮罩掉。" to "Odinstalowano dla wszystkich użytkowników. Po restarcie APK w partycji systemowej też zostanie zamaskowany.",
     "卸载失败：ROOT 没权限，也没能写入挂载遮罩" to "Nie udało się usunąć — brak dostępu ROOT i nie zapisano maski",
+    "高危操作" to "Bardzo ryzykowne",
 )

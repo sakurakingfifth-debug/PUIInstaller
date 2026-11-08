@@ -454,8 +454,9 @@ internal val dutchOverrides: Map<String, String> = mapOf(
     "卸载失败，检查一下 ROOT 授权" to "Verwijderen mislukt — controleer ROOT-toegang",
     "彻底卸载系统应用" to "Systeemapps volledig verwijderen",
     "连系统分区里的 APK 一起抹掉（挂载遮罩，重启后生效）" to "Wist ook de APK in de systeempartitie (mount-masker, na herstart)",
-    "彻底卸载会把系统分区里的 APK 一起遮罩掉，重启后应用从系统里彻底消失。系统关键应用被删可能导致无法开机，本安装器概不负责。" to "Dit maskeert ook de APK in de systeempartitie, zodat de app na een herstart volledig verdwijnt. Kritieke systeemapps verwijderen kan opstarten verhinderen — geen aansprakelijkheid.",
+    "卸载系统自带应用的操作极其危险，卸载后不可逆，且极容易导致无法开机。打开这个开关后，如果卸载任一一个系统APP导致无法开机或者其他使用异常，本安装器概不负责。" to "Systeemapps verwijderen is uiterst gevaarlijk en onomkeerbaar, en kan het opstarten gemakkelijk verhinderen. Als je dit aanzet en het verwijderen van een systeemapp veroorzaakt een opstartfout of andere problemen, is deze installer niet aansprakelijk.",
     "已彻底卸载" to "Volledig verwijderd",
     "已对所有用户卸载。重启后系统分区里的 APK 也会被遮罩掉。" to "Verwijderd voor alle gebruikers. Na een herstart wordt de APK in de systeempartitie ook gemaskeerd.",
     "卸载失败：ROOT 没权限，也没能写入挂载遮罩" to "Verwijderen mislukt — geen ROOT-toegang en het masker kon niet worden geschreven",
+    "高危操作" to "Zeer riskant",
 )

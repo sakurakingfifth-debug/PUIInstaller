@@ -454,8 +454,9 @@ internal val latinOverrides: Map<String, String> = mapOf(
     "卸载失败，检查一下 ROOT 授权" to "Deinstalatio defecit — ROOT potestatem inspice",
     "彻底卸载系统应用" to "App systematis penitus removere",
     "连系统分区里的 APK 一起抹掉（挂载遮罩，重启后生效）" to "Etiam APK in partitione systematis delet (larva montis, post restitutionem)",
-    "彻底卸载会把系统分区里的 APK 一起遮罩掉，重启后应用从系统里彻底消失。系统关键应用被删可能导致无法开机，本安装器概不负责。" to "Haec etiam APK in partitione systematis celat, ut app post restitutionem plane evanescat. App systematis magni momenti delere potest impedire quominus systema incipiat — nulla responsabilitas.",
+    "卸载系统自带应用的操作极其危险，卸载后不可逆，且极容易导致无法开机。打开这个开关后，如果卸载任一一个系统APP导致无法开机或者其他使用异常，本安装器概不负责。" to "App systematis delere periculosissimum est neque revocabile, et facile impedit quominus systema incipiat. Si hoc accenderis et app systematis deleta defectum incipiendi vel alia mala pepererit, hic installator nullam responsabilitatem suscipit.",
     "已彻底卸载" to "Penitus remotum",
     "已对所有用户卸载。重启后系统分区里的 APK 也会被遮罩掉。" to "Pro omnibus usoribus deinstallatum. Post restitutionem etiam APK in partitione systematis celabitur.",
     "卸载失败：ROOT 没权限，也没能写入挂载遮罩" to "Deinstalatio defecit — nulla potestas ROOT neque larva scripta",
+    "高危操作" to "Periculosissimum",
 )

@@ -454,8 +454,9 @@ internal val vietnameseOverrides: Map<String, String> = mapOf(
     "卸载失败，检查一下 ROOT 授权" to "Gỡ cài đặt thất bại — kiểm tra quyền ROOT",
     "彻底卸载系统应用" to "Xóa hoàn toàn ứng dụng hệ thống",
     "连系统分区里的 APK 一起抹掉（挂载遮罩，重启后生效）" to "Xóa luôn APK trong phân vùng hệ thống (mặt nạ mount, có hiệu lực sau khi khởi động lại)",
-    "彻底卸载会把系统分区里的 APK 一起遮罩掉，重启后应用从系统里彻底消失。系统关键应用被删可能导致无法开机，本安装器概不负责。" to "Tùy chọn này cũng che APK trong phân vùng hệ thống, nên ứng dụng sẽ biến mất hoàn toàn sau khi khởi động lại. Xóa ứng dụng hệ thống quan trọng có thể khiến máy không khởi động — không chịu trách nhiệm.",
+    "卸载系统自带应用的操作极其危险，卸载后不可逆，且极容易导致无法开机。打开这个开关后，如果卸载任一一个系统APP导致无法开机或者其他使用异常，本安装器概不负责。" to "Gỡ ứng dụng hệ thống cực kỳ nguy hiểm và không thể hoàn tác, dễ khiến máy không khởi động được. Nếu bật tùy chọn này và việc gỡ một ứng dụng hệ thống gây lỗi khởi động hoặc sự cố khác, trình cài đặt này không chịu trách nhiệm.",
     "已彻底卸载" to "Đã xóa hoàn toàn",
     "已对所有用户卸载。重启后系统分区里的 APK 也会被遮罩掉。" to "Đã gỡ cho mọi người dùng. Sau khi khởi động lại, APK trong phân vùng hệ thống cũng sẽ bị che.",
     "卸载失败：ROOT 没权限，也没能写入挂载遮罩" to "Gỡ thất bại — không có quyền ROOT và không ghi được mặt nạ",
+    "高危操作" to "Rất rủi ro",
 )
