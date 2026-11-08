@@ -545,12 +545,12 @@ private fun SwipeToDelete(
 /** 列表末尾的「新增」：实心主色按钮。 */
 @Composable
 private fun AddCard(onClick: () -> Unit) {
+    // 和参考图一致：只有文字、居中，不带图标
     PuiButton(
         text = tr("新增", "Add"),
         onClick = onClick,
         modifier = Modifier.fillMaxWidth().padding(bottom = 10.dp),
-        style = PuiButtonStyle.Filled,
-        icon = PuiIcon.Plus
+        style = PuiButtonStyle.Filled
     )
 }
 
