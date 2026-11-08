@@ -8,6 +8,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
@@ -19,6 +20,9 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.pager.HorizontalPager
+import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -27,38 +31,49 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import com.panl.installer.core.InstallerLog
 import com.panl.installer.core.Settings
 import com.panl.installer.i18n.tr
 import com.panl.installer.ui.theme.InstallerTheme
+import com.panl.pui.PuiBarMetrics
 import com.panl.pui.PuiButton
 import com.panl.pui.PuiButtonStyle
-import com.panl.pui.PuiGroup
+import com.panl.pui.PuiCard
+import com.panl.pui.PuiFloatingNavBar
 import com.panl.pui.PuiIcon
 import com.panl.pui.PuiIconView
 import com.panl.pui.PuiPageTitle
 import com.panl.pui.PuiTextField
+import com.panl.pui.PuiTopFade
 import com.panl.pui.puiEdgeHaptic
 import com.panl.pui.puiProgressiveTopBlur
+import com.panl.pui.navBackdropSource
+import com.panl.pui.rememberNavBackdrop
+import com.panl.pui.rememberNavigationBarHeight
 import com.panl.pui.rememberPuiTopBlurHeight
+import kotlinx.coroutines.launch
 
 /**
  * 安装器全局设置（移植自 InstallerX-Revived 的 InstallerGlobalSettingsPage，只搬功能不搬 UI）。
  *
- * 三组都是「白名单 / 黑名单」：
- *  - 安装来源预设：只允许列表里的应用发起安装（空 = 不限制）；
- *  - 根据包名禁止安装应用程序；
- *  - 根据 SharedUID 禁止安装应用程序。
+ * 三块内容各占一页，底部用和主页一样的悬浮导航栏切换：
+ *  - 来源：只允许列表里的应用发起安装；
+ *  - 黑名单：按包名禁止安装；
+ *  - SharedUID：按 sharedUserId 禁止安装。
  */
 class InstallerGlobalActivity : ComponentActivity() {
 
@@ -67,9 +82,89 @@ class InstallerGlobalActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         setContent {
             InstallerTheme {
-                InstallerGlobalScreen()
+                GlobalShell()
             }
         }
+    }
+}
+
+private val TAB_LABELS: List<String>
+    @Composable get() = listOf(tr("来源", "Sources"), tr("黑名单", "Blocklist"), tr("SharedUID", "SharedUID"))
+
+private val TAB_ICONS = listOf(PuiIcon.Download, PuiIcon.Trash, PuiIcon.User)
+
+@Composable
+private fun GlobalShell() {
+    val pagerState = rememberPagerState { 3 }
+    val scope = rememberCoroutineScope()
+    val settings = Settings.get(LocalContext.current)
+    val navBarH = rememberNavigationBarHeight()
+    val blurH = rememberPuiTopBlurHeight()
+    val density = LocalDensity.current.density
+    val backdrop = rememberNavBackdrop()
+    val blurOn = settings.blurEnabled
+
+    BoxWithConstraints(
+        Modifier
+            .fillMaxSize()
+            .background(MaterialTheme.colorScheme.background)
+    ) {
+        val itemWidth = minOf(
+            PuiBarMetrics.itemWidth,
+            (maxWidth - 40.dp - PuiBarMetrics.padding * 2) / TAB_LABELS.size
+        )
+
+        HorizontalPager(
+            state = pagerState,
+            beyondViewportPageCount = 1,
+            modifier = if (blurOn) {
+                Modifier
+                    .fillMaxSize()
+                    // 先登记位置（导航栏毛玻璃要采样这一层），再加模糊 —— 顺序不能反
+                    .navBackdropSource(backdrop)
+                    .puiProgressiveTopBlur(
+                        height = blurH,
+                        maxRadius = (settings.topBlurPx / density).dp,
+                        backdrop = backdrop
+                    )
+            } else {
+                Modifier.fillMaxSize()
+            }
+        ) { page ->
+            GlobalPage(page = page, topPad = blurH, navBarH = navBarH)
+        }
+
+        // 内容滚进模糊区时自然消失
+        PuiTopFade(height = blurH)
+
+        // 底部切面过渡：内容滚到导航栏那儿是淡出，不是一刀切
+        val bg = MaterialTheme.colorScheme.background
+        Box(
+            Modifier
+                .align(Alignment.BottomCenter)
+                .fillMaxWidth()
+                .height(navBarH + 120.dp)
+                .background(
+                    Brush.verticalGradient(0f to Color.Transparent, 0.55f to bg, 1f to bg)
+                )
+        )
+
+        PuiFloatingNavBar(
+            items = TAB_LABELS,
+            selectedIndex = pagerState.currentPage,
+            onSelect = { page ->
+                if (page != pagerState.currentPage) {
+                    scope.launch { pagerState.animateScrollToPage(page) }
+                }
+            },
+            icons = TAB_ICONS,
+            itemWidth = itemWidth,
+            backdrop = if (blurOn) backdrop else null,
+            glassAlpha = settings.navGlassPercent / 100f,
+            modifier = Modifier
+                .align(Alignment.BottomCenter)
+                .padding(bottom = PuiBarMetrics.bottomMargin + navBarH)
+        )
     }
 }
 
@@ -77,21 +172,48 @@ class InstallerGlobalActivity : ComponentActivity() {
 private enum class ListKind { Sources, Packages, SharedUids }
 
 @Composable
-private fun InstallerGlobalScreen() {
-    val scheme = MaterialTheme.colorScheme
+private fun GlobalPage(page: Int, topPad: Dp, navBarH: Dp) {
     val context = LocalContext.current
     val settings = Settings.get(context)
-    val density = LocalDensity.current.density
-    val blurH = rememberPuiTopBlurHeight()
-
     var tick by remember { mutableIntStateOf(0) }
-    var adding by remember { mutableStateOf<ListKind?>(null) }
+    var adding by remember { mutableStateOf(false) }
 
-    val sources = remember(tick) { settings.managedInstallerPackagesRaw }
-    val packages = remember(tick) { settings.blacklistPackagesRaw }
-    val uids = remember(tick) { settings.blacklistSharedUidRaw }
+    val kind = when (page) {
+        0 -> ListKind.Sources
+        1 -> ListKind.Packages
+        else -> ListKind.SharedUids
+    }
+    val raw = remember(tick, page) {
+        when (kind) {
+            ListKind.Sources -> settings.managedInstallerPackagesRaw
+            ListKind.Packages -> settings.blacklistPackagesRaw
+            ListKind.SharedUids -> settings.blacklistSharedUidRaw
+        }
+    }
+    val entries = raw.lineSequence().map { it.trim() }.filter { it.isNotBlank() }.toList()
 
-    fun write(kind: ListKind, value: String) {
+    val title = when (kind) {
+        ListKind.Sources -> tr("来源预设", "Install sources")
+        ListKind.Packages -> tr("禁止安装的包名", "Blocked packages")
+        ListKind.SharedUids -> tr("禁止安装的 SharedUID", "Blocked SharedUIDs")
+    }
+    val emptyTitle = when (kind) {
+        ListKind.Sources -> tr("没有预设安装来源", "No preset install sources")
+        ListKind.Packages -> tr("没有需要禁止安装的应用包名", "No package names blocked")
+        ListKind.SharedUids -> tr("没有需要禁止安装的应用 SharedUID", "No SharedUIDs blocked")
+    }
+    val subtitleOf = when (kind) {
+        ListKind.Sources -> tr("允许发起安装", "Allowed to start installs")
+        ListKind.Packages -> tr("禁止安装该包", "Installs blocked")
+        ListKind.SharedUids -> tr("禁止安装该 SharedUID", "Installs blocked")
+    }
+    val rowIcon = when (kind) {
+        ListKind.Sources -> PuiIcon.Download
+        ListKind.Packages -> PuiIcon.Trash
+        ListKind.SharedUids -> PuiIcon.User
+    }
+
+    fun write(value: String) {
         when (kind) {
             ListKind.Sources -> settings.managedInstallerPackagesRaw = value
             ListKind.Packages -> settings.blacklistPackagesRaw = value
@@ -100,186 +222,162 @@ private fun InstallerGlobalScreen() {
         tick++
     }
 
-    Box(Modifier.fillMaxSize().background(scheme.background)) {
-        LazyColumn(
-            Modifier
-                .fillMaxSize()
-                .puiEdgeHaptic()
-                .then(
-                    if (settings.blurEnabled) {
-                        Modifier.puiProgressiveTopBlur(
-                            height = blurH,
-                            maxRadius = (settings.topBlurPx / density).dp
+    LazyColumn(
+        Modifier
+            .fillMaxSize()
+            .puiEdgeHaptic(),
+        contentPadding = PaddingValues(
+            start = 16.dp,
+            end = 16.dp,
+            top = topPad + 4.dp,
+            bottom = navBarH + 130.dp
+        )
+    ) {
+        item {
+            PuiPageTitle(title)
+            Spacer(Modifier.height(14.dp))
+        }
+
+        if (entries.isEmpty()) {
+            item {
+                PuiCard(Modifier.fillMaxWidth().padding(bottom = 10.dp)) {
+                    Column(Modifier.fillMaxWidth().padding(16.dp)) {
+                        Text(
+                            emptyTitle,
+                            style = MaterialTheme.typography.titleMedium,
+                            color = MaterialTheme.colorScheme.onSurface
                         )
-                    } else {
-                        Modifier
+                        Spacer(Modifier.height(2.dp))
+                        Text(
+                            tr("点击下方的「新增」按钮开始", "Tap “Add” below to start"),
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
                     }
-                ),
-            contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = blurH + 4.dp, bottom = 32.dp)
-        ) {
-            item {
-                PuiPageTitle(tr("安装器全局设置", "Installer settings"))
-                Spacer(Modifier.height(14.dp))
-            }
-
-            item {
-                PuiGroup(title = tr("来源预设", "Install sources")) {
-                    EntryList(
-                        raw = sources,
-                        emptyTitle = tr("没有预设安装来源", "No preset install sources"),
-                        emptyHint = tr("点击下方的「新增」按钮开始", "Tap “Add” below to start"),
-                        onRemove = { line -> write(ListKind.Sources, removeLine(sources, line)) },
-                        onAdd = { adding = ListKind.Sources }
-                    )
                 }
             }
+        }
 
-            item {
-                Spacer(Modifier.height(18.dp))
-                PuiGroup(title = tr("根据包名禁止安装应用程序", "Block installs by package name")) {
-                    EntryList(
-                        raw = packages,
-                        emptyTitle = tr("没有需要禁止安装的应用包名", "No package names blocked"),
-                        emptyHint = tr("点击下方的「新增」按钮开始", "Tap “Add” below to start"),
-                        onRemove = { line -> write(ListKind.Packages, removeLine(packages, line)) },
-                        onAdd = { adding = ListKind.Packages }
-                    )
+        items(entries) { entry ->
+            EntryCard(
+                icon = rowIcon,
+                title = entry.substringAfter(' ', "").ifBlank { entry },
+                subtitle = if (entry.contains(' ')) entry.substringBefore(' ') else subtitleOf,
+                onRemove = {
+                    write(entries.filter { it != entry }.joinToString("\n"))
                 }
-            }
+            )
+        }
 
-            item {
-                Spacer(Modifier.height(18.dp))
-                PuiGroup(title = tr("根据 SharedUID 禁止安装应用程序", "Block installs by SharedUID")) {
-                    EntryList(
-                        raw = uids,
-                        emptyTitle = tr("没有需要禁止安装的应用 SharedUID", "No SharedUIDs blocked"),
-                        emptyHint = tr("点击下方的「新增」按钮开始", "Tap “Add” below to start"),
-                        onRemove = { line -> write(ListKind.SharedUids, removeLine(uids, line)) },
-                        onAdd = { adding = ListKind.SharedUids }
-                    )
-                }
-            }
+        item {
+            AddCard(onClick = { adding = true })
         }
     }
 
-    adding?.let { kind ->
-        val title: String
-        val hint: String
-        when (kind) {
-            ListKind.Sources -> {
-                title = tr("新增安装来源", "Add install source")
-                hint = tr("包名，例如 com.android.vending", "Package name, e.g. com.android.vending")
-            }
-            ListKind.Packages -> {
-                title = tr("新增禁止安装的包名", "Add blocked package")
-                hint = tr("包名，例如 com.example.app", "Package name, e.g. com.example.app")
-            }
-            ListKind.SharedUids -> {
-                title = tr("新增禁止安装的 SharedUID", "Add blocked SharedUID")
-                hint = tr("UID 值，例如 1000 或 android.uid.phone", "UID value, e.g. 1000 or android.uid.phone")
-            }
+    if (adding) {
+        val (dialogTitle, hint) = when (kind) {
+            ListKind.Sources -> tr("新增安装来源", "Add install source") to
+                tr("包名，例如 com.android.vending", "Package name, e.g. com.android.vending")
+            ListKind.Packages -> tr("新增禁止安装的包名", "Add blocked package") to
+                tr("包名，例如 com.example.app", "Package name, e.g. com.example.app")
+            ListKind.SharedUids -> tr("新增禁止安装的 SharedUID", "Add blocked SharedUID") to
+                tr("UID 值，例如 1000 或 android.uid.phone", "UID value, e.g. 1000 or android.uid.phone")
         }
         AddEntryDialog(
-            title = title,
+            title = dialogTitle,
             placeholder = hint,
-            onDismiss = { adding = null },
+            onDismiss = { adding = false },
             onConfirm = { value ->
-                val raw = when (kind) {
-                    ListKind.Sources -> sources
-                    ListKind.Packages -> packages
-                    ListKind.SharedUids -> uids
-                }
-                write(kind, if (raw.isBlank()) value else raw.trimEnd() + "\n" + value)
+                write(if (raw.isBlank()) value else raw.trimEnd() + "\n" + value)
                 InstallerLog.record(context, "SETTINGS", "新增 $value")
-                adding = null
+                adding = false
             }
         )
     }
 }
 
-private fun removeLine(raw: String, line: String): String =
-    raw.lineSequence().filter { it.trim() != line.trim() }.joinToString("\n")
-
-/** 列表主体：每行「名称 + 副标题 + 删除」，底部一个「+ 新增」。 */
+/** 一条记录：图标 + 名称 + 说明 + 删除。版式跟历史页的行一致。 */
 @Composable
-private fun EntryList(
-    raw: String,
-    emptyTitle: String,
-    emptyHint: String,
-    onRemove: (String) -> Unit,
-    onAdd: () -> Unit
+private fun EntryCard(
+    icon: PuiIcon,
+    title: String,
+    subtitle: String,
+    onRemove: () -> Unit
 ) {
     val scheme = MaterialTheme.colorScheme
-    val items = raw.lineSequence().map { it.trim() }.filter { it.isNotBlank() }.toList()
-
-    if (items.isEmpty()) {
-        Column(Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 14.dp)) {
-            Text(
-                emptyTitle,
-                style = MaterialTheme.typography.titleMedium,
-                color = scheme.onSurface
-            )
-            Spacer(Modifier.height(2.dp))
-            Text(
-                emptyHint,
-                style = MaterialTheme.typography.bodyMedium,
-                color = scheme.onSurfaceVariant
-            )
-        }
-    } else {
-        items.forEach { item ->
-            Row(
-                Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 12.dp),
-                verticalAlignment = Alignment.CenterVertically
+    PuiCard(Modifier.fillMaxWidth().padding(bottom = 10.dp)) {
+        Row(
+            Modifier.fillMaxWidth().padding(14.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Box(
+                Modifier
+                    .size(44.dp)
+                    .clip(RoundedCornerShape(12.dp))
+                    .background(scheme.primary.copy(alpha = 0.12f)),
+                contentAlignment = Alignment.Center
             ) {
-                Column(Modifier.weight(1f)) {
-                    // 「包名 显示名」：有显示名就把显示名放上面
-                    Text(
-                        item.substringAfter(' ', "").ifBlank { item },
-                        style = MaterialTheme.typography.titleMedium,
-                        color = scheme.onSurface,
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis
-                    )
-                    if (item.contains(' ')) {
-                        Spacer(Modifier.height(2.dp))
-                        Text(
-                            item.substringBefore(' '),
-                            style = MaterialTheme.typography.bodyMedium,
-                            color = scheme.onSurfaceVariant,
-                            maxLines = 1,
-                            overflow = TextOverflow.Ellipsis
-                        )
-                    }
-                }
-                Spacer(Modifier.width(10.dp))
-                PillButton(text = tr("删除", "Remove"), onClick = { onRemove(item) })
+                PuiIconView(icon, Modifier.size(22.dp), tint = scheme.primary)
             }
+            Spacer(Modifier.width(12.dp))
+            Column(Modifier.weight(1f)) {
+                Text(
+                    title,
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.SemiBold,
+                    color = scheme.onSurface,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
+                )
+                Spacer(Modifier.height(2.dp))
+                Text(
+                    subtitle,
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = scheme.onSurfaceVariant,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
+                )
+            }
+            Spacer(Modifier.width(10.dp))
+            PillButton(text = tr("删除", "Remove"), onClick = onRemove)
         }
-    }
-
-    Row(Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 12.dp)) {
-        Spacer(Modifier.weight(1f))
-        PillButton(text = tr("新增", "Add"), onClick = onAdd, leadingPlus = true)
     }
 }
 
-/** 截图里那种浅底圆角小胶囊按钮。 */
+/** 列表末尾的「+ 新增」。 */
 @Composable
-private fun PillButton(text: String, onClick: () -> Unit, leadingPlus: Boolean = false) {
+private fun AddCard(onClick: () -> Unit) {
     val scheme = MaterialTheme.colorScheme
-    Row(
+    PuiCard(Modifier.fillMaxWidth().padding(bottom = 10.dp)) {
+        Row(
+            Modifier
+                .fillMaxWidth()
+                .clickable { onClick() }
+                .padding(horizontal = 16.dp, vertical = 18.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            PuiIconView(PuiIcon.Plus, Modifier.size(20.dp), tint = scheme.primary)
+            Spacer(Modifier.width(10.dp))
+            Text(
+                tr("新增", "Add"),
+                style = MaterialTheme.typography.titleMedium,
+                color = scheme.primary
+            )
+        }
+    }
+}
+
+/** 浅底圆角小胶囊按钮。 */
+@Composable
+private fun PillButton(text: String, onClick: () -> Unit) {
+    val scheme = MaterialTheme.colorScheme
+    Box(
         Modifier
             .clip(RoundedCornerShape(50))
             .background(scheme.primary.copy(alpha = 0.12f))
             .clickable { onClick() }
-            .padding(horizontal = 16.dp, vertical = 8.dp),
-        verticalAlignment = Alignment.CenterVertically
+            .padding(horizontal = 14.dp, vertical = 7.dp)
     ) {
-        if (leadingPlus) {
-            PuiIconView(PuiIcon.Plus, Modifier.size(16.dp), tint = scheme.primary)
-            Spacer(Modifier.width(4.dp))
-        }
         Text(
             text,
             style = MaterialTheme.typography.titleSmall,
