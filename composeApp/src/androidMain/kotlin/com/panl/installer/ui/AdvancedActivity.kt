@@ -346,7 +346,8 @@ private fun AdvancedScreen(activity: ComponentActivity) {
                 Spacer(Modifier.height(18.dp))
                 PuiGroup(title = null) {
                     PuiSwitchRow(
-                        icon = PuiIcon.Moon,
+                        icon = null,
+                        iconPainter = painterResource(R.drawable.ic_eye_slash),
                         title = tr("隐藏桌面图标", "Hide launcher icon"),
                         subtitle = tr(
                             "拨号输入 *#*#078#*#* 可随时打开安装器",
