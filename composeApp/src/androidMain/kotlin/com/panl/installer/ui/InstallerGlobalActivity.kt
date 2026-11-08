@@ -240,8 +240,15 @@ private fun GlobalPage(page: Int, topPad: Dp, navBarH: Dp) {
 
         if (entries.isEmpty()) {
             item {
-                PuiCard(Modifier.fillMaxWidth().padding(bottom = 10.dp)) {
-                    Column(Modifier.fillMaxWidth().padding(16.dp)) {
+                Column(
+                    Modifier
+                        .fillMaxWidth()
+                        .padding(bottom = 10.dp)
+                        .clip(RoundedCornerShape(24.dp))
+                        .background(MaterialTheme.colorScheme.surfaceContainerLowest)
+                        .padding(horizontal = 16.dp, vertical = 18.dp)
+                ) {
+                    run {
                         Text(
                             emptyTitle,
                             style = MaterialTheme.typography.titleMedium,
@@ -305,42 +312,45 @@ private fun EntryCard(
     onRemove: () -> Unit
 ) {
     val scheme = MaterialTheme.colorScheme
-    PuiCard(Modifier.fillMaxWidth().padding(bottom = 10.dp)) {
-        Row(
-            Modifier.fillMaxWidth().padding(14.dp),
-            verticalAlignment = Alignment.CenterVertically
+    Row(
+        Modifier
+            .fillMaxWidth()
+            .padding(bottom = 10.dp)
+            .clip(RoundedCornerShape(24.dp))
+            .background(scheme.surfaceContainerLowest)
+            .padding(horizontal = 16.dp, vertical = 16.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Box(
+            Modifier
+                .size(48.dp)
+                .clip(RoundedCornerShape(14.dp))
+                .background(scheme.primary.copy(alpha = 0.12f)),
+            contentAlignment = Alignment.Center
         ) {
-            Box(
-                Modifier
-                    .size(44.dp)
-                    .clip(RoundedCornerShape(12.dp))
-                    .background(scheme.primary.copy(alpha = 0.12f)),
-                contentAlignment = Alignment.Center
-            ) {
-                PuiIconView(icon, Modifier.size(22.dp), tint = scheme.primary)
-            }
-            Spacer(Modifier.width(12.dp))
-            Column(Modifier.weight(1f)) {
-                Text(
-                    title,
-                    style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.SemiBold,
-                    color = scheme.onSurface,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis
-                )
-                Spacer(Modifier.height(2.dp))
-                Text(
-                    subtitle,
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = scheme.onSurfaceVariant,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis
-                )
-            }
-            Spacer(Modifier.width(10.dp))
-            PillButton(text = tr("删除", "Remove"), onClick = onRemove)
+            PuiIconView(icon, Modifier.size(24.dp), tint = scheme.primary)
         }
+        Spacer(Modifier.width(14.dp))
+        Column(Modifier.weight(1f)) {
+            Text(
+                title,
+                style = MaterialTheme.typography.titleMedium,
+                fontWeight = FontWeight.SemiBold,
+                color = scheme.onSurface,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis
+            )
+            Spacer(Modifier.height(3.dp))
+            Text(
+                subtitle,
+                style = MaterialTheme.typography.bodyMedium,
+                color = scheme.onSurfaceVariant,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis
+            )
+        }
+        Spacer(Modifier.width(12.dp))
+        PillButton(text = tr("删除", "Remove"), onClick = onRemove)
     }
 }
 
@@ -348,22 +358,24 @@ private fun EntryCard(
 @Composable
 private fun AddCard(onClick: () -> Unit) {
     val scheme = MaterialTheme.colorScheme
-    PuiCard(Modifier.fillMaxWidth().padding(bottom = 10.dp)) {
-        Row(
-            Modifier
-                .fillMaxWidth()
-                .clickable { onClick() }
-                .padding(horizontal = 16.dp, vertical = 18.dp),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            PuiIconView(PuiIcon.Plus, Modifier.size(20.dp), tint = scheme.primary)
-            Spacer(Modifier.width(10.dp))
-            Text(
-                tr("新增", "Add"),
-                style = MaterialTheme.typography.titleMedium,
-                color = scheme.primary
-            )
-        }
+    Row(
+        Modifier
+            .fillMaxWidth()
+            .padding(bottom = 10.dp)
+            .clip(RoundedCornerShape(24.dp))
+            .background(scheme.surfaceContainerLowest)
+            .clickable { onClick() }
+            .padding(horizontal = 16.dp, vertical = 20.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        PuiIconView(PuiIcon.Plus, Modifier.size(22.dp), tint = scheme.primary)
+        Spacer(Modifier.width(12.dp))
+        Text(
+            tr("新增", "Add"),
+            style = MaterialTheme.typography.titleMedium,
+            fontWeight = FontWeight.SemiBold,
+            color = scheme.primary
+        )
     }
 }
 
@@ -376,12 +388,12 @@ private fun PillButton(text: String, onClick: () -> Unit) {
             .clip(RoundedCornerShape(50))
             .background(scheme.primary.copy(alpha = 0.12f))
             .clickable { onClick() }
-            .padding(horizontal = 14.dp, vertical = 7.dp)
+            .padding(horizontal = 16.dp, vertical = 8.dp)
     ) {
         Text(
             text,
             style = MaterialTheme.typography.titleSmall,
-            fontWeight = FontWeight.Medium,
+            fontWeight = FontWeight.SemiBold,
             color = scheme.primary
         )
     }
