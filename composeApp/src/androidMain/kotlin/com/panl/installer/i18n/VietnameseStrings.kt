@@ -443,4 +443,10 @@ internal val vietnameseOverrides: Map<String, String> = mapOf(
     "点按打开安装器" to "Chạm để mở trình cài đặt",
     "支持 .apk.1 安装包" to "Hỗ trợ gói .apk.1",
     "QQ / 微信 下载的 APK 会被改名成 .apk.1，打开后照常安装" to "QQ và WeChat đổi tên APK tải về thành .apk.1 — vẫn cài đặt bình thường",
+    "生物识别确认" to "Xác nhận sinh trắc học",
+    "安装前需要通过设备认证（指纹 / 面容 / 锁屏密码）" to "Yêu cầu xác thực thiết bị (vân tay, khuôn mặt hoặc mã khóa) trước khi cài đặt",
+    "安装确认" to "Xác nhận cài đặt",
+    "请认证以确认本次安装操作" to "Xác thực để xác nhận lần cài đặt này",
+    "等待设备认证…" to "Đang chờ xác thực…",
+    "认证未通过，安装已取消" to "Xác thực thất bại — đã hủy cài đặt",
 )

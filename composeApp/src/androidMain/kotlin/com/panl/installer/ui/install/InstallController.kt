@@ -13,6 +13,7 @@ import androidx.lifecycle.lifecycleScope
 import com.panl.installer.core.ApkInfo
 import com.panl.installer.core.ApkInspector
 import com.panl.installer.core.ApkStaging
+import com.panl.installer.core.BiometricGate
 import com.panl.installer.core.InstallEngine
 import com.panl.installer.core.InstallHistory
 import com.panl.installer.core.LiveInstallService
@@ -203,17 +204,34 @@ class InstallController(
             return
         }
 
-        // 浮窗 + 通知：签名预检过了就直接交给前台服务，浮窗马上消失。
-        // 会话创建、进度、结果通知、历史记录、删源文件都由服务负责。
-        if (handOffToLive) {
-            handedOff = true
-            LiveInstallService.start(activity, info, sourceUri, autoStart = true)
-            runCatching { activity.finish() }
-            return
-        }
-
         InstallEngine.Bus.outcome = null
         activity.lifecycleScope.launch {
+            // 生物识别确认：开了就在真正动手前过一次系统认证（浮窗 / 浮窗+通知都算）
+            if (settings.biometricBeforeInstall) {
+                state = InstallUiState.Installing(
+                    tr("等待设备认证…", "Waiting for device authentication…"),
+                    null
+                )
+                val passed = BiometricGate.authenticate(activity)
+                if (!passed) {
+                    InstallerLog.record(activity, "INSTALL", "生物认证未通过，安装取消 ${info.packageName}")
+                    state = InstallUiState.Failed(
+                        info,
+                        tr("认证未通过，安装已取消", "Authentication failed — install cancelled")
+                    )
+                    return@launch
+                }
+            }
+
+            // 浮窗 + 通知：签名预检过了就直接交给前台服务，浮窗马上消失。
+            // 会话创建、进度、结果通知、历史记录、删源文件都由服务负责。
+            if (handOffToLive) {
+                handedOff = true
+                LiveInstallService.start(activity, info, sourceUri, autoStart = true)
+                runCatching { activity.finish() }
+                return@launch
+            }
+
             if (settings.verifyBeforeInstall) {
                 state = InstallUiState.Installing(tr("正在校验安装包", "Verifying the APK"), null)
                 notifyProgress(info.label, Notifications.Stage.PREPARING, tr("正在校验安装包", "Verifying the APK"))

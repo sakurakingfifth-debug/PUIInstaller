@@ -241,6 +241,23 @@ private fun AdvancedScreen() {
                 Spacer(Modifier.height(18.dp))
                 PuiGroup(title = null) {
                     PuiSwitchRow(
+                        icon = PuiIcon.Lock,
+                        title = tr("生物识别确认", "Biometric confirmation"),
+                        subtitle = tr(
+                            "安装前需要通过设备认证（指纹 / 面容 / 锁屏密码）",
+                            "Require device authentication (fingerprint, face or screen lock) before installing"
+                        ),
+                        checked = settings.biometricBeforeInstall,
+                        onChange = { settings.biometricBeforeInstall = it },
+                        showDivider = false
+                    )
+                }
+            }
+
+            item {
+                Spacer(Modifier.height(18.dp))
+                PuiGroup(title = null) {
+                    PuiSwitchRow(
                         icon = null,
                         iconPainter = painterResource(R.drawable.ic_document_text),
                         title = tr("支持 .apk.1 安装包", "Support .apk.1 packages"),

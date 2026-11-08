@@ -15,6 +15,12 @@
     <uses-permission android:name="android.permission.REQUEST_IGNORE_BATTERY_OPTIMIZATIONS" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_SPECIAL_USE" />
+    <!-- 安装前的生物识别确认 -->
+    <uses-permission android:name="android.permission.USE_BIOMETRIC" />
+    <uses-permission
+        android:name="android.permission.USE_FINGERPRINT"
+        android:maxSdkVersion="27" />
+
     <!-- 实时活动（Android 16 Live Updates）；ColorOS 16 的流体云复用同一套 API -->
     <uses-permission android:name="android.permission.POST_PROMOTED_NOTIFICATIONS" />
 

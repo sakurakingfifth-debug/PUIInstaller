@@ -103,6 +103,14 @@ class Settings private constructor(private val sp: SharedPreferences) {
      */
     var apk1Support: Boolean by bool("apk1_support", true)
 
+    /**
+     * 安装前要求生物识别（指纹 / 面容 / 锁屏密码）确认。
+     *
+     * 移植自 InstallerX-Revived 的 require_biometric_auth：防止手机在解锁状态被人
+     * 随手装一个包。默认关，开了之后每次点「安装」都要过一次系统认证。
+     */
+    var biometricBeforeInstall: Boolean by bool("biometric_before_install", false)
+
     /** 浮窗背后那层系统模糊的半径（px，2–100）。 */
     var sheetBlurPx: Int by int("sheet_blur_px", 60)
 
