@@ -452,4 +452,10 @@ internal val italianOverrides: Map<String, String> = mapOf(
     "卸载系统应用" to "Disinstalla le app di sistema",
     "允许把预装应用也卸掉（需要 ROOT，风险自负）" to "Consenti di rimuovere anche le app preinstallate (richiede ROOT, a tuo rischio)",
     "卸载失败，检查一下 ROOT 授权" to "Disinstallazione non riuscita — controlla l'accesso ROOT",
+    "彻底卸载系统应用" to "Rimuovi completamente le app di sistema",
+    "连系统分区里的 APK 一起抹掉（挂载遮罩，重启后生效）" to "Cancella anche l'APK nella partizione di sistema (maschera di mount, dopo il riavvio)",
+    "彻底卸载会把系统分区里的 APK 一起遮罩掉，重启后应用从系统里彻底消失。系统关键应用被删可能导致无法开机，本安装器概不负责。" to "Questo maschera anche l'APK nella partizione di sistema: l'app sparisce del tutto dopo un riavvio. Rimuovere app di sistema critiche può impedire l'avvio — nessuna responsabilità.",
+    "已彻底卸载" to "Rimosso completamente",
+    "已对所有用户卸载。重启后系统分区里的 APK 也会被遮罩掉。" to "Disinstallato per tutti gli utenti. Dopo un riavvio anche l'APK nella partizione di sistema viene mascherato.",
+    "卸载失败：ROOT 没权限，也没能写入挂载遮罩" to "Rimozione non riuscita — nessun accesso ROOT e maschera non scritta",
 )

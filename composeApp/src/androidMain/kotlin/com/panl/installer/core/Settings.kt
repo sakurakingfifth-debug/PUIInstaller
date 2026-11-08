@@ -113,6 +113,16 @@ class Settings private constructor(private val sp: SharedPreferences) {
     var allowUninstallSystemApps: Boolean by bool("allow_uninstall_system_apps", false)
 
     /**
+     * 彻底卸载系统应用：连系统分区里的 APK 一起抹掉。
+     *
+     * 系统分区（system / system_ext / product 等）是 EROFS 只读，删不掉实体文件，
+     * 所以这里走**挂载遮罩**：写一个只含 `.replace` 的 Magisk/KernelSU 模块，
+     * 重启后那个目录会被空目录盖住，等于从系统里消失。比 remount 改分区安全得多，
+     * 想恢复只要把模块目录删掉再重启。默认关。
+     */
+    var deepUninstallSystemApps: Boolean by bool("deep_uninstall_system_apps", false)
+
+    /**
      * 安装前要求生物识别（指纹 / 面容 / 锁屏密码）确认。
      *
      * 移植自 InstallerX-Revived 的 require_biometric_auth：防止手机在解锁状态被人

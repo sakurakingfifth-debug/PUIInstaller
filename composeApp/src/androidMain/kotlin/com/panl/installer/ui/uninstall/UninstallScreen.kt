@@ -252,6 +252,65 @@ fun UninstallScreen(controller: UninstallController, onClose: () -> Unit) {
                     }
                 }
 
+                is UninstallUiState.DeepRemoved -> Column(Modifier.fillMaxSize()) {
+                    Column(
+                        Modifier
+                            .weight(1f)
+                            .fillMaxWidth()
+                            .padding(horizontal = 32.dp),
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        verticalArrangement = Arrangement.Center
+                    ) {
+                        StatusGlyph(
+                            icon = PuiIcon.Check,
+                            tint = MaterialTheme.colorScheme.onPrimary,
+                            container = MaterialTheme.colorScheme.primary,
+                            size = 96.dp
+                        )
+                        Spacer(Modifier.height(22.dp))
+                        Text(
+                            tr("已彻底卸载", "Completely removed"),
+                            style = MaterialTheme.typography.headlineSmall,
+                            color = MaterialTheme.colorScheme.onSurface
+                        )
+                        Spacer(Modifier.height(8.dp))
+                        Text(
+                            state.app.label,
+                            style = MaterialTheme.typography.bodyLarge,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                        Spacer(Modifier.height(4.dp))
+                        Text(
+                            tr(
+                                "已对所有用户卸载。重启后系统分区里的 APK 也会被遮罩掉。",
+                                "Uninstalled for all users. After a reboot the APK in the system partition is masked too."
+                            ),
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            textAlign = TextAlign.Center
+                        )
+                    }
+                    Row(
+                        Modifier
+                            .fillMaxWidth()
+                            .navigationBarsPadding()
+                            .padding(horizontal = 16.dp, vertical = 12.dp),
+                        horizontalArrangement = Arrangement.spacedBy(10.dp)
+                    ) {
+                        PuiButton(
+                            text = tr("稍后", "Later"),
+                            onClick = onClose,
+                            modifier = Modifier.weight(1f),
+                            style = PuiButtonStyle.Ghost
+                        )
+                        PuiButton(
+                            text = tr("立即重启", "Reboot now"),
+                            onClick = { controller.rebootNow() },
+                            modifier = Modifier.weight(1.2f)
+                        )
+                    }
+                }
+
                 is UninstallUiState.Failed -> Column(Modifier.fillMaxSize()) {
                     Column(
                         Modifier

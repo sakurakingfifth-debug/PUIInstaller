@@ -14,6 +14,7 @@ import com.panl.installer.core.InstallEngine
 import com.panl.installer.core.InstalledApp
 import com.panl.installer.core.PackageUtils
 import com.panl.installer.core.RootShell
+import com.panl.installer.core.SystemAppRemover
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.flow.first
@@ -31,6 +32,9 @@ sealed interface UninstallUiState {
 
     /** 更新副本已经被 ROOT 删掉，重启后系统才会回退出厂版本。 */
     data class NeedsReboot(val app: InstalledApp) : UninstallUiState
+
+    /** 彻底卸载：已经对所有用户卸掉，并写了挂载遮罩，重启后 APK 才真正消失。 */
+    data class DeepRemoved(val app: InstalledApp) : UninstallUiState
     data class Failed(val app: InstalledApp?, val message: String) : UninstallUiState
 }
 
@@ -141,6 +145,30 @@ class UninstallController(private val activity: ComponentActivity) {
             state = UninstallUiState.Failed(app, tr("缺少 DELETE_PACKAGES 权限，无法静默卸载", "Missing DELETE_PACKAGES — can't uninstall silently"))
             return
         }
+        // 系统应用 + 彻底卸载：对所有用户卸掉，再写挂载遮罩把系统分区里的 APK 盖掉
+        if (app.isSystem && settings.allowUninstallSystemApps && settings.deepUninstallSystemApps) {
+            activity.lifecycleScope.launch {
+                state = UninstallUiState.Working(app)
+                val result = withContext(Dispatchers.IO) {
+                    SystemAppRemover.remove(activity, app.packageName, app.apkPath)
+                }
+                if (!result.ok) {
+                    com.panl.installer.core.InstallerLog.record(
+                        activity, "UNINSTALL", "彻底卸载失败 ${app.packageName}: ${result.message}"
+                    )
+                }
+                state = when {
+                    result.ok && result.needsReboot -> UninstallUiState.DeepRemoved(app)
+                    result.ok -> UninstallUiState.Done(app)
+                    else -> UninstallUiState.Failed(
+                        app,
+                        result.message ?: tr("卸载失败", "Uninstall failed")
+                    )
+                }
+            }
+            return
+        }
+
         // 系统应用 + 允许卸系统应用：普通接口只能摘更新，这里用 root 对当前用户整包卸掉
         if (app.isSystem && settings.allowUninstallSystemApps) {
             activity.lifecycleScope.launch {

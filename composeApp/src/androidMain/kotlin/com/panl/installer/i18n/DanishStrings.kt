@@ -452,4 +452,10 @@ internal val danishOverrides: Map<String, String> = mapOf(
     "卸载系统应用" to "Afinstallér systemapps",
     "允许把预装应用也卸掉（需要 ROOT，风险自负）" to "Tillad at fjerne forudinstallerede apps (kræver ROOT, på eget ansvar)",
     "卸载失败，检查一下 ROOT 授权" to "Afinstallation mislykkedes — tjek ROOT-adgang",
+    "彻底卸载系统应用" to "Fjern systemapps helt",
+    "连系统分区里的 APK 一起抹掉（挂载遮罩，重启后生效）" to "Fjerner også APK'en i systempartitionen (mount-maske, efter genstart)",
+    "彻底卸载会把系统分区里的 APK 一起遮罩掉，重启后应用从系统里彻底消失。系统关键应用被删可能导致无法开机，本安装器概不负责。" to "Dette maskerer også APK'en i systempartitionen, så appen forsvinder helt efter en genstart. Fjernes kritiske systemapps, kan enheden muligvis ikke starte – intet ansvar.",
+    "已彻底卸载" to "Fjernet helt",
+    "已对所有用户卸载。重启后系统分区里的 APK 也会被遮罩掉。" to "Afinstalleret for alle brugere. Efter en genstart maskeres APK'en i systempartitionen også.",
+    "卸载失败：ROOT 没权限，也没能写入挂载遮罩" to "Afinstallation mislykkedes — ingen ROOT-adgang og masken kunne ikke skrives",
 )

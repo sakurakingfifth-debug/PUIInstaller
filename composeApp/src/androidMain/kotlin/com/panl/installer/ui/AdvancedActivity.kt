@@ -84,6 +84,7 @@ private fun AdvancedScreen(activity: ComponentActivity) {
     // 标题跟着列表一起滚，模糊带只盖住状态栏这一条
     val blurH = rememberPuiTopBlurHeight()
     var showSystemWarning by remember { mutableStateOf(false) }
+    var showDeepWarning by remember { mutableStateOf(false) }
     var showRootRequired by remember { mutableStateOf(false) }
     var rootState by remember { mutableStateOf(RootState.Checking) }
     var rootTick by remember { mutableIntStateOf(0) }
@@ -244,6 +245,19 @@ private fun AdvancedScreen(activity: ComponentActivity) {
                             // 打开才弹风险确认；关闭直接生效
                             if (on) showSystemWarning = true else settings.allowUninstallSystemApps = false
                         },
+                        showDivider = true
+                    )
+                    PuiSwitchRow(
+                        icon = PuiIcon.Trash,
+                        title = tr("彻底卸载系统应用", "Remove system apps completely"),
+                        subtitle = tr(
+                            "连系统分区里的 APK 一起抹掉（挂载遮罩，重启后生效）",
+                            "Also wipe the APK in the system partition (mount mask, takes effect after reboot)"
+                        ),
+                        checked = settings.deepUninstallSystemApps,
+                        onChange = { on ->
+                            if (on) showDeepWarning = true else settings.deepUninstallSystemApps = false
+                        },
                         showDivider = false
                     )
                 }
@@ -334,6 +348,25 @@ private fun AdvancedScreen(activity: ComponentActivity) {
         }
 
         // 标题在列表里，滚走就跟着走；顶部只剩状态栏那一条模糊
+    }
+
+    if (showDeepWarning) {
+        PuiDialog(
+            scrim = !settings.noScrim,
+            title = tr("风险提示", "Warning"),
+            text = tr(
+                "彻底卸载会把系统分区里的 APK 一起遮罩掉，重启后应用从系统里彻底消失。系统关键应用被删可能导致无法开机，本安装器概不负责。",
+                "This also masks the APK inside the system partition, so the app disappears from the system entirely after a reboot. Removing critical system apps can prevent the device from booting — this installer takes no responsibility."
+            ),
+            confirmText = tr("仍要打开", "Enable anyway"),
+            dismissText = tr("取消", "Cancel"),
+            danger = true,
+            onDismiss = { showDeepWarning = false },
+            onConfirm = {
+                settings.deepUninstallSystemApps = true
+                showDeepWarning = false
+            }
+        )
     }
 
     if (showRootRequired) {
