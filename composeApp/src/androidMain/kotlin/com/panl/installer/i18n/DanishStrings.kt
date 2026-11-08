@@ -459,4 +459,6 @@ internal val danishOverrides: Map<String, String> = mapOf(
     "已对所有用户卸载。重启后系统分区里的 APK 也会被遮罩掉。" to "Afinstalleret for alle brugere. Efter en genstart maskeres APK'en i systempartitionen også.",
     "卸载失败：ROOT 没权限，也没能写入挂载遮罩" to "Afinstallation mislykkedes — ingen ROOT-adgang og masken kunne ikke skrives",
     "高危操作" to "Meget risikabelt",
+    "启用来源预设" to "Aktivér installationskilder",
+    "只允许列表里的应用发起安装" to "Kun apps på listen må starte installationer",
 )

@@ -459,4 +459,6 @@ internal val spanishOverrides: Map<String, String> = mapOf(
     "已对所有用户卸载。重启后系统分区里的 APK 也会被遮罩掉。" to "Desinstalado para todos los usuarios. Tras reiniciar, el APK de la partición del sistema también se ocultará.",
     "卸载失败：ROOT 没权限，也没能写入挂载遮罩" to "Error al eliminar: sin acceso ROOT y no se pudo escribir la máscara",
     "高危操作" to "Muy arriesgado",
+    "启用来源预设" to "Activar fuentes de instalación",
+    "只允许列表里的应用发起安装" to "Solo las apps de la lista pueden iniciar instalaciones",
 )

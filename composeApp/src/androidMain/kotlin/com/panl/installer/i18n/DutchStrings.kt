@@ -459,4 +459,6 @@ internal val dutchOverrides: Map<String, String> = mapOf(
     "已对所有用户卸载。重启后系统分区里的 APK 也会被遮罩掉。" to "Verwijderd voor alle gebruikers. Na een herstart wordt de APK in de systeempartitie ook gemaskeerd.",
     "卸载失败：ROOT 没权限，也没能写入挂载遮罩" to "Verwijderen mislukt — geen ROOT-toegang en het masker kon niet worden geschreven",
     "高危操作" to "Zeer riskant",
+    "启用来源预设" to "Installatiebronnen inschakelen",
+    "只允许列表里的应用发起安装" to "Alleen apps in de lijst mogen installaties starten",
 )

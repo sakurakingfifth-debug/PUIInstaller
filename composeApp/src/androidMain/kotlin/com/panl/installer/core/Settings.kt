@@ -105,6 +105,14 @@ class Settings private constructor(private val sp: SharedPreferences) {
 
     // ---------------- 安装器全局设置（移植自 InstallerX-Revived） ----------------
 
+    /**
+     * 启用来源预设：只有列表里的应用才能发起安装。
+     *
+     * 默认关 —— 列表只是「备好的一份白名单」，不打开就不生效，免得新装机器上
+     * 从文件管理器点 apk 就被自己拦住。安装器自己发起的一律放行。
+     */
+    var sourcePresetEnabled: Boolean by bool("source_preset_enabled", false)
+
     /** 包名黑名单，一行一个（支持「包名 显示名」）。命中的包直接拒绝安装。 */
     var blacklistPackagesRaw: String by string("blacklist_packages", "")
 

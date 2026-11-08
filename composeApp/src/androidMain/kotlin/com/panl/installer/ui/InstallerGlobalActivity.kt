@@ -74,9 +74,11 @@ import com.panl.pui.PuiButton
 import com.panl.pui.PuiButtonStyle
 import com.panl.pui.PuiDialog
 import com.panl.pui.PuiFloatingNavBar
+import com.panl.pui.PuiGroup
 import com.panl.pui.PuiIcon
 import com.panl.pui.PuiIconView
 import com.panl.pui.PuiPageTitle
+import com.panl.pui.PuiSwitchRow
 import com.panl.pui.PuiTextField
 import com.panl.pui.PuiTopFade
 import com.panl.pui.puiEdgeHaptic
@@ -270,6 +272,30 @@ private fun GlobalPage(page: Int, topPad: Dp, navBarH: Dp) {
         item {
             PuiPageTitle(title)
             Spacer(Modifier.height(14.dp))
+        }
+
+        // 来源预设的总开关：关着的时候列表只是存着，不参与拦截
+        if (kind == ListKind.Sources) {
+            item {
+                PuiGroup(title = null) {
+                    PuiSwitchRow(
+                        icon = null,
+                        iconPainter = painterResource(R.drawable.ic_receipt_item),
+                        title = tr("启用来源预设", "Enable install sources"),
+                        subtitle = tr(
+                            "只允许列表里的应用发起安装",
+                            "Only listed apps may start installs"
+                        ),
+                        checked = settings.sourcePresetEnabled,
+                        onChange = {
+                            settings.sourcePresetEnabled = it
+                            tick++
+                        },
+                        showDivider = false
+                    )
+                }
+                Spacer(Modifier.height(10.dp))
+            }
         }
 
         if (entries.isEmpty()) {
