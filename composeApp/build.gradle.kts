@@ -43,11 +43,11 @@ android {
         minSdk = 34
         targetSdk = 37
         // 高于系统自带 17.7.4 (17700004)，模块覆盖 / 覆盖安装时才能生效
-        // 版本规则：从 3.7.0 起，**每次改动 versionName 只加 patch（3.7.0 → 3.7.1 → …）**。
-        // versionCode 必须 ≥ 系统预装的 17700004，否则 PMS 会拒绝
-        // （System app cannot be downgraded to older than its preloaded version），
-        // 所以保留 17700000 前缀，并跟着 versionName 一起 +1。
-        versionCode = 17700384
+        // 版本规则：从 3.7.0 起，**每次改动 versionName 只加 patch（3.7.0 → 3.7.1 → …）**；
+        // versionCode 每次迭代 **+1000000**（37000001 → 38000001 → …），
+        // 且必须 ≥ 系统预装的 17700004，否则 PMS 会拒绝覆盖安装
+        // （System app cannot be downgraded to older than its preloaded version）。
+        versionCode = 37000001
         versionName = "3.7.0"
     }
 
