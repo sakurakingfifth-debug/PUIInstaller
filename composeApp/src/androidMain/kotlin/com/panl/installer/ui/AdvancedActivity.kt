@@ -117,7 +117,11 @@ private fun AdvancedScreen(activity: ComponentActivity) {
             Modifier
                 .fillMaxSize()
                 .puiEdgeHaptic()
-                .puiCardBackdropBlur(showSystemWarning, (settings.sheetBlurPx / density).dp)
+                // 两个风险弹窗都要把身后的列表糊掉，半径跟着「浮窗背景模糊」走
+                .puiCardBackdropBlur(
+                    showSystemWarning || showDeepWarning,
+                    (settings.sheetBlurPx / density).dp
+                )
                 .then(
                     if (settings.blurEnabled) {
                         Modifier.puiProgressiveTopBlur(
