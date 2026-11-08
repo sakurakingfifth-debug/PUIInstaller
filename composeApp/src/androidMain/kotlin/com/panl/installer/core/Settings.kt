@@ -108,8 +108,16 @@ class Settings private constructor(private val sp: SharedPreferences) {
     /** 包名黑名单，一行一个（支持「包名 显示名」）。命中的包直接拒绝安装。 */
     var blacklistPackagesRaw: String by string("blacklist_packages", "")
 
-    /** 受管安装器包（安装来源预设），一行一个。非空时只允许这些应用发起安装。 */
-    var managedInstallerPackagesRaw: String by string("managed_installer_packages", "")
+    /**
+     * 受管安装器包（来源预设），一行一个。非空时只允许这些应用发起安装。
+     *
+     * 默认给三个常见来源（shell / Play 商店 / 应用市场），安装器自己也始终放行，
+     * 所以应用内的「选择安装包」不受影响。清空列表 = 不限制。
+     */
+    var managedInstallerPackagesRaw: String by string(
+        "managed_installer_packages",
+        DEFAULT_SOURCES
+    )
 
     /** SharedUID 黑名单，一行一个（支持「UID 名称 uid值」）。命中的包直接拒绝安装。 */
     var blacklistSharedUidRaw: String by string("blacklist_shared_uid", "")
@@ -168,6 +176,18 @@ class Settings private constructor(private val sp: SharedPreferences) {
     /** 是否显示欧加系应用的 OSDK 目标版本（AndroidManifest 的 min/maxOsdkVersion）。 */
     var showOsdk: Boolean by bool("show_osdk", true)
 
+    /**
+     * 老版本没有「来源预设」这一项，读出来是空串。这里只在**从没播种过**时补上出厂值，
+     * 用户自己清空过列表（seeded 已置位）就不再干预。
+     */
+    private fun seedSourceDefaults() {
+        if (sp.getBoolean("managed_sources_seeded", false)) return
+        if (sp.getString("managed_installer_packages", null).isNullOrBlank()) {
+            managedInstallerPackagesRaw = DEFAULT_SOURCES
+        }
+        sp.edit().putBoolean("managed_sources_seeded", true).apply()
+    }
+
     private fun bool(key: String, default: Boolean) = Pref(sp.getBoolean(key, default)) {
         sp.edit().putBoolean(key, it).apply()
     }
@@ -190,13 +210,19 @@ class Settings private constructor(private val sp: SharedPreferences) {
     }
 
     companion object {
+        /** 来源预设的出厂值：adb shell、Play 商店、应用市场。 */
+        const val DEFAULT_SOURCES = "com.android.shell\ncom.android.vending\ncom.heytap.market"
+
         @Volatile
         private var instance: Settings? = null
 
         fun get(context: Context): Settings = instance ?: synchronized(this) {
             instance ?: Settings(
                 context.applicationContext.getSharedPreferences("installer_settings", Context.MODE_PRIVATE)
-            ).also { instance = it }
+            ).also {
+                instance = it
+                it.seedSourceDefaults()
+            }
         }
     }
 }

@@ -107,7 +107,11 @@ class InstallController(
         // 受管安装器：列表非空时只允许这些应用发起安装（拿不到来源就放行）
         val allowed = settings.managedInstallerPackages
         val caller = activity.launchedFromPackage
-        if (allowed.isNotEmpty() && caller != null && !allowed.contains(caller.lowercase())) {
+        // 自己拉起的不算「外部来源」，否则应用内的选择安装包会被自己拦掉
+        val selfCaller = caller != null && caller.equals(activity.packageName, ignoreCase = true)
+        if (allowed.isNotEmpty() && caller != null && !selfCaller &&
+            !allowed.contains(caller.lowercase())
+        ) {
             InstallerLog.record(activity, "INSTALL", "受管安装器拦截 $caller")
             state = InstallUiState.Failed(
                 null,

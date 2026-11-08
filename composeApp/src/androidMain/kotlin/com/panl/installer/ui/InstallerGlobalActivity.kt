@@ -123,7 +123,7 @@ private fun InstallerGlobalScreen() {
             }
 
             item {
-                PuiGroup(title = tr("安装来源预设", "Allowed install sources")) {
+                PuiGroup(title = tr("来源预设", "Install sources")) {
                     EntryList(
                         raw = sources,
                         emptyTitle = tr("没有预设安装来源", "No preset install sources"),

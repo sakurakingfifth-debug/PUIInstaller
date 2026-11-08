@@ -186,10 +186,10 @@ fun SettingsScreen(topPad: Dp) {
                 )
                 PuiListRow(
                     icon = null,
-                    iconPainter = painterResource(R.drawable.ic_security_safe),
+                    iconPainter = painterResource(R.drawable.ic_bookmark_2),
                     title = tr("安装器全局设置", "Installer settings"),
                     subtitle = tr(
-                        "安装来源预设、包名与 SharedUID 黑名单",
+                        "来源预设、包名与 SharedUID 黑名单",
                         "Install sources, package and SharedUID blacklists"
                     ),
                     showDivider = false,
