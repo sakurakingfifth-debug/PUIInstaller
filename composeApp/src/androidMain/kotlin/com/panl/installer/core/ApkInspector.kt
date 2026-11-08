@@ -55,8 +55,8 @@ data class ApkInfo(
     val supports16K: Boolean? = null,
     /** APK 里带的 ABI（lib/<abi>/），空表示纯 Java。 */
     val abis: List<String> = emptyList(),
-    /** APK 里是否带了 Xposed 模块（assets/xposed_init 或 META-INF/xposed/）。 */
-    val hasXposed: Boolean = false
+    /** AndroidManifest 里的 sharedUserId（拿不到就是 null）。 */
+    val sharedUserId: String? = null
 ) {
     val relation: VersionRelation
         get() {
@@ -136,19 +136,9 @@ object ApkInspector {
             maxOsdk = ai.metaData.metaString("maxOsdkVersion"),
             supports16K = PageSizeCheck.detect(file),
             abis = ApkAbi.detect(file),
-            hasXposed = hasXposedModule(file)
+            sharedUserId = runCatching { pi.sharedUserId }.getOrNull()
         )
     }
-
-    /** 扫 zip 目录，看有没有 Xposed 模块的标记文件。 */
-    private fun hasXposedModule(file: File): Boolean = runCatching {
-        java.util.zip.ZipFile(file).use { zip ->
-            zip.entries().asSequence().any {
-                val n = it.name
-                n == "assets/xposed_init" || n.startsWith("META-INF/xposed/")
-            }
-        }
-    }.getOrDefault(false)
 
     /** 只读签名（签名检测页用，不解析图标等重资源）。 */
     fun inspectSignatures(context: Context, file: File): ApkInfo? = inspect(context, file)

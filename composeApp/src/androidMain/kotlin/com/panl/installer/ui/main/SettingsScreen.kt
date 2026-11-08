@@ -189,8 +189,8 @@ fun SettingsScreen(topPad: Dp) {
                     iconPainter = painterResource(R.drawable.ic_security_safe),
                     title = tr("安装器全局设置", "Installer settings"),
                     subtitle = tr(
-                        "签名校验、Xposed 检测、包名黑名单",
-                        "Signature check, Xposed detection, package blacklist"
+                        "安装来源预设、包名与 SharedUID 黑名单",
+                        "Install sources, package and SharedUID blacklists"
                     ),
                     showDivider = false,
                     showChevron = true,

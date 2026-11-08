@@ -202,12 +202,19 @@ class InstallController(
     fun startInstall() {
         val info = (state as? InstallUiState.Ready)?.info ?: return
 
-        // 包名黑名单：命中直接拒
-        if (settings.blacklistPackages.contains(info.packageName.lowercase())) {
+        // 包名黑名单 / SharedUID 黑名单：命中直接拒
+        val uid = info.sharedUserId
+        // SharedUID 是「android.uid.phone」这种字符串，整串比对（忽略大小写）
+        val uidBlocked = uid != null &&
+            settings.blacklistSharedUids.any { it.equals(uid, ignoreCase = true) }
+        if (settings.blacklistPackages.contains(info.packageName.lowercase()) || uidBlocked) {
             InstallerLog.record(activity, "INSTALL", "黑名单拦截 ${info.packageName}")
             state = InstallUiState.Failed(
                 info,
-                tr("该应用在包名黑名单中，已拒绝安装", "This package is on the blacklist — install blocked")
+                tr(
+                    "该应用在黑名单中，已拒绝安装",
+                    "This app is on the blacklist — install blocked"
+                )
             )
             return
         }
@@ -216,8 +223,7 @@ class InstallController(
         // 核心破解已经接入系统框架时，校验就交给系统决定：模块里的开关状态
         // 有可能还没同步过来（远程 prefs 是异步的），在这里拦一道就会变成
         // 「开关全开却装不上」——用户报的就是这个。
-        if (settings.checkAppSignature &&
-            info.relation == VersionRelation.UPDATE &&
+        if (info.relation == VersionRelation.UPDATE &&
             info.signatureMatchesInstalled == false &&
             !CorePatchPrefs.activeInSystem
         ) {

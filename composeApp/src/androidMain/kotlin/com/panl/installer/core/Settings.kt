@@ -105,34 +105,26 @@ class Settings private constructor(private val sp: SharedPreferences) {
 
     // ---------------- 安装器全局设置（移植自 InstallerX-Revived） ----------------
 
-    /** 校验应用签名：关掉就跳过「与已安装版本签名不一致」的预检。 */
-    var checkAppSignature: Boolean by bool("check_app_signature", true)
-
-    /** 同时校验来源戳（APK Signature Scheme v2+ 的 source stamp）。 */
-    var checkSourceStamp: Boolean by bool("check_source_stamp", false)
-
-    /** 签名一致时把签名信息也显示出来。 */
-    var showSignatureInfoOnMatch: Boolean by bool("show_signature_info_on_match", true)
-
-    /** 显示完整签名细节（指纹、算法、证书链）。 */
-    var showSignatureDetails: Boolean by bool("show_signature_details", false)
-
-    /** 检测 APK 里是否带 Xposed 模块。 */
-    var detectXposedModule: Boolean by bool("detect_xposed_module", false)
-
-    /** 检测到 Xposed 时给一个跳转 LSPosed 的入口。 */
-    var quickOpenLSPosed: Boolean by bool("quick_open_lsposed", true)
-
     /** 包名黑名单，一行一个（支持「包名 显示名」）。命中的包直接拒绝安装。 */
     var blacklistPackagesRaw: String by string("blacklist_packages", "")
 
-    /** 受管安装器包，一行一个。非空时只允许这些应用发起安装。 */
+    /** 受管安装器包（安装来源预设），一行一个。非空时只允许这些应用发起安装。 */
     var managedInstallerPackagesRaw: String by string("managed_installer_packages", "")
+
+    /** SharedUID 黑名单，一行一个（支持「UID 名称 uid值」）。命中的包直接拒绝安装。 */
+    var blacklistSharedUidRaw: String by string("blacklist_shared_uid", "")
 
     /** 黑名单包名集合（小写）。 */
     val blacklistPackages: Set<String>
         get() = blacklistPackagesRaw.lineSequence()
             .map { it.trim().substringBefore(' ').lowercase() }
+            .filter { it.isNotBlank() }
+            .toSet()
+
+    /** SharedUID 黑名单值集合（整串，比如 android.uid.phone）。 */
+    val blacklistSharedUids: Set<String>
+        get() = blacklistSharedUidRaw.lineSequence()
+            .map { it.trim().substringAfterLast(' ').trim() }
             .filter { it.isNotBlank() }
             .toSet()
 
