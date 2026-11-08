@@ -88,6 +88,7 @@ import androidx.compose.animation.scaleIn
 import androidx.compose.animation.scaleOut
 import com.panl.installer.i18n.tr
 import com.panl.installer.ui.InstallSettingsActivity
+import com.panl.installer.ui.InstallerGlobalActivity
 
 /** 设置页：安装策略、安全提示、通知、外观、系统入口。 */
 @Composable
@@ -181,6 +182,20 @@ fun SettingsScreen(topPad: Dp) {
                     showChevron = true,
                     onClick = {
                         context.startActivity(Intent(context, InstallSettingsActivity::class.java))
+                    }
+                )
+                PuiListRow(
+                    icon = null,
+                    iconPainter = painterResource(R.drawable.ic_security_safe),
+                    title = tr("安装器全局设置", "Installer settings"),
+                    subtitle = tr(
+                        "签名校验、Xposed 检测、包名黑名单",
+                        "Signature check, Xposed detection, package blacklist"
+                    ),
+                    showDivider = false,
+                    showChevron = true,
+                    onClick = {
+                        context.startActivity(Intent(context, InstallerGlobalActivity::class.java))
                     }
                 )
             }

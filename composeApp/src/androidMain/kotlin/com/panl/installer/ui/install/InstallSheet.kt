@@ -290,6 +290,29 @@ private fun ReadySheet(
 
         SheetVersionCard(info)
 
+        // 装了 Xposed 模块的包提示一句（设置里的「Xposed 检测」开关）
+        if (Settings.get(LocalContext.current).detectXposedModule && info.hasXposed) {
+            Spacer(Modifier.height(8.dp))
+            Row(
+                Modifier.fillMaxWidth().padding(horizontal = 4.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.Center
+            ) {
+                Icon(
+                    painter = painterResource(R.drawable.ic_info_badge),
+                    contentDescription = null,
+                    tint = scheme.error,
+                    modifier = Modifier.size(16.dp)
+                )
+                Spacer(Modifier.width(6.dp))
+                Text(
+                    tr("检测到 Xposed 模块", "Xposed module detected"),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = scheme.error
+                )
+            }
+        }
+
         val signer = info.primarySigner
         if (signer?.isAosp == true) {
             Spacer(Modifier.height(8.dp))

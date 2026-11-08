@@ -104,6 +104,21 @@ class InstallController(
             return
         }
 
+        // 受管安装器：列表非空时只允许这些应用发起安装（拿不到来源就放行）
+        val allowed = settings.managedInstallerPackages
+        val caller = activity.launchedFromPackage
+        if (allowed.isNotEmpty() && caller != null && !allowed.contains(caller.lowercase())) {
+            InstallerLog.record(activity, "INSTALL", "受管安装器拦截 $caller")
+            state = InstallUiState.Failed(
+                null,
+                tr(
+                    "该安装请求来自未受管的应用（$caller），已拒绝",
+                    "This install request comes from an unmanaged app ($caller) — blocked"
+                )
+            )
+            return
+        }
+
         val data: Uri? = intent.data
         if (data == null) {
             state = InstallUiState.Error(tr("没有拿到安装包", "No APK received"), tr("Intent 里没有文件地址", "The intent has no file URI"))
@@ -186,11 +201,23 @@ class InstallController(
 
     fun startInstall() {
         val info = (state as? InstallUiState.Ready)?.info ?: return
+
+        // 包名黑名单：命中直接拒
+        if (settings.blacklistPackages.contains(info.packageName.lowercase())) {
+            InstallerLog.record(activity, "INSTALL", "黑名单拦截 ${info.packageName}")
+            state = InstallUiState.Failed(
+                info,
+                tr("该应用在包名黑名单中，已拒绝安装", "This package is on the blacklist — install blocked")
+            )
+            return
+        }
+
         // 这条签名预检是**客户端**做的，和系统里的 hook 无关。
         // 核心破解已经接入系统框架时，校验就交给系统决定：模块里的开关状态
         // 有可能还没同步过来（远程 prefs 是异步的），在这里拦一道就会变成
         // 「开关全开却装不上」——用户报的就是这个。
-        if (info.relation == VersionRelation.UPDATE &&
+        if (settings.checkAppSignature &&
+            info.relation == VersionRelation.UPDATE &&
             info.signatureMatchesInstalled == false &&
             !CorePatchPrefs.activeInSystem
         ) {
