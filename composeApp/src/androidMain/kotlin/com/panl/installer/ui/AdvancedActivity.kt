@@ -262,8 +262,8 @@ private fun AdvancedScreen() {
                         icon = PuiIcon.Moon,
                         title = tr("隐藏桌面图标", "Hide launcher icon"),
                         subtitle = tr(
-                            "拨号输入 *#*#078#*#* 可随时切换",
-                            "Dial *#*#078#*#* anytime to toggle"
+                            "拨号输入 *#*#078#*#* 可随时打开安装器",
+                            "Dial *#*#078#*#* anytime to open the installer"
                         ),
                         checked = launcherHidden,
                         onChange = { on ->

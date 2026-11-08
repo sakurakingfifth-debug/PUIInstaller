@@ -398,6 +398,27 @@ object Notifications {
         runCatching { nm.notify(HIDDEN_ID, builder.build()) }
     }
 
+    /**
+     * 兜底：暗号打不开界面时（没有 root、又被 BAL 拦住）发一条可点开的通知。
+     */
+    fun showOpenInstaller(context: Context) {
+        val nm = context.getSystemService(NotificationManager::class.java) ?: return
+        val open = PendingIntent.getActivity(
+            context, 1006,
+            Intent(context, MainActivity::class.java)
+                .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP),
+            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+        )
+        val builder = Notification.Builder(context, CHANNEL_ID)
+            .setSmallIcon(R.drawable.ic_stat_install)
+            .setContentTitle(tr("打开安装器", "Open the installer"))
+            .setContentText(tr("点按打开安装器", "Tap to open the installer"))
+            .setContentIntent(open)
+            .setAutoCancel(true)
+            .setShowWhen(false)
+        runCatching { nm.notify(9300, builder.build()) }
+    }
+
     fun cancelIconHidden(context: Context) {
         val nm = context.getSystemService(NotificationManager::class.java) ?: return
         runCatching { nm.cancel(HIDDEN_ID) }

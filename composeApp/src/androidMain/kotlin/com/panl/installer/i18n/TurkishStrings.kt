@@ -430,7 +430,7 @@ internal val turkishOverrides: Map<String, String> = mapOf(
     "修改系统的安装校验开关需要 ROOT 授权，当前没有拿到权限，设置没有改动。" to "Sistem doğrulamasını değiştirmek ROOT gerektirir. Hiçbir şey değiştirilmedi.",
     "浮窗+通知" to "Pencere+bildirim",
     "隐藏桌面图标" to "Başlatıcı simgesini gizle",
-    "拨号输入 *#*#078#*#* 可随时切换" to "Geçiş için *#*#078#*#* tuşlayın",
+    "拨号输入 *#*#078#*#* 可随时打开安装器" to "Yükleyiciyi açmak için *#*#078#*#* tuşlayın",
     "已隐藏桌面图标，再次输入可恢复" to "Simge gizlendi — geri getirmek için kodu tekrar girin",
     "已恢复桌面图标" to "Başlatıcı simgesi geri getirildi",
     "切换桌面图标失败" to "Simge değiştirilemedi",
@@ -439,4 +439,6 @@ internal val turkishOverrides: Map<String, String> = mapOf(
     "恢复" to "Geri getir",
     "桌面图标" to "Başlatıcı simgesi",
     "桌面图标隐藏后留一条提示，随时可以恢复" to "Simge gizliyken gösterilir; istediğiniz zaman geri getirebilirsiniz",
+    "打开安装器" to "Yükleyiciyi aç",
+    "点按打开安装器" to "Açmak için dokunun",
 )

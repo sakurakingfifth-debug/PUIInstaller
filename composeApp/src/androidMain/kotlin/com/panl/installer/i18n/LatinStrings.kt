@@ -430,7 +430,7 @@ internal val latinOverrides: Map<String, String> = mapOf(
     "修改系统的安装校验开关需要 ROOT 授权，当前没有拿到权限，设置没有改动。" to "Mutare verificationem systematis ROOT postulat. Nihil mutatum est.",
     "浮窗+通知" to "Fenestra+notificatio",
     "隐藏桌面图标" to "Iconem launcher celare",
-    "拨号输入 *#*#078#*#* 可随时切换" to "Umbilicum *#*#078#*#* forma ut mutes",
+    "拨号输入 *#*#078#*#* 可随时打开安装器" to "Umbilicum *#*#078#*#* forma ut installatorem aperias",
     "已隐藏桌面图标，再次输入可恢复" to "Icon celata — codicem iterum insere ut restituas",
     "已恢复桌面图标" to "Icon launcher restituta",
     "切换桌面图标失败" to "Iconem mutare non potui",
@@ -439,4 +439,6 @@ internal val latinOverrides: Map<String, String> = mapOf(
     "恢复" to "Restitue",
     "桌面图标" to "Icon launcher",
     "桌面图标隐藏后留一条提示，随时可以恢复" to "Monstratur dum icon celata est; semper restitui potest",
+    "打开安装器" to "Installatorem aperire",
+    "点按打开安装器" to "Tange ut installatorem aperias",
 )

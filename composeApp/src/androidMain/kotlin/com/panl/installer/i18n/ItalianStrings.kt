@@ -430,7 +430,7 @@ internal val italianOverrides: Map<String, String> = mapOf(
     "修改系统的安装校验开关需要 ROOT 授权，当前没有拿到权限，设置没有改动。" to "Per modificare la verifica di sistema serve ROOT. Nulla è stato modificato.",
     "浮窗+通知" to "Finestra+notifica",
     "隐藏桌面图标" to "Nascondi icona nel launcher",
-    "拨号输入 *#*#078#*#* 可随时切换" to "Componi *#*#078#*#* per cambiare",
+    "拨号输入 *#*#078#*#* 可随时打开安装器" to "Componi *#*#078#*#* per aprire l'installer",
     "已隐藏桌面图标，再次输入可恢复" to "Icona nascosta — inserisci di nuovo il codice per ripristinarla",
     "已恢复桌面图标" to "Icona ripristinata",
     "切换桌面图标失败" to "Impossibile cambiare l'icona",
@@ -439,4 +439,6 @@ internal val italianOverrides: Map<String, String> = mapOf(
     "恢复" to "Ripristina",
     "桌面图标" to "Icona del launcher",
     "桌面图标隐藏后留一条提示，随时可以恢复" to "Mostrata mentre l'icona è nascosta; ripristinabile in qualsiasi momento",
+    "打开安装器" to "Apri l'installer",
+    "点按打开安装器" to "Tocca per aprire l'installer",
 )

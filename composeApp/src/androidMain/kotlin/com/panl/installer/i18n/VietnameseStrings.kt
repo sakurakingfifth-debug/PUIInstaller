@@ -430,7 +430,7 @@ internal val vietnameseOverrides: Map<String, String> = mapOf(
     "修改系统的安装校验开关需要 ROOT 授权，当前没有拿到权限，设置没有改动。" to "Đổi xác minh hệ thống cần ROOT. Không có gì bị thay đổi.",
     "浮窗+通知" to "Cửa sổ+thông báo",
     "隐藏桌面图标" to "Ẩn biểu tượng màn hình chính",
-    "拨号输入 *#*#078#*#* 可随时切换" to "Bấm *#*#078#*#* để chuyển",
+    "拨号输入 *#*#078#*#* 可随时打开安装器" to "Bấm *#*#078#*#* để mở trình cài đặt",
     "已隐藏桌面图标，再次输入可恢复" to "Đã ẩn biểu tượng — nhập lại mã để khôi phục",
     "已恢复桌面图标" to "Đã khôi phục biểu tượng",
     "切换桌面图标失败" to "Không chuyển được biểu tượng",
@@ -439,4 +439,6 @@ internal val vietnameseOverrides: Map<String, String> = mapOf(
     "恢复" to "Khôi phục",
     "桌面图标" to "Biểu tượng màn hình chính",
     "桌面图标隐藏后留一条提示，随时可以恢复" to "Hiển thị khi biểu tượng bị ẩn; có thể khôi phục bất cứ lúc nào",
+    "打开安装器" to "Mở trình cài đặt",
+    "点按打开安装器" to "Chạm để mở trình cài đặt",
 )

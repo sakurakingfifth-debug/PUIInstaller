@@ -430,7 +430,7 @@ internal val polishOverrides: Map<String, String> = mapOf(
     "修改系统的安装校验开关需要 ROOT 授权，当前没有拿到权限，设置没有改动。" to "Zmiana systemowej weryfikacji wymaga ROOT. Nic nie zostało zmienione.",
     "浮窗+通知" to "Okno+powiadomienie",
     "隐藏桌面图标" to "Ukryj ikonę w launcherze",
-    "拨号输入 *#*#078#*#* 可随时切换" to "Wpisz *#*#078#*#* aby przełączyć",
+    "拨号输入 *#*#078#*#* 可随时打开安装器" to "Wpisz *#*#078#*#* aby otworzyć instalator",
     "已隐藏桌面图标，再次输入可恢复" to "Ikona ukryta — wpisz kod ponownie, aby przywrócić",
     "已恢复桌面图标" to "Ikona przywrócona",
     "切换桌面图标失败" to "Nie udało się przełączyć ikony",
@@ -439,4 +439,6 @@ internal val polishOverrides: Map<String, String> = mapOf(
     "恢复" to "Przywróć",
     "桌面图标" to "Ikona w launcherze",
     "桌面图标隐藏后留一条提示，随时可以恢复" to "Wyświetlane, gdy ikona jest ukryta; można ją przywrócić w każdej chwili",
+    "打开安装器" to "Otwórz instalator",
+    "点按打开安装器" to "Dotknij, aby otworzyć instalator",
 )

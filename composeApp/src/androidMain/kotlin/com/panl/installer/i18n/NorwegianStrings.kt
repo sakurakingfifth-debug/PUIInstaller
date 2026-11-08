@@ -430,7 +430,7 @@ internal val norwegianOverrides: Map<String, String> = mapOf(
     "修改系统的安装校验开关需要 ROOT 授权，当前没有拿到权限，设置没有改动。" to "Endring av systemkontrollen krever ROOT. Ingenting ble endret.",
     "浮窗+通知" to "Vindu+varsel",
     "隐藏桌面图标" to "Skjul ikonet på startskjermen",
-    "拨号输入 *#*#078#*#* 可随时切换" to "Ring *#*#078#*#* når som helst for å bytte",
+    "拨号输入 *#*#078#*#* 可随时打开安装器" to "Ring *#*#078#*#* når som helst for å åpne installasjonsprogrammet",
     "已隐藏桌面图标，再次输入可恢复" to "Ikonet er skjult – skriv koden igjen for å gjenopprette",
     "已恢复桌面图标" to "Ikonet er gjenopprettet",
     "切换桌面图标失败" to "Kunne ikke bytte ikonet",
@@ -439,4 +439,6 @@ internal val norwegianOverrides: Map<String, String> = mapOf(
     "恢复" to "Gjenopprett",
     "桌面图标" to "Startskjermikon",
     "桌面图标隐藏后留一条提示，随时可以恢复" to "Vises mens ikonet er skjult; kan gjenopprettes når som helst",
+    "打开安装器" to "Åpne installasjonsprogrammet",
+    "点按打开安装器" to "Trykk for å åpne installasjonsprogrammet",
 )

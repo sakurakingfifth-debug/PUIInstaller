@@ -430,7 +430,7 @@ internal val germanOverrides: Map<String, String> = mapOf(
     "修改系统的安装校验开关需要 ROOT 授权，当前没有拿到权限，设置没有改动。" to "Zum Ändern der System-Installationsprüfung ist ROOT nötig. Es wurde nichts geändert.",
     "浮窗+通知" to "Sheet+Benachrichtigung",
     "隐藏桌面图标" to "Startbildschirm-Symbol ausblenden",
-    "拨号输入 *#*#078#*#* 可随时切换" to "Jederzeit *#*#078#*#* wählen zum Umschalten",
+    "拨号输入 *#*#078#*#* 可随时打开安装器" to "Jederzeit *#*#078#*#* wählen, um den Installer zu öffnen",
     "已隐藏桌面图标，再次输入可恢复" to "Symbol ausgeblendet – Code erneut eingeben zum Wiederherstellen",
     "已恢复桌面图标" to "Symbol wiederhergestellt",
     "切换桌面图标失败" to "Symbol konnte nicht umgeschaltet werden",
@@ -439,4 +439,6 @@ internal val germanOverrides: Map<String, String> = mapOf(
     "恢复" to "Wiederherstellen",
     "桌面图标" to "Startbildschirm-Symbol",
     "桌面图标隐藏后留一条提示，随时可以恢复" to "Wird angezeigt, solange das Symbol ausgeblendet ist – jederzeit wiederherstellbar",
+    "打开安装器" to "Installer öffnen",
+    "点按打开安装器" to "Tippen, um den Installer zu öffnen",
 )

@@ -430,7 +430,7 @@ internal val dutchOverrides: Map<String, String> = mapOf(
     "修改系统的安装校验开关需要 ROOT 授权，当前没有拿到权限，设置没有改动。" to "De systeemverificatie wijzigen vereist ROOT. Er is niets gewijzigd.",
     "浮窗+通知" to "Venster+melding",
     "隐藏桌面图标" to "Pictogram verbergen",
-    "拨号输入 *#*#078#*#* 可随时切换" to "Kies *#*#078#*#* om het te wisselen",
+    "拨号输入 *#*#078#*#* 可随时打开安装器" to "Kies *#*#078#*#* om de installer te openen",
     "已隐藏桌面图标，再次输入可恢复" to "Pictogram verborgen — voer de code opnieuw in om te herstellen",
     "已恢复桌面图标" to "Pictogram hersteld",
     "切换桌面图标失败" to "Kon het pictogram niet wisselen",
@@ -439,4 +439,6 @@ internal val dutchOverrides: Map<String, String> = mapOf(
     "恢复" to "Herstellen",
     "桌面图标" to "Pictogram",
     "桌面图标隐藏后留一条提示，随时可以恢复" to "Wordt getoond zolang het pictogram verborgen is; altijd te herstellen",
+    "打开安装器" to "Installer openen",
+    "点按打开安装器" to "Tik om de installer te openen",
 )
