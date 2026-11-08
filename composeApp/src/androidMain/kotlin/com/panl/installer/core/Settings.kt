@@ -88,10 +88,12 @@ class Settings private constructor(private val sp: SharedPreferences) {
     /**
      * 走不走「实时通知」（Android 16 Live Updates / ColorOS 流体云胶囊）。
      *
-     * 只跟**安装样式**走：只有选了「实时通知」的安装样式才会提升成胶囊；
+     * 跟**安装样式**走：纯「实时通知」和「浮窗+通知」都要提升成胶囊
+     * （后者只是把确认界面换回浮窗，安装过程一样交给前台服务）；
      * 浮窗 / 全屏模式下即使安装结束也只发普通通知，不弹胶囊。
      */
-    val notificationsLive: Boolean get() = installStyle == "Live"
+    val notificationsLive: Boolean
+        get() = installStyle == "Live" || installStyle == "SheetLive"
 
     /** 浮窗背后那层系统模糊的半径（px，2–100）。 */
     var sheetBlurPx: Int by int("sheet_blur_px", 60)
