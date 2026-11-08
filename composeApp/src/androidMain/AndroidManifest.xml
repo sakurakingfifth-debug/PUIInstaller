@@ -185,7 +185,11 @@
                 <data android:scheme="file" android:pathPattern=".*\.[xX][aA][pP][kK]" />
                 <data android:scheme="file" android:pathPattern=".*\.[aA][pP][kK][mM]" />
             </intent-filter>
-            <!-- content：只按 mimeType 认，不写 pathPattern -->
+            <!-- content：只按 mimeType 认，不写 pathPattern。
+                 MediaStore 的 URI 是 content://media/external/file/12345，路径里没有文件名，
+                 扩展名匹配完全没用，只能靠下载器/浏览器给的 type。
+                 Chrome 这类认得出扩展名的会给 application/vnd.apkm，认不出的给 zip / octet-stream，
+                 所以两种都要登记。 -->
             <intent-filter>
                 <action android:name="android.intent.action.VIEW" />
                 <category android:name="android.intent.category.DEFAULT" />
@@ -194,6 +198,13 @@
                 <data android:mimeType="application/zip" />
                 <data android:mimeType="application/x-zip-compressed" />
                 <data android:mimeType="application/vnd.android.package-archive" />
+                <!-- 拆分包自己的 mime：AOSP MimeUtils 里 .apkm 就是 application/vnd.apkm -->
+                <data android:mimeType="application/vnd.apkm" />
+                <data android:mimeType="application/vnd.apks" />
+                <data android:mimeType="application/vnd.xapk" />
+                <data android:mimeType="application/x-apkm" />
+                <data android:mimeType="application/x-apks" />
+                <data android:mimeType="application/x-xapk" />
             </intent-filter>
             <!-- file 带 type 的情况（部分文件管理器会带） -->
             <intent-filter>
