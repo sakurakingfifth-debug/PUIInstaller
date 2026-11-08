@@ -361,8 +361,6 @@ private fun EntryCard(
                     overflow = TextOverflow.Ellipsis
                 )
             }
-            Spacer(Modifier.width(12.dp))
-            PillButton(text = tr("删除", "Remove"), onClick = onRemove)
         }
     }
 }
@@ -465,26 +463,6 @@ private fun AddCard(onClick: () -> Unit) {
         Text(
             tr("新增", "Add"),
             style = MaterialTheme.typography.titleMedium,
-            fontWeight = FontWeight.SemiBold,
-            color = scheme.primary
-        )
-    }
-}
-
-/** 浅底圆角小胶囊按钮。 */
-@Composable
-private fun PillButton(text: String, onClick: () -> Unit) {
-    val scheme = MaterialTheme.colorScheme
-    Box(
-        Modifier
-            .clip(RoundedCornerShape(50))
-            .background(scheme.primary.copy(alpha = 0.12f))
-            .clickable { onClick() }
-            .padding(horizontal = 16.dp, vertical = 8.dp)
-    ) {
-        Text(
-            text,
-            style = MaterialTheme.typography.titleSmall,
             fontWeight = FontWeight.SemiBold,
             color = scheme.primary
         )
