@@ -24,6 +24,8 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.width
+import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.foundation.gestures.awaitEachGesture
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -33,6 +35,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableIntStateOf
@@ -64,7 +67,7 @@ import com.panl.installer.ui.theme.InstallerTheme
 import com.panl.pui.PuiBarMetrics
 import com.panl.pui.PuiButton
 import com.panl.pui.PuiButtonStyle
-import com.panl.pui.PuiCard
+import com.panl.pui.PuiDialog
 import com.panl.pui.PuiFloatingNavBar
 import com.panl.pui.PuiIcon
 import com.panl.pui.PuiIconView
@@ -189,6 +192,9 @@ private fun GlobalPage(page: Int, topPad: Dp, navBarH: Dp) {
     val settings = Settings.get(context)
     var tick by remember { mutableIntStateOf(0) }
     var adding by remember { mutableStateOf(false) }
+    // 待确认删除的条目 / 正在播放消失动画的条目
+    var pendingDelete by remember { mutableStateOf<String?>(null) }
+    var removing by remember { mutableStateOf<String?>(null) }
 
     val kind = when (page) {
         0 -> ListKind.Sources
@@ -277,13 +283,17 @@ private fun GlobalPage(page: Int, topPad: Dp, navBarH: Dp) {
             }
         }
 
-        items(entries) { entry ->
+        items(entries, key = { it }) { entry ->
             EntryCard(
+                modifier = Modifier.animateItem(),
                 icon = rowIcon,
                 title = entry.substringAfter(' ', "").ifBlank { entry },
                 subtitle = if (entry.contains(' ')) entry.substringBefore(' ') else subtitleOf,
-                onRemove = {
+                removing = removing == entry,
+                onRequestDelete = { pendingDelete = entry },
+                onRemoved = {
                     write(entries.filter { it != entry }.joinToString("\n"))
+                    removing = null
                 }
             )
         }
@@ -291,6 +301,25 @@ private fun GlobalPage(page: Int, topPad: Dp, navBarH: Dp) {
         item {
             AddCard(onClick = { adding = true })
         }
+    }
+
+    pendingDelete?.let { target ->
+        PuiDialog(
+            scrim = !Settings.get(context).noScrim,
+            title = tr("删除这条记录？", "Delete this entry?"),
+            text = tr(
+                "该条目会从列表里移除，不影响应用本身。",
+                "This entry will be removed from the list — the app itself is untouched."
+            ),
+            confirmText = tr("删除", "Delete"),
+            dismissText = tr("取消", "Cancel"),
+            danger = true,
+            onDismiss = { pendingDelete = null },
+            onConfirm = {
+                removing = target
+                pendingDelete = null
+            }
+        )
     }
 
     if (adding) {
@@ -315,16 +344,24 @@ private fun GlobalPage(page: Int, topPad: Dp, navBarH: Dp) {
     }
 }
 
-/** 一条记录：图标 + 名称 + 说明 + 删除。版式跟历史页的行一致，支持左滑删除。 */
+/** 一条记录：图标 + 名称 + 说明。版式跟历史页的行一致，左滑触发删除确认。 */
 @Composable
 private fun EntryCard(
+    modifier: Modifier = Modifier,
     icon: PuiIcon,
     title: String,
     subtitle: String,
-    onRemove: () -> Unit
+    removing: Boolean,
+    onRequestDelete: () -> Unit,
+    onRemoved: () -> Unit
 ) {
     val scheme = MaterialTheme.colorScheme
-    SwipeToDelete(onDelete = onRemove) {
+    SwipeToDelete(
+        modifier = modifier,
+        removing = removing,
+        onRequestDelete = onRequestDelete,
+        onRemoved = onRemoved
+    ) {
         Row(
             Modifier
                 .fillMaxWidth()
@@ -366,20 +403,56 @@ private fun EntryCard(
 }
 
 /**
- * 左滑删除：卡片往左跟手滑，松手超过阈值就删。
+ * 左滑删除：卡片跟手左移，松手超过阈值就弹确认；确认后整张卡滑出 + 淡出，再从列表里移除。
  *
- * 只认「往左」——往右的位移不 consume，交给外层 pager 翻页（和历史页同一套判断）。
+ * 只 consume「往左」的位移，往右交给外层 pager 翻页（和历史页同一套判断）。
  */
 @Composable
-private fun SwipeToDelete(onDelete: () -> Unit, content: @Composable () -> Unit) {
+private fun SwipeToDelete(
+    modifier: Modifier = Modifier,
+    removing: Boolean,
+    onRequestDelete: () -> Unit,
+    onRemoved: () -> Unit,
+    content: @Composable () -> Unit
+) {
     val scheme = MaterialTheme.colorScheme
     val density = LocalDensity.current
     val scope = rememberCoroutineScope()
     val maxSwipePx = with(density) { 104.dp.toPx() }
     val triggerPx = with(density) { 64.dp.toPx() }
     var offsetX by remember { mutableFloatStateOf(0f) }
+    var alpha by remember { mutableFloatStateOf(1f) }
+    var widthPx by remember { mutableFloatStateOf(0f) }
 
-    Box(Modifier.fillMaxWidth().padding(bottom = 10.dp)) {
+    // 确认删除后：滑出 + 淡出，动画结束再真正从列表里移除
+    LaunchedEffect(removing) {
+        if (!removing) return@LaunchedEffect
+        val target = if (widthPx > 0f) -widthPx else -maxSwipePx * 6
+        kotlinx.coroutines.coroutineScope {
+            launch {
+                androidx.compose.animation.core.animate(
+                    offsetX,
+                    target,
+                    animationSpec = androidx.compose.animation.core.tween(220)
+                ) { v, _ -> offsetX = v }
+            }
+            launch {
+                androidx.compose.animation.core.animate(
+                    alpha,
+                    0f,
+                    animationSpec = androidx.compose.animation.core.tween(160)
+                ) { v, _ -> alpha = v }
+            }
+        }
+        onRemoved()
+    }
+
+    Box(
+        modifier
+            .fillMaxWidth()
+            .padding(bottom = 10.dp)
+            .onSizeChanged { widthPx = it.width.toFloat() }
+    ) {
         // 底层：滑开后露出的红色删除底
         Box(
             Modifier
@@ -401,6 +474,7 @@ private fun SwipeToDelete(onDelete: () -> Unit, content: @Composable () -> Unit)
             Modifier
                 .fillMaxWidth()
                 .offset { IntOffset(offsetX.roundToInt(), 0) }
+                .graphicsLayer { this.alpha = alpha }
                 .pointerInput(Unit) {
                     val slop = viewConfiguration.touchSlop
                     awaitPointerEventScope {
@@ -427,12 +501,17 @@ private fun SwipeToDelete(onDelete: () -> Unit, content: @Composable () -> Unit)
                                 }
                             }
                             if (claimed) {
-                                if (offsetX <= -triggerPx) onDelete()
+                                if (offsetX <= -triggerPx) onRequestDelete()
+                                // 没确认就弹回原位
                                 scope.launch {
                                     androidx.compose.animation.core.animate(
                                         offsetX,
-                                        0f
-                                    ) { value, _ -> offsetX = value }
+                                        0f,
+                                        animationSpec = androidx.compose.animation.core.spring(
+                                            dampingRatio = 0.8f,
+                                            stiffness = 420f
+                                        )
+                                    ) { v, _ -> offsetX = v }
                                 }
                             }
                         }
