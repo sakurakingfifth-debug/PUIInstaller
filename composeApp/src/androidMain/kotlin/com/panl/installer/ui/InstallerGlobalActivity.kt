@@ -4,6 +4,7 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.awaitEachGesture
@@ -49,6 +50,8 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.ColorFilter
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.input.pointer.positionChange
 import androidx.compose.ui.unit.IntOffset
@@ -63,6 +66,8 @@ import androidx.compose.ui.window.Dialog
 import com.panl.installer.core.InstallerLog
 import com.panl.installer.core.Settings
 import com.panl.installer.i18n.tr
+import com.panl.installer.R
+import com.panl.installer.ui.components.puiCardBackdropBlur
 import com.panl.installer.ui.theme.InstallerTheme
 import com.panl.pui.PuiBarMetrics
 import com.panl.pui.PuiButton
@@ -106,7 +111,12 @@ class InstallerGlobalActivity : ComponentActivity() {
 private val TAB_LABELS: List<String>
     @Composable get() = listOf(tr("来源", "Sources"), tr("黑名单", "Blocklist"), tr("SharedUID", "SharedUID"))
 
-private val TAB_ICONS = listOf(PuiIcon.Download, PuiIcon.Trash, PuiIcon.User)
+// 导航栏三个标签的官方矢量图标（Receipt_Item / Receipt_Minus / Receipt_Discount）
+private val TAB_ICON_RES = listOf(
+    R.drawable.ic_receipt_item,
+    R.drawable.ic_receipt_minus,
+    R.drawable.ic_receipt_discount
+)
 
 @Composable
 private fun GlobalShell() {
@@ -172,7 +182,14 @@ private fun GlobalShell() {
                     scope.launch { pagerState.animateScrollToPage(page) }
                 }
             },
-            icons = TAB_ICONS,
+            iconContent = { index, tint ->
+                Image(
+                    painter = painterResource(TAB_ICON_RES[index]),
+                    contentDescription = null,
+                    modifier = Modifier.size(24.dp),
+                    colorFilter = ColorFilter.tint(tint)
+                )
+            },
             itemWidth = itemWidth,
             backdrop = if (blurOn) backdrop else null,
             glassAlpha = settings.navGlassPercent / 100f,
@@ -225,12 +242,6 @@ private fun GlobalPage(page: Int, topPad: Dp, navBarH: Dp) {
         ListKind.Packages -> tr("禁止安装该包", "Installs blocked")
         ListKind.SharedUids -> tr("禁止安装该 SharedUID", "Installs blocked")
     }
-    val rowIcon = when (kind) {
-        ListKind.Sources -> PuiIcon.Download
-        ListKind.Packages -> PuiIcon.Trash
-        ListKind.SharedUids -> PuiIcon.User
-    }
-
     fun write(value: String) {
         when (kind) {
             ListKind.Sources -> settings.managedInstallerPackagesRaw = value
@@ -243,7 +254,12 @@ private fun GlobalPage(page: Int, topPad: Dp, navBarH: Dp) {
     LazyColumn(
         Modifier
             .fillMaxSize()
-            .puiEdgeHaptic(),
+            .puiEdgeHaptic()
+            // 弹窗打开时把身后的列表糊掉，半径跟「浮窗背景模糊」一致
+            .puiCardBackdropBlur(
+                adding || pendingDelete != null,
+                (settings.sheetBlurPx / LocalDensity.current.density).dp
+            ),
         contentPadding = PaddingValues(
             start = 16.dp,
             end = 16.dp,
@@ -286,7 +302,6 @@ private fun GlobalPage(page: Int, topPad: Dp, navBarH: Dp) {
         items(entries, key = { it }) { entry ->
             EntryCard(
                 modifier = Modifier.animateItem(),
-                icon = rowIcon,
                 title = entry.substringAfter(' ', "").ifBlank { entry },
                 subtitle = if (entry.contains(' ')) entry.substringBefore(' ') else subtitleOf,
                 removing = removing == entry,
@@ -348,7 +363,6 @@ private fun GlobalPage(page: Int, topPad: Dp, navBarH: Dp) {
 @Composable
 private fun EntryCard(
     modifier: Modifier = Modifier,
-    icon: PuiIcon,
     title: String,
     subtitle: String,
     removing: Boolean,
@@ -377,7 +391,12 @@ private fun EntryCard(
                     .background(scheme.primary.copy(alpha = 0.12f)),
                 contentAlignment = Alignment.Center
             ) {
-                PuiIconView(icon, Modifier.size(24.dp), tint = scheme.primary)
+                Image(
+                    painter = painterResource(R.drawable.ic_tag_2),
+                    contentDescription = null,
+                    modifier = Modifier.size(24.dp),
+                    colorFilter = ColorFilter.tint(scheme.primary)
+                )
             }
             Spacer(Modifier.width(14.dp))
             Column(Modifier.weight(1f)) {
@@ -523,29 +542,16 @@ private fun SwipeToDelete(
     }
 }
 
-/** 列表末尾的「+ 新增」。 */
+/** 列表末尾的「新增」：实心主色按钮。 */
 @Composable
 private fun AddCard(onClick: () -> Unit) {
-    val scheme = MaterialTheme.colorScheme
-    Row(
-        Modifier
-            .fillMaxWidth()
-            .padding(bottom = 10.dp)
-            .clip(RoundedCornerShape(24.dp))
-            .background(scheme.surfaceContainerLowest)
-            .clickable { onClick() }
-            .padding(horizontal = 16.dp, vertical = 20.dp),
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        PuiIconView(PuiIcon.Plus, Modifier.size(22.dp), tint = scheme.primary)
-        Spacer(Modifier.width(12.dp))
-        Text(
-            tr("新增", "Add"),
-            style = MaterialTheme.typography.titleMedium,
-            fontWeight = FontWeight.SemiBold,
-            color = scheme.primary
-        )
-    }
+    PuiButton(
+        text = tr("新增", "Add"),
+        onClick = onClick,
+        modifier = Modifier.fillMaxWidth().padding(bottom = 10.dp),
+        style = PuiButtonStyle.Filled,
+        icon = PuiIcon.Plus
+    )
 }
 
 @Composable
