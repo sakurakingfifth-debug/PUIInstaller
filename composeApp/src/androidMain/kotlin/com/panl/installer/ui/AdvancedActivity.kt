@@ -285,7 +285,8 @@ private fun AdvancedScreen(activity: ComponentActivity) {
                 Spacer(Modifier.height(18.dp))
                 PuiGroup(title = null) {
                     PuiSwitchRow(
-                        icon = PuiIcon.Lock,
+                        icon = null,
+                        iconPainter = painterResource(R.drawable.ic_finger_scan),
                         title = tr("生物识别", "Biometric confirmation"),
                         subtitle = tr(
                             "安装前需要通过设备的生物/密码通过确认",
