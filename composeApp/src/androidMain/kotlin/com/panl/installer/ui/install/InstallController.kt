@@ -519,20 +519,17 @@ class InstallController(
                     snapshotFlow { InstallEngine.Bus.outcome }.filterNotNull().first()
                 }
             } else {
-                if (info == null) {
-                    stopProgress()
-                    state = InstallUiState.Failed(
-                        null,
-                        tr(
-                            "无法读取这个安装会话的安装包，请回到原应用重新发起安装",
-                            "Can't read the APK of this install session — start the install again from the original app"
-                        )
-                    )
-                    return@launch
-                }
-                // 接管不了别人的会话，但它暂存的 APK 能直接装（需要 ROOT）
+                // 接管不了别人的会话：让 root 直接 `pm install-commit`（不需要读暂存文件，
+                // 读不到暂存文件也能装成功），失败才退回「读暂存目录自己装」
                 withContext(Dispatchers.IO) { SessionInstaller.install(confirm.sessionId) }
-                    .also { if (!it.success) InstallerLog.record(activity, "SESSION", "外部会话安装失败 ${confirm.sessionId}: ${it.message}") }
+                    .also {
+                        if (!it.success) {
+                            InstallerLog.record(
+                                activity, "SESSION",
+                                "外部会话安装失败 ${confirm.sessionId}: ${it.message}"
+                            )
+                        }
+                    }
             }
 
             if (outcome == null) {

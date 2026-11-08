@@ -45,12 +45,25 @@ object SessionInstaller {
     }
 
     /**
-     * 直接装暂存目录里的 APK（需要 root）。
+     * 提交别人建的会话（需要 root）。
      *
-     * 单包走 `pm install`，有 split 走 `pm install-multiple`；
-     * 装完顺手 `pm install-abandon`，把那个我们接管不了的会话清掉。
+     * 首选 `pm install-commit <id>`：PMS 的 owner 检查对 root 放行，所以 root 能直接
+     * 提交这个会话 —— 不用碰暂存目录，会话里已经写好的 split、installer 包名、
+     * 签名校验策略全都原样保留，这是最接近「正常安装」的一条路。
+     *
+     * 退路才是读 `/data/app/vmdl<id>.tmp/` 里的文件自己 `pm install`（老办法，
+     * 遇到会话里文件没写全 / 只有 split 没有 base 时会失败）。
      */
     suspend fun install(sessionId: Int): InstallEngine.Outcome {
+        // 1. root 直接提交会话
+        val (commitOk, commitOut) = RootShell.run("pm install-commit $sessionId")
+        if (commitOk && commitOut.contains("Success")) {
+            Log.i(TAG, "install-commit session=$sessionId ok out=${commitOut.take(160)}")
+            return InstallEngine.Outcome(true, null, "Success", 0)
+        }
+        Log.w(TAG, "install-commit session=$sessionId failed: ok=$commitOk out=${commitOut.take(200)}")
+
+        // 2. 退路：读暂存目录自己装
         val apks = stagedApks(sessionId)
         if (apks.isEmpty()) {
             Log.w(TAG, "install: no staged apk for session $sessionId")
