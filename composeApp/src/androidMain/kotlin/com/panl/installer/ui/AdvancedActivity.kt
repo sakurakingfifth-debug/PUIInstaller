@@ -231,8 +231,14 @@ private fun AdvancedScreen(activity: ComponentActivity) {
                         ),
                         checked = settings.showSystemApps,
                         onChange = { settings.showSystemApps = it },
-                        showDivider = true
+                        showDivider = false
                     )
+                }
+            }
+
+            item {
+                Spacer(Modifier.height(18.dp))
+                PuiGroup(title = null) {
                     PuiSwitchRow(
                         icon = PuiIcon.Trash,
                         title = tr("卸载系统应用", "Uninstall system apps"),
@@ -245,8 +251,14 @@ private fun AdvancedScreen(activity: ComponentActivity) {
                             // 打开才弹风险确认；关闭直接生效
                             if (on) showSystemWarning = true else settings.allowUninstallSystemApps = false
                         },
-                        showDivider = true
+                        showDivider = false
                     )
+                }
+            }
+
+            item {
+                Spacer(Modifier.height(18.dp))
+                PuiGroup(title = null) {
                     PuiSwitchRow(
                         icon = PuiIcon.Trash,
                         title = tr("彻底卸载系统应用", "Remove system apps completely"),
