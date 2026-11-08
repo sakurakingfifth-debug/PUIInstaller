@@ -444,7 +444,7 @@ internal val portugueseOverrides: Map<String, String> = mapOf(
     "支持 .apk.1 安装包" to "Suporte a pacotes .apk.1",
     "QQ / 微信 下载的 APK 会被改名成 .apk.1，打开后照常安装" to "QQ e WeChat renomeiam APKs baixados para .apk.1 — eles instalam normalmente",
     "生物识别" to "Biometria",
-    "安装前需要通过设备认证（指纹 / 面容 / 锁屏密码）" to "Exigir autenticação do dispositivo (impressão digital, rosto ou bloqueio) antes de instalar",
+    "安装前需要通过设备的生物/密码通过确认" to "Confirme com biometria ou senha do dispositivo antes de instalar",
     "安装确认" to "Confirmar instalação",
     "请认证以确认本次安装操作" to "Autentique-se para confirmar esta instalação",
     "等待设备认证…" to "Aguardando autenticação…",

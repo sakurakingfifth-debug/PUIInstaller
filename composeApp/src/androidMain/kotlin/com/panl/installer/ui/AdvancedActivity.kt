@@ -245,8 +245,8 @@ private fun AdvancedScreen(activity: ComponentActivity) {
                         icon = PuiIcon.Lock,
                         title = tr("生物识别", "Biometric confirmation"),
                         subtitle = tr(
-                            "安装前需要通过设备认证（指纹 / 面容 / 锁屏密码）",
-                            "Require device authentication (fingerprint, face or screen lock) before installing"
+                            "安装前需要通过设备的生物/密码通过确认",
+                            "Confirm with the device's biometrics or password before installing"
                         ),
                         checked = settings.biometricBeforeInstall,
                         onChange = { on ->

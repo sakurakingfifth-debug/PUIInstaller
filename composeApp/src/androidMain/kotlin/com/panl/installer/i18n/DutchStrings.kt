@@ -444,7 +444,7 @@ internal val dutchOverrides: Map<String, String> = mapOf(
     "支持 .apk.1 安装包" to "Ondersteuning voor .apk.1-pakketten",
     "QQ / 微信 下载的 APK 会被改名成 .apk.1，打开后照常安装" to "QQ en WeChat hernoemen gedownloade APK's naar .apk.1 — ze installeren gewoon",
     "生物识别" to "Biometrie",
-    "安装前需要通过设备认证（指纹 / 面容 / 锁屏密码）" to "Vereis apparaatverificatie (vingerafdruk, gezicht of schermvergrendeling) voor installeren",
+    "安装前需要通过设备的生物/密码通过确认" to "Bevestig met biometrie of wachtwoord van het apparaat voor installeren",
     "安装确认" to "Installatie bevestigen",
     "请认证以确认本次安装操作" to "Verifieer om deze installatie te bevestigen",
     "等待设备认证…" to "Wachten op verificatie…",

@@ -444,7 +444,7 @@ internal val latinOverrides: Map<String, String> = mapOf(
     "支持 .apk.1 安装包" to "Fasciculos .apk.1 sustinere",
     "QQ / 微信 下载的 APK 会被改名成 .apk.1，打开后照常安装" to "QQ et WeChat fasciculos APK in .apk.1 renominant — more solito installantur",
     "生物识别" to "Biometria",
-    "安装前需要通过设备认证（指纹 / 面容 / 锁屏密码）" to "Ante installationem authenticationem postula (digitus, facies, clavis)",
+    "安装前需要通过设备的生物/密码通过确认" to "Ante installationem biometria vel tessera confirmes",
     "安装确认" to "Installationem confirmare",
     "请认证以确认本次安装操作" to "Authentica ut hanc installationem confirmes",
     "等待设备认证…" to "Authenticatio exspectatur…",

@@ -444,7 +444,7 @@ internal val norwegianOverrides: Map<String, String> = mapOf(
     "支持 .apk.1 安装包" to "Støtt .apk.1-pakker",
     "QQ / 微信 下载的 APK 会被改名成 .apk.1，打开后照常安装" to "QQ og WeChat gir nedlastede APK-er navnet .apk.1 — de installeres som vanlig",
     "生物识别" to "Biometri",
-    "安装前需要通过设备认证（指纹 / 面容 / 锁屏密码）" to "Krev enhetsautentisering (fingeravtrykk, ansikt eller skjermlås) før installasjon",
+    "安装前需要通过设备的生物/密码通过确认" to "Bekreft med enhetens biometri eller passord før installasjon",
     "安装确认" to "Bekreft installasjon",
     "请认证以确认本次安装操作" to "Autentiser for å bekrefte denne installasjonen",
     "等待设备认证…" to "Venter på enhetsautentisering…",
