@@ -41,6 +41,7 @@ import com.panl.installer.core.RootCheck
 import com.panl.installer.core.RootState
 import com.panl.installer.R
 import com.panl.installer.core.Settings
+import com.panl.installer.core.BiometricGate
 import com.panl.installer.core.LauncherIcon
 import com.panl.installer.core.SystemTweaks
 import com.panl.installer.i18n.tr
@@ -68,14 +69,14 @@ class AdvancedActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         setContent {
             InstallerTheme {
-                AdvancedScreen()
+                AdvancedScreen(this@AdvancedActivity)
             }
         }
     }
 }
 
 @Composable
-private fun AdvancedScreen() {
+private fun AdvancedScreen(activity: ComponentActivity) {
     val scheme = MaterialTheme.colorScheme
     val context = LocalContext.current
     val settings = Settings.get(context)
@@ -242,13 +243,21 @@ private fun AdvancedScreen() {
                 PuiGroup(title = null) {
                     PuiSwitchRow(
                         icon = PuiIcon.Lock,
-                        title = tr("生物识别确认", "Biometric confirmation"),
+                        title = tr("生物识别", "Biometric confirmation"),
                         subtitle = tr(
                             "安装前需要通过设备认证（指纹 / 面容 / 锁屏密码）",
                             "Require device authentication (fingerprint, face or screen lock) before installing"
                         ),
                         checked = settings.biometricBeforeInstall,
-                        onChange = { settings.biometricBeforeInstall = it },
+                        onChange = { on ->
+                            // 开和关都要过一次认证：防止别人拿到已解锁的手机直接把它关掉
+                            scope.launch {
+                                if (BiometricGate.authenticate(activity)) {
+                                    settings.biometricBeforeInstall = on
+                                }
+                                tweakTick++
+                            }
+                        },
                         showDivider = false
                     )
                 }

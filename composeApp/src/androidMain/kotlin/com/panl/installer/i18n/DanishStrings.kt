@@ -443,7 +443,7 @@ internal val danishOverrides: Map<String, String> = mapOf(
     "点按打开安装器" to "Tryk for at åbne installationsprogrammet",
     "支持 .apk.1 安装包" to "Understøt .apk.1-pakker",
     "QQ / 微信 下载的 APK 会被改名成 .apk.1，打开后照常安装" to "QQ og WeChat omdøber downloadede APK'er til .apk.1 — de installeres som normalt",
-    "生物识别确认" to "Biometrisk bekræftelse",
+    "生物识别" to "Biometri",
     "安装前需要通过设备认证（指纹 / 面容 / 锁屏密码）" to "Kræv enhedsgodkendelse (fingeraftryk, ansigt eller skærmlås) før installation",
     "安装确认" to "Bekræft installation",
     "请认证以确认本次安装操作" to "Godkend for at bekræfte denne installation",

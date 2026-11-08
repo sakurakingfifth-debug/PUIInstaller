@@ -443,7 +443,7 @@ internal val polishOverrides: Map<String, String> = mapOf(
     "点按打开安装器" to "Dotknij, aby otworzyć instalator",
     "支持 .apk.1 安装包" to "Obsługa pakietów .apk.1",
     "QQ / 微信 下载的 APK 会被改名成 .apk.1，打开后照常安装" to "QQ i WeChat zmieniają nazwy pobranych APK na .apk.1 — instalują się normalnie",
-    "生物识别确认" to "Potwierdzenie biometryczne",
+    "生物识别" to "Biometria",
     "安装前需要通过设备认证（指纹 / 面容 / 锁屏密码）" to "Wymagaj uwierzytelnienia urządzenia (odcisk palca, twarz lub blokada) przed instalacją",
     "安装确认" to "Potwierdź instalację",
     "请认证以确认本次安装操作" to "Uwierzytelnij się, aby potwierdzić instalację",
