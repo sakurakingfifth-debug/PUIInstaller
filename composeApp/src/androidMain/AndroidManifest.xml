@@ -134,12 +134,12 @@
             <intent-filter>
                 <action android:name="android.intent.action.VIEW" />
                 <category android:name="android.intent.category.DEFAULT" />
-                <data android:scheme="file" android:pathPattern=".*\\.apk" />
+                <data android:scheme="file" android:pathPattern=".*\.[aA][pP][kK]" />
             </intent-filter>
             <intent-filter>
                 <action android:name="android.intent.action.VIEW" />
                 <category android:name="android.intent.category.DEFAULT" />
-                <data android:scheme="content" android:pathPattern=".*\\.apk" />
+                <data android:scheme="content" android:pathPattern=".*\.[aA][pP][kK]" />
             </intent-filter>
 
             <!-- QQ / 微信 把下载回来的包改名成 xxx.apk.1，系统认不出是安装包。
@@ -148,19 +148,19 @@
             <intent-filter>
                 <action android:name="android.intent.action.VIEW" />
                 <category android:name="android.intent.category.DEFAULT" />
-                <data android:scheme="file" android:pathPattern=".*\\.[aA][pP][kK]\\.1" />
+                <data android:scheme="file" android:pathPattern=".*\.[aA][pP][kK]\.1" />
             </intent-filter>
             <intent-filter>
                 <action android:name="android.intent.action.VIEW" />
                 <category android:name="android.intent.category.DEFAULT" />
-                <data android:scheme="content" android:pathPattern=".*\\.[aA][pP][kK]\\.1" />
+                <data android:scheme="content" android:pathPattern=".*\.[aA][pP][kK]\.1" />
             </intent-filter>
             <intent-filter>
                 <action android:name="android.intent.action.VIEW" />
                 <category android:name="android.intent.category.DEFAULT" />
                 <data android:scheme="content" />
                 <data android:mimeType="application/octet-stream" />
-                <data android:pathPattern=".*\\.[aA][pP][kK]\\.1" />
+                <data android:pathPattern=".*\.[aA][pP][kK]\.1" />
             </intent-filter>
             <!-- intent 带 type 时 filter 必须声明 mimeType，文件管理器给 .apk.1 的多半是 octet-stream -->
             <intent-filter>
@@ -169,29 +169,39 @@
                 <data
                     android:scheme="file"
                     android:mimeType="application/octet-stream"
-                    android:pathPattern=".*\\.[aA][pP][kK]\\.1" />
+                    android:pathPattern=".*\.[aA][pP][kK]\.1" />
             </intent-filter>
 
-            <!-- 拆分包：.apks（bundletool）/ .xapk（APKPure）/ .apkm（APKMirror） -->
+            <!-- 拆分包：.apks（bundletool）/ .xapk（APKPure）/ .apkm（APKMirror）。
+                 两个坑：
+                 1. pathPattern 里是正则，点在 XML 里只写一个反斜杠（写成 \\. 会被当成「字面反斜杠」）；
+                 2. 这三种容器本质都是 zip，下载器给的 type 多半是 application/zip 或 octet-stream，
+                    而 Downloads 的 content URI 里没有文件名（.../document/msf%3A1000），
+                    path 匹配无从下手 —— 所以 content 侧只按 type 认，file 侧才用扩展名限定。 -->
             <intent-filter>
                 <action android:name="android.intent.action.VIEW" />
                 <category android:name="android.intent.category.DEFAULT" />
-                <data android:scheme="file" android:pathPattern=".*\\.[aA][pP][kK][sS]" />
-                <data android:scheme="file" android:pathPattern=".*\\.[xX][aA][pP][kK]" />
-                <data android:scheme="file" android:pathPattern=".*\\.[aA][pP][kK][mM]" />
-                <data android:scheme="content" android:pathPattern=".*\\.[aA][pP][kK][sS]" />
-                <data android:scheme="content" android:pathPattern=".*\\.[xX][aA][pP][kK]" />
-                <data android:scheme="content" android:pathPattern=".*\\.[aA][pP][kK][mM]" />
+                <data android:scheme="file" android:pathPattern=".*\.[aA][pP][kK][sS]" />
+                <data android:scheme="file" android:pathPattern=".*\.[xX][aA][pP][kK]" />
+                <data android:scheme="file" android:pathPattern=".*\.[aA][pP][kK][mM]" />
             </intent-filter>
+            <!-- content：只按 mimeType 认，不写 pathPattern -->
             <intent-filter>
                 <action android:name="android.intent.action.VIEW" />
                 <category android:name="android.intent.category.DEFAULT" />
-                <data android:scheme="file" android:mimeType="application/octet-stream" android:pathPattern=".*\\.[aA][pP][kK][sS]" />
-                <data android:scheme="file" android:mimeType="application/octet-stream" android:pathPattern=".*\\.[xX][aA][pP][kK]" />
-                <data android:scheme="file" android:mimeType="application/octet-stream" android:pathPattern=".*\\.[aA][pP][kK][mM]" />
-                <data android:scheme="content" android:mimeType="application/octet-stream" android:pathPattern=".*\\.[aA][pP][kK][sS]" />
-                <data android:scheme="content" android:mimeType="application/octet-stream" android:pathPattern=".*\\.[xX][aA][pP][kK]" />
-                <data android:scheme="content" android:mimeType="application/octet-stream" android:pathPattern=".*\\.[aA][pP][kK][mM]" />
+                <data android:scheme="content" />
+                <data android:mimeType="application/octet-stream" />
+                <data android:mimeType="application/zip" />
+                <data android:mimeType="application/x-zip-compressed" />
+                <data android:mimeType="application/vnd.android.package-archive" />
+            </intent-filter>
+            <!-- file 带 type 的情况（部分文件管理器会带） -->
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <data android:scheme="file" />
+                <data android:mimeType="application/zip" />
+                <data android:mimeType="application/x-zip-compressed" />
             </intent-filter>
 
             <!-- 旧式安装入口。注意：intent 带 type 时，filter 必须也声明 mimeType，
