@@ -51,6 +51,7 @@ class LiveInstallService : Service() {
         val label = intent?.getStringExtra(EXTRA_LABEL).orEmpty()
         val packageName = intent?.getStringExtra(EXTRA_PACKAGE).orEmpty()
         val sourceUri = intent?.getStringExtra(EXTRA_URI)?.let(Uri::parse)
+        val splits = intent?.getStringArrayListExtra(EXTRA_SPLITS).orEmpty().map(::File)
         val file = path?.let(::File)
 
         if (file == null || !file.exists()) {
@@ -78,17 +79,19 @@ class LiveInstallService : Service() {
             var keep = false
             try {
                 keep = if (action == ACTION_START) {
-                    install(file, label, packageName, sourceUri)
+                    install(file, label, packageName, sourceUri, splits)
                 } else if (Settings.get(this@LiveInstallService).autoInstallLive) {
                     // 开了「自动安装」：不问了，直接装
-                    install(file, label, packageName, sourceUri)
+                    install(file, label, packageName, sourceUri, splits)
                 } else {
                     // 先解绑前台身份，否则这条提示会被「正在读取安装包」盖回去
                     detach()
                     // 等宿主 Activity 真正退到后台再发提示：ColorOS 不会给还在前台的
                     // 应用提升胶囊，抢在这之前发就会「点了没反应」（再点一次才好）。
                     delay(400)
-                    Notifications.showInstallPrompt(this@LiveInstallService, label, packageName, file, sourceUri)
+                    Notifications.showInstallPrompt(
+                        this@LiveInstallService, label, packageName, file, sourceUri, splits
+                    )
                     true
                 }
             } catch (t: Throwable) {
@@ -112,7 +115,8 @@ class LiveInstallService : Service() {
         file: File,
         label: String,
         packageName: String,
-        sourceUri: Uri?
+        sourceUri: Uri?,
+        splits: List<File> = emptyList()
     ): Boolean {
         val promoted = Notifications.canPromote(this)
         val settings = Settings.get(this)
@@ -128,7 +132,8 @@ class LiveInstallService : Service() {
             apk = file,
             packageName = packageName,
             allowDowngrade = true,
-            safeMode = settings.safeMode
+            safeMode = settings.safeMode,
+            splits = splits
         ) { p ->
             Notifications.showInstall(
                 this, label, Notifications.Stage.COPYING, p,
@@ -216,9 +221,12 @@ class LiveInstallService : Service() {
         const val EXTRA_PACKAGE = "com.panl.installer.extra.LIVE_PACKAGE"
         const val EXTRA_URI = "com.panl.installer.extra.LIVE_URI"
 
+        /** 拆分包解出来的分片路径（base 走 EXTRA_FILE）。 */
+        const val EXTRA_SPLITS = "com.panl.installer.extra.LIVE_SPLITS"
+
         /** 入口：Activity 已经把 APK 落到缓存，这里只传路径。 */
         fun start(context: Context, info: ApkInfo, sourceUri: Uri?, autoStart: Boolean) {
-            startRaw(context, info.file, info.label, info.packageName, sourceUri, autoStart)
+            startRaw(context, info.file, info.label, info.packageName, sourceUri, autoStart, info.splits)
         }
 
         /**
@@ -232,7 +240,8 @@ class LiveInstallService : Service() {
             label: String,
             packageName: String,
             sourceUri: Uri?,
-            autoStart: Boolean
+            autoStart: Boolean,
+            splits: List<File> = emptyList()
         ) {
             val intent = Intent(context, LiveInstallService::class.java)
                 .setAction(if (autoStart) ACTION_START else ACTION_PREPARE)
@@ -240,6 +249,7 @@ class LiveInstallService : Service() {
                 .putExtra(EXTRA_LABEL, label)
                 .putExtra(EXTRA_PACKAGE, packageName)
                 .putExtra(EXTRA_URI, sourceUri?.toString())
+                .putStringArrayListExtra(EXTRA_SPLITS, ArrayList(splits.map { it.absolutePath }))
             runCatching { context.startForegroundService(intent) }
                 .onFailure { Log.e(TAG, "startForegroundService failed: ${it.javaClass.simpleName} ${it.message}") }
         }

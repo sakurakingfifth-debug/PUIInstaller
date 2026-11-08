@@ -59,6 +59,8 @@ object InstallEngine {
         packageName: String,
         allowDowngrade: Boolean,
         safeMode: Boolean = false,
+        /** 拆分包（.apks/.xapk/.apkm）解出来的分片，空表示普通单 apk。 */
+        splits: List<File> = emptyList(),
         onProgress: (Float) -> Unit
     ): Int = withContext(Dispatchers.IO) {
         val installer = context.packageManager.packageInstaller
@@ -117,27 +119,34 @@ object InstallEngine {
             Bus.sessionId = sessionId
 
             installer.openSession(sessionId).use { session ->
-                val total = apk.length().coerceAtLeast(1L)
+                // 拆分包：base 必须以 "base.apk" 的名字写进去，其余分片保留原文件名
+                val payload = buildList {
+                    add("base.apk" to apk)
+                    splits.forEach { add(it.name to it) }
+                }
+                val total = payload.sumOf { it.second.length() }.coerceAtLeast(1L)
                 var copied = 0L
                 var lastTick = 0f
 
-                session.openWrite("base.apk", 0, total).use { out ->
-                    apk.inputStream().use { input ->
-                        val buffer = ByteArray(256 * 1024)
-                        while (true) {
-                            val read = input.read(buffer)
-                            if (read <= 0) break
-                            out.write(buffer, 0, read)
-                            copied += read
-                            val p = (copied.toFloat() / total).coerceIn(0f, 1f)
-                            // 每 1% 才回调一次，避免高频重组
-                            if (p - lastTick >= 0.01f || p >= 1f) {
-                                lastTick = p
-                                onProgress(p)
+                payload.forEach { (name, file) ->
+                    session.openWrite(name, 0, file.length()).use { out ->
+                        file.inputStream().use { input ->
+                            val buffer = ByteArray(256 * 1024)
+                            while (true) {
+                                val read = input.read(buffer)
+                                if (read <= 0) break
+                                out.write(buffer, 0, read)
+                                copied += read
+                                val p = (copied.toFloat() / total).coerceIn(0f, 1f)
+                                // 每 1% 才回调一次，避免高频重组
+                                if (p - lastTick >= 0.01f || p >= 1f) {
+                                    lastTick = p
+                                    onProgress(p)
+                                }
                             }
                         }
+                        session.fsync(out)
                     }
-                    session.fsync(out)
                 }
 
                 val resultIntent = Intent(context, InstallResultReceiver::class.java).apply {

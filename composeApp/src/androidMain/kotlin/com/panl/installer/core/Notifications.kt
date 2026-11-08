@@ -437,7 +437,8 @@ object Notifications {
         label: String,
         packageName: String,
         file: java.io.File,
-        sourceUri: android.net.Uri?
+        sourceUri: android.net.Uri?,
+        splits: List<java.io.File> = emptyList()
     ) {
         val nm = context.getSystemService(NotificationManager::class.java) ?: return
         val startIntent = Intent(context, LiveInstallService::class.java)
@@ -446,6 +447,10 @@ object Notifications {
             .putExtra(LiveInstallService.EXTRA_LABEL, label)
             .putExtra(LiveInstallService.EXTRA_PACKAGE, packageName)
             .putExtra(LiveInstallService.EXTRA_URI, sourceUri?.toString())
+            .putStringArrayListExtra(
+                LiveInstallService.EXTRA_SPLITS,
+                ArrayList(splits.map { it.absolutePath })
+            )
         // 开了生物识别就先去认证中转站；否则直接叫服务（服务没有界面，弹不出认证框）
         val confirm = if (Settings.get(context).biometricBeforeInstall) {
             PendingIntent.getActivity(
@@ -455,7 +460,11 @@ object Notifications {
                     .putExtra(LiveInstallService.EXTRA_FILE, file.absolutePath)
                     .putExtra(LiveInstallService.EXTRA_LABEL, label)
                     .putExtra(LiveInstallService.EXTRA_PACKAGE, packageName)
-                    .putExtra(LiveInstallService.EXTRA_URI, sourceUri?.toString()),
+                    .putExtra(LiveInstallService.EXTRA_URI, sourceUri?.toString())
+                    .putStringArrayListExtra(
+                        LiveInstallService.EXTRA_SPLITS,
+                        ArrayList(splits.map { it.absolutePath })
+                    ),
                 PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
             )
         } else {

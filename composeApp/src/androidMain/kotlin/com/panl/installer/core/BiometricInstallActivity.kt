@@ -38,6 +38,8 @@ class BiometricInstallActivity : ComponentActivity() {
         val label = intent?.getStringExtra(LiveInstallService.EXTRA_LABEL).orEmpty()
         val packageName = intent?.getStringExtra(LiveInstallService.EXTRA_PACKAGE).orEmpty()
         val sourceUri = intent?.getStringExtra(LiveInstallService.EXTRA_URI)?.let(Uri::parse)
+        val splits = intent?.getStringArrayListExtra(LiveInstallService.EXTRA_SPLITS)
+            .orEmpty().map(::File)
         val file = path?.let(::File)
 
         if (file == null || !file.exists()) {
@@ -57,7 +59,8 @@ class BiometricInstallActivity : ComponentActivity() {
                     label,
                     packageName,
                     sourceUri,
-                    autoStart = true
+                    autoStart = true,
+                    splits = splits
                 )
             } else {
                 InstallerLog.record(this@BiometricInstallActivity, "INSTALL", "生物认证未通过，安装取消 $packageName")

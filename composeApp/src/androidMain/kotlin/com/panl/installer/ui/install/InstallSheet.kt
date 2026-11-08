@@ -277,6 +277,17 @@ private fun ReadySheet(
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis
             )
+            if (info.splits.isNotEmpty()) {
+                Spacer(Modifier.height(4.dp))
+                Text(
+                    tr(
+                        "拆分包 · 共 ${info.splits.size + 1} 个分片",
+                        "Split bundle · ${info.splits.size + 1} parts"
+                    ),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = scheme.primary
+                )
+            }
             Spacer(Modifier.height(6.dp))
             InstallInfoChips(
                 info = info,

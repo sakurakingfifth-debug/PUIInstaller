@@ -14,6 +14,7 @@ import com.panl.installer.core.ApkInfo
 import com.panl.installer.core.ApkInspector
 import com.panl.installer.core.ApkStaging
 import com.panl.installer.core.BiometricGate
+import com.panl.installer.core.BundleReader
 import com.panl.installer.core.InstallEngine
 import com.panl.installer.core.InstallHistory
 import com.panl.installer.core.LiveInstallService
@@ -89,6 +90,8 @@ class InstallController(
     private var stagedFile: File? = null
     /** 已经交给前台服务了：退出时别删缓存副本，服务还要读它。 */
     private var handedOff = false
+    /** 拆分包解出来的临时目录，退出时一起删。 */
+    private var bundleDir: File? = null
     private var installedInfo: ApkInfo? = null
 
     private val settings get() = Settings.get(activity)
@@ -182,8 +185,17 @@ class InstallController(
                 return@launch
             }
             safeRetryDone = false
-            val info = withContext(Dispatchers.IO) { ApkInspector.inspect(activity, file) }
-                ?.copy(sourceLabel = resolveSourceLabel(activity))
+            // 拆分包（.apks/.xapk/.apkm）：先解包，拿 base.apk 去解析，其余分片挂在 info 上
+            val bundle = withContext(Dispatchers.IO) {
+                if (BundleReader.isBundle(file.name)) BundleReader.extract(activity, file) else null
+            }
+            bundleDir = bundle?.dir
+            val target = bundle?.base ?: file
+            val info = withContext(Dispatchers.IO) { ApkInspector.inspect(activity, target) }
+                ?.copy(
+                    sourceLabel = resolveSourceLabel(activity),
+                    splits = bundle?.splits.orEmpty()
+                )
             if (info == null) {
                 state = InstallUiState.Error(
                     tr("无法解析安装包", "Can't parse the APK"),
@@ -289,7 +301,8 @@ class InstallController(
                 apk = info.file,
                 packageName = info.packageName,
                 allowDowngrade = true,
-                safeMode = settings.safeMode
+                safeMode = settings.safeMode,
+                splits = info.splits
             ) { p ->
                 state = InstallUiState.Installing(tr("正在复制安装包", "Copying the APK"), p)
                 notifyProgress(info.label, Notifications.Stage.COPYING, tr("正在复制安装包", "Copying the APK"), p)
@@ -625,6 +638,7 @@ class InstallController(
         // 交给服务之后这份缓存还有用，删了服务就读不到了
         if (handedOff) return
         stagedFile?.delete()
+        bundleDir?.deleteRecursively()
     }
 
     companion object {

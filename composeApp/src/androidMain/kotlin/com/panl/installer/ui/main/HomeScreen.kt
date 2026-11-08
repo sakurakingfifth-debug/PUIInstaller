@@ -156,10 +156,9 @@ fun HomeScreen(
                     subtitle = tr("从文件里挑一个 APK", "Pick an APK from your files"),
                     modifier = Modifier.weight(1f)
                 ) {
-                    // 开了 .apk.1 支持就放开所有文件，否则 QQ/微信 下载的包在选择器里根本看不到
-                    installPicker.launch(
-                        if (settings.apk1Support) arrayOf(APK_MIME, "*/*") else arrayOf(APK_MIME)
-                    )
+                    // 放开所有文件：.apk.1 和 .apks/.xapk/.apkm 的 mime 都是未知的，
+                    // 只按 apk 的 mime 过滤会在选择器里看不到它们
+                    installPicker.launch(arrayOf(APK_MIME, "*/*"))
                 }
 
                 ActionTile(

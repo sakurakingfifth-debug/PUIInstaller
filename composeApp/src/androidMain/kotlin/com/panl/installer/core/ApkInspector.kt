@@ -56,7 +56,9 @@ data class ApkInfo(
     /** APK 里带的 ABI（lib/<abi>/），空表示纯 Java。 */
     val abis: List<String> = emptyList(),
     /** AndroidManifest 里的 sharedUserId（拿不到就是 null）。 */
-    val sharedUserId: String? = null
+    val sharedUserId: String? = null,
+    /** 拆分包（.apks/.xapk/.apkm）解出来的分片；空表示普通单 apk。 */
+    val splits: List<File> = emptyList()
 ) {
     val relation: VersionRelation
         get() {

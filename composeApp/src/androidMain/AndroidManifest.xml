@@ -172,6 +172,28 @@
                     android:pathPattern=".*\\.[aA][pP][kK]\\.1" />
             </intent-filter>
 
+            <!-- 拆分包：.apks（bundletool）/ .xapk（APKPure）/ .apkm（APKMirror） -->
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <data android:scheme="file" android:pathPattern=".*\\.[aA][pP][kK][sS]" />
+                <data android:scheme="file" android:pathPattern=".*\\.[xX][aA][pP][kK]" />
+                <data android:scheme="file" android:pathPattern=".*\\.[aA][pP][kK][mM]" />
+                <data android:scheme="content" android:pathPattern=".*\\.[aA][pP][kK][sS]" />
+                <data android:scheme="content" android:pathPattern=".*\\.[xX][aA][pP][kK]" />
+                <data android:scheme="content" android:pathPattern=".*\\.[aA][pP][kK][mM]" />
+            </intent-filter>
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <data android:scheme="file" android:mimeType="application/octet-stream" android:pathPattern=".*\\.[aA][pP][kK][sS]" />
+                <data android:scheme="file" android:mimeType="application/octet-stream" android:pathPattern=".*\\.[xX][aA][pP][kK]" />
+                <data android:scheme="file" android:mimeType="application/octet-stream" android:pathPattern=".*\\.[aA][pP][kK][mM]" />
+                <data android:scheme="content" android:mimeType="application/octet-stream" android:pathPattern=".*\\.[aA][pP][kK][sS]" />
+                <data android:scheme="content" android:mimeType="application/octet-stream" android:pathPattern=".*\\.[xX][aA][pP][kK]" />
+                <data android:scheme="content" android:mimeType="application/octet-stream" android:pathPattern=".*\\.[aA][pP][kK][mM]" />
+            </intent-filter>
+
             <!-- 旧式安装入口。注意：intent 带 type 时，filter 必须也声明 mimeType，
                  只写 scheme 是匹配不上的（酷安就是 INSTALL_PACKAGE + content + apk type） -->
             <intent-filter>
