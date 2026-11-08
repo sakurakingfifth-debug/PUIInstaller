@@ -441,4 +441,6 @@ internal val dutchOverrides: Map<String, String> = mapOf(
     "桌面图标隐藏后留一条提示，随时可以恢复" to "Wordt getoond zolang het pictogram verborgen is; altijd te herstellen",
     "打开安装器" to "Installer openen",
     "点按打开安装器" to "Tik om de installer te openen",
+    "支持 .apk.1 安装包" to "Ondersteuning voor .apk.1-pakketten",
+    "QQ / 微信 下载的 APK 会被改名成 .apk.1，打开后照常安装" to "QQ en WeChat hernoemen gedownloade APK's naar .apk.1 — ze installeren gewoon",
 )

@@ -441,4 +441,6 @@ internal val frenchOverrides: Map<String, String> = mapOf(
     "桌面图标隐藏后留一条提示，随时可以恢复" to "Affiché tant que l'icône est masquée ; restaurable à tout moment",
     "打开安装器" to "Ouvrir l'installateur",
     "点按打开安装器" to "Touchez pour ouvrir l'installateur",
+    "支持 .apk.1 安装包" to "Prendre en charge les paquets .apk.1",
+    "QQ / 微信 下载的 APK 会被改名成 .apk.1，打开后照常安装" to "QQ et WeChat renomment les APK téléchargés en .apk.1 — ils s'installent normalement",
 )

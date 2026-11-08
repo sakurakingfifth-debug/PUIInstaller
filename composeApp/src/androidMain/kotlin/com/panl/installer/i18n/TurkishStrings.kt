@@ -441,4 +441,6 @@ internal val turkishOverrides: Map<String, String> = mapOf(
     "桌面图标隐藏后留一条提示，随时可以恢复" to "Simge gizliyken gösterilir; istediğiniz zaman geri getirebilirsiniz",
     "打开安装器" to "Yükleyiciyi aç",
     "点按打开安装器" to "Açmak için dokunun",
+    "支持 .apk.1 安装包" to ".apk.1 paketlerini destekle",
+    "QQ / 微信 下载的 APK 会被改名成 .apk.1，打开后照常安装" to "QQ ve WeChat indirilen APK'ları .apk.1 olarak yeniden adlandırır — normal kurulur",
 )

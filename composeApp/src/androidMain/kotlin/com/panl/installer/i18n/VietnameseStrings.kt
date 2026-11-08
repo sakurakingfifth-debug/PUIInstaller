@@ -441,4 +441,6 @@ internal val vietnameseOverrides: Map<String, String> = mapOf(
     "桌面图标隐藏后留一条提示，随时可以恢复" to "Hiển thị khi biểu tượng bị ẩn; có thể khôi phục bất cứ lúc nào",
     "打开安装器" to "Mở trình cài đặt",
     "点按打开安装器" to "Chạm để mở trình cài đặt",
+    "支持 .apk.1 安装包" to "Hỗ trợ gói .apk.1",
+    "QQ / 微信 下载的 APK 会被改名成 .apk.1，打开后照常安装" to "QQ và WeChat đổi tên APK tải về thành .apk.1 — vẫn cài đặt bình thường",
 )

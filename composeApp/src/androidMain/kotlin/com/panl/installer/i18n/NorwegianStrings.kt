@@ -441,4 +441,6 @@ internal val norwegianOverrides: Map<String, String> = mapOf(
     "桌面图标隐藏后留一条提示，随时可以恢复" to "Vises mens ikonet er skjult; kan gjenopprettes når som helst",
     "打开安装器" to "Åpne installasjonsprogrammet",
     "点按打开安装器" to "Trykk for å åpne installasjonsprogrammet",
+    "支持 .apk.1 安装包" to "Støtt .apk.1-pakker",
+    "QQ / 微信 下载的 APK 会被改名成 .apk.1，打开后照常安装" to "QQ og WeChat gir nedlastede APK-er navnet .apk.1 — de installeres som vanlig",
 )

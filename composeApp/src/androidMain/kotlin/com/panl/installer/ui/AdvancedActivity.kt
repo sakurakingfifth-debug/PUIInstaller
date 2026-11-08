@@ -242,6 +242,24 @@ private fun AdvancedScreen() {
                 PuiGroup(title = null) {
                     PuiSwitchRow(
                         icon = null,
+                        iconPainter = painterResource(R.drawable.ic_document_text),
+                        title = tr("支持 .apk.1 安装包", "Support .apk.1 packages"),
+                        subtitle = tr(
+                            "QQ / 微信 下载的 APK 会被改名成 .apk.1，打开后照常安装",
+                            "QQ and WeChat rename downloaded APKs to .apk.1 — install them as usual"
+                        ),
+                        checked = settings.apk1Support,
+                        onChange = { settings.apk1Support = it },
+                        showDivider = false
+                    )
+                }
+            }
+
+            item {
+                Spacer(Modifier.height(18.dp))
+                PuiGroup(title = null) {
+                    PuiSwitchRow(
+                        icon = null,
                         iconPainter = painterResource(R.drawable.ic_security),
                         title = tr("安全模式", "Safe mode"),
                         subtitle = tr(

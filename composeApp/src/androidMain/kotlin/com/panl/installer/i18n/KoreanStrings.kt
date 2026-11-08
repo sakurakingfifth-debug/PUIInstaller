@@ -441,4 +441,6 @@ internal val koreanOverrides: Map<String, String> = mapOf(
     "桌面图标隐藏后留一条提示，随时可以恢复" to "아이콘을 숨긴 동안 표시되며 언제든 복원할 수 있습니다",
     "打开安装器" to "설치 관리자 열기",
     "点按打开安装器" to "탭하여 설치 관리자 열기",
+    "支持 .apk.1 安装包" to ".apk.1 패키지 지원",
+    "QQ / 微信 下载的 APK 会被改名成 .apk.1，打开后照常安装" to "QQ와 WeChat은 내려받은 APK 이름을 .apk.1로 바꿉니다 — 그대로 설치됩니다",
 )

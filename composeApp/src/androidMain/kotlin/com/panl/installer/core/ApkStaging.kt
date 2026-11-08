@@ -19,6 +19,23 @@ object ApkStaging {
             ?.use { cursor -> if (cursor.moveToFirst()) cursor.getString(0) else null }
     }.getOrNull()
 
+    /**
+     * QQ / 微信 的「.apk.1」。
+     *
+     * 关掉开关时直接当非法文件；开着就按普通 APK 走，落到缓存时顺手把名字改回 `.apk`
+     * （下游有按 `.apk` 结尾判断的地方，比如删源文件的路径检查）。
+     */
+    private fun isApk1(name: String?): Boolean =
+        name != null && name.endsWith(".apk.1", ignoreCase = true)
+
+    private fun copyInto(src: File, dir: File, name: String): File? = runCatching {
+        val target = File(dir, name)
+        src.inputStream().use { input ->
+            target.outputStream().use { output -> input.copyTo(output, 512 * 1024) }
+        }
+        target
+    }.getOrNull()
+
     /** @return 可直接读取的 APK 文件；失败返回 null。 */
     fun stage(context: Context, uri: Uri, dirName: String = "staging"): File? {
         val dir = File(context.cacheDir, dirName).apply { mkdirs() }
@@ -28,13 +45,23 @@ object ApkStaging {
 
         if (uri.scheme == "file") {
             val path = uri.path ?: return null
-            return File(path).takeIf { it.exists() && it.canRead() }
+            val file = File(path).takeIf { it.exists() && it.canRead() } ?: return null
+            if (isApk1(file.name)) {
+                if (!Settings.get(context).apk1Support) return null
+                // 复制一份改成 .apk 的名字，别动用户原文件
+                return copyInto(file, dir, file.name.dropLast(2))
+            }
+            return file
         }
 
-        val name = displayName(context, uri)
+        var name = displayName(context, uri)
             ?.substringAfterLast('/')
             ?.takeIf { it.isNotBlank() }
             ?: "package.apk"
+        if (isApk1(name)) {
+            if (!Settings.get(context).apk1Support) return null
+            name = name.dropLast(2)
+        }
         val target = File(dir, name)
         return runCatching {
             context.contentResolver.openInputStream(uri)?.use { input ->

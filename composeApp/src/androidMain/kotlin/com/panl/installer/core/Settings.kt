@@ -95,6 +95,14 @@ class Settings private constructor(private val sp: SharedPreferences) {
     val notificationsLive: Boolean
         get() = installStyle == "Live" || installStyle == "SheetLive"
 
+    /**
+     * 支持 `.apk.1` 安装包。
+     *
+     * 腾讯 QQ / 微信把文件上传再下载回来后，会把 `xxx.apk` 改名成 `xxx.apk.1`，
+     * 系统认不出这是安装包。打开这个开关就按普通 APK 处理（默认开）。
+     */
+    var apk1Support: Boolean by bool("apk1_support", true)
+
     /** 浮窗背后那层系统模糊的半径（px，2–100）。 */
     var sheetBlurPx: Int by int("sheet_blur_px", 60)
 
