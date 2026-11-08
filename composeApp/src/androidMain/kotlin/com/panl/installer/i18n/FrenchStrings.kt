@@ -450,7 +450,7 @@ internal val frenchOverrides: Map<String, String> = mapOf(
     "等待设备认证…" to "En attente de l'authentification…",
     "认证未通过，安装已取消" to "Authentification échouée — installation annulée",
     "卸载系统应用" to "Désinstaller les apps système",
-    "允许把预装应用也卸掉（需要 ROOT，风险自负）" to "Autoriser la suppression des apps préinstallées (nécessite ROOT, à vos risques)",
+    "允许把预装应用也卸掉" to "Autoriser la suppression des apps préinstallées",
     "卸载失败，检查一下 ROOT 授权" to "Désinstallation échouée — vérifiez l'accès ROOT",
     "彻底卸载系统应用" to "Supprimer complètement les apps système",
     "连系统分区里的 APK 一起抹掉（挂载遮罩，重启后生效）" to "Efface aussi l'APK de la partition système (masque de montage, après redémarrage)",

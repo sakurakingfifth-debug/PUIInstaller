@@ -450,7 +450,7 @@ internal val turkishOverrides: Map<String, String> = mapOf(
     "等待设备认证…" to "Cihaz doğrulaması bekleniyor…",
     "认证未通过，安装已取消" to "Doğrulama başarısız — kurulum iptal edildi",
     "卸载系统应用" to "Sistem uygulamalarını kaldır",
-    "允许把预装应用也卸掉（需要 ROOT，风险自负）" to "Önceden yüklü uygulamaların kaldırılmasına izin ver (ROOT gerekir, risk size ait)",
+    "允许把预装应用也卸掉" to "Önceden yüklü uygulamaların kaldırılmasına izin ver",
     "卸载失败，检查一下 ROOT 授权" to "Kaldırma başarısız — ROOT erişimini kontrol edin",
     "彻底卸载系统应用" to "Sistem uygulamalarını tamamen kaldır",
     "连系统分区里的 APK 一起抹掉（挂载遮罩，重启后生效）" to "Sistem bölümündeki APK'yı da siler (bağlama maskesi, yeniden başlatmadan sonra)",

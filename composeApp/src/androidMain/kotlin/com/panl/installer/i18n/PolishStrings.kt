@@ -450,7 +450,7 @@ internal val polishOverrides: Map<String, String> = mapOf(
     "等待设备认证…" to "Oczekiwanie na uwierzytelnienie…",
     "认证未通过，安装已取消" to "Uwierzytelnienie nie powiodło się — instalacja anulowana",
     "卸载系统应用" to "Odinstaluj aplikacje systemowe",
-    "允许把预装应用也卸掉（需要 ROOT，风险自负）" to "Zezwól na usuwanie preinstalowanych aplikacji (wymaga ROOT, na własne ryzyko)",
+    "允许把预装应用也卸掉" to "Zezwól na usuwanie preinstalowanych aplikacji",
     "卸载失败，检查一下 ROOT 授权" to "Odinstalowanie nie powiodło się — sprawdź dostęp ROOT",
     "彻底卸载系统应用" to "Całkowicie usuń aplikacje systemowe",
     "连系统分区里的 APK 一起抹掉（挂载遮罩，重启后生效）" to "Usuwa też APK z partycji systemowej (maska montowania, po restarcie)",

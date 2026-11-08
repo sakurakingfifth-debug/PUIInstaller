@@ -450,7 +450,7 @@ internal val norwegianOverrides: Map<String, String> = mapOf(
     "等待设备认证…" to "Venter på enhetsautentisering…",
     "认证未通过，安装已取消" to "Autentisering mislyktes — installasjonen ble avbrutt",
     "卸载系统应用" to "Avinstaller systemapper",
-    "允许把预装应用也卸掉（需要 ROOT，风险自负）" to "Tillat å fjerne forhåndsinstallerte apper (krever ROOT, på eget ansvar)",
+    "允许把预装应用也卸掉" to "Tillat å fjerne forhåndsinstallerte apper",
     "卸载失败，检查一下 ROOT 授权" to "Avinstallasjon mislyktes — sjekk ROOT-tilgang",
     "彻底卸载系统应用" to "Fjern systemapper helt",
     "连系统分区里的 APK 一起抹掉（挂载遮罩，重启后生效）" to "Fjerner også APK-en i systempartisjonen (mount-maske, etter omstart)",

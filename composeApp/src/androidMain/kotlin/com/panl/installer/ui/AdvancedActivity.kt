@@ -248,8 +248,8 @@ private fun AdvancedScreen(activity: ComponentActivity) {
                         icon = PuiIcon.Trash,
                         title = tr("卸载系统应用", "Uninstall system apps"),
                         subtitle = tr(
-                            "允许把预装应用也卸掉（需要 ROOT，风险自负）",
-                            "Allow removing preinstalled apps too (requires ROOT, at your own risk)"
+                            "允许把预装应用也卸掉",
+                            "Allow removing preinstalled apps too"
                         ),
                         checked = settings.allowUninstallSystemApps,
                         onChange = { on ->

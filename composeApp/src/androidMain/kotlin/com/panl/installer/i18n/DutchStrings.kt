@@ -450,7 +450,7 @@ internal val dutchOverrides: Map<String, String> = mapOf(
     "等待设备认证…" to "Wachten op verificatie…",
     "认证未通过，安装已取消" to "Verificatie mislukt — installatie geannuleerd",
     "卸载系统应用" to "Systeemapps verwijderen",
-    "允许把预装应用也卸掉（需要 ROOT，风险自负）" to "Vooraf geïnstalleerde apps verwijderen toestaan (vereist ROOT, op eigen risico)",
+    "允许把预装应用也卸掉" to "Vooraf geïnstalleerde apps verwijderen toestaan",
     "卸载失败，检查一下 ROOT 授权" to "Verwijderen mislukt — controleer ROOT-toegang",
     "彻底卸载系统应用" to "Systeemapps volledig verwijderen",
     "连系统分区里的 APK 一起抹掉（挂载遮罩，重启后生效）" to "Wist ook de APK in de systeempartitie (mount-masker, na herstart)",

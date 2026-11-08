@@ -450,7 +450,7 @@ internal val danishOverrides: Map<String, String> = mapOf(
     "等待设备认证…" to "Venter på enhedsgodkendelse…",
     "认证未通过，安装已取消" to "Godkendelse mislykkedes — installationen blev annulleret",
     "卸载系统应用" to "Afinstallér systemapps",
-    "允许把预装应用也卸掉（需要 ROOT，风险自负）" to "Tillad at fjerne forudinstallerede apps (kræver ROOT, på eget ansvar)",
+    "允许把预装应用也卸掉" to "Tillad at fjerne forudinstallerede apps",
     "卸载失败，检查一下 ROOT 授权" to "Afinstallation mislykkedes — tjek ROOT-adgang",
     "彻底卸载系统应用" to "Fjern systemapps helt",
     "连系统分区里的 APK 一起抹掉（挂载遮罩，重启后生效）" to "Fjerner også APK'en i systempartitionen (mount-maske, efter genstart)",

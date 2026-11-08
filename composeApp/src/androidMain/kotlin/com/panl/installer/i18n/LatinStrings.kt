@@ -450,7 +450,7 @@ internal val latinOverrides: Map<String, String> = mapOf(
     "等待设备认证…" to "Authenticatio exspectatur…",
     "认证未通过，安装已取消" to "Authenticatio defecit — installatio sublata",
     "卸载系统应用" to "App systematis deinstallare",
-    "允许把预装应用也卸掉（需要 ROOT，风险自负）" to "App praeinstallatas removere permittere (ROOT postulat, periculo tuo)",
+    "允许把预装应用也卸掉" to "App praeinstallatas removere permittere",
     "卸载失败，检查一下 ROOT 授权" to "Deinstalatio defecit — ROOT potestatem inspice",
     "彻底卸载系统应用" to "App systematis penitus removere",
     "连系统分区里的 APK 一起抹掉（挂载遮罩，重启后生效）" to "Etiam APK in partitione systematis delet (larva montis, post restitutionem)",
