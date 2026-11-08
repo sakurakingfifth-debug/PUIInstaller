@@ -313,7 +313,7 @@ private fun AdvancedScreen(activity: ComponentActivity) {
                 PuiGroup(title = null) {
                     PuiSwitchRow(
                         icon = null,
-                        iconPainter = painterResource(R.drawable.ic_document_text),
+                        iconPainter = painterResource(R.drawable.ic_text_field_focus),
                         title = tr("支持 .apk.1 安装包", "Support .apk.1 packages"),
                         subtitle = tr(
                             "QQ / 微信 下载的 APK 会被改名成 .apk.1，打开后照常安装",
