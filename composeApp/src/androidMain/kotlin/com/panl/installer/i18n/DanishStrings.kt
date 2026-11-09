@@ -461,4 +461,6 @@ internal val danishOverrides: Map<String, String> = mapOf(
     "高危操作" to "Meget risikabelt",
     "启用来源预设" to "Aktivér installationskilder",
     "只允许列表里的应用发起安装" to "Kun apps på listen må starte installationer",
+    "安装途径" to "Installeret af",
+    "这个应用没有安装" to "Denne app er ikke installeret",
 )

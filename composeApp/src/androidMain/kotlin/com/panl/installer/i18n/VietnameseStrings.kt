@@ -461,4 +461,6 @@ internal val vietnameseOverrides: Map<String, String> = mapOf(
     "高危操作" to "Rất rủi ro",
     "启用来源预设" to "Bật nguồn cài đặt",
     "只允许列表里的应用发起安装" to "Chỉ ứng dụng trong danh sách mới được bắt đầu cài đặt",
+    "安装途径" to "Được cài bởi",
+    "这个应用没有安装" to "Ứng dụng này chưa được cài",
 )

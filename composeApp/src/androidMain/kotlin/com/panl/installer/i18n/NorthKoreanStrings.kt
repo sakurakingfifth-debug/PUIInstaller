@@ -465,4 +465,6 @@ internal val northKoreanOverrides: Map<String, String> = mapOf(
     "高危操作" to "고위험 조작",
     "启用来源预设" to "설치 원천 사용",
     "只允许列表里的应用发起安装" to "목록에 있는 앱만 설치를 시작할수 있습니다",
+    "安装途径" to "설치 경로",
+    "这个应用没有安装" to "이 앱은 설치되여 있지 않습니다",
 )

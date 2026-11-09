@@ -250,4 +250,6 @@ internal val cantoneseOverrides: Map<String, String> = mapOf(
     "高危操作" to "高危操作",
     "启用来源预设" to "啟用來源預設",
     "只允许列表里的应用发起安装" to "只允許列表入面嘅應用發起安裝",
+    "安装途径" to "安裝途徑",
+    "这个应用没有安装" to "呢個應用未安裝",
 )

@@ -461,4 +461,6 @@ internal val polishOverrides: Map<String, String> = mapOf(
     "高危操作" to "Bardzo ryzykowne",
     "启用来源预设" to "Włącz źródła instalacji",
     "只允许列表里的应用发起安装" to "Tylko aplikacje z listy mogą rozpocząć instalację",
+    "安装途径" to "Zainstalowane przez",
+    "这个应用没有安装" to "Ta aplikacja nie jest zainstalowana",
 )

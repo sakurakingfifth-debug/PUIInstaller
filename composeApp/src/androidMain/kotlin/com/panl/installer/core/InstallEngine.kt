@@ -31,6 +31,9 @@ object InstallEngine {
 
     private const val TAG = "InstallEngine"
 
+    /** 本安装器安装时登记给系统的「安装途径」。 */
+    const val INSTALLER_PACKAGE = "com.android.shell"
+
     /** 一次安装的结果，接收器写入、界面读取。 */
     data class Outcome(
         val success: Boolean,
@@ -93,13 +96,15 @@ object InstallEngine {
                 // ---- 安全模式 ----
                 // 关：伪造安装者 + 测试包 + 低 targetSdk 绕过，尽量让系统把这次安装当成商店来源；
                 // 开：老老实实用自己当安装者，只保留安装能力。
+                // 安装途径统一记成 shell（不是我们自己的包名）：应用详情页的「安装途径」
+                // 那一行读的就是这个值，记成 com.android.packageinstaller 会显得很怪。
                 if (safeMode) {
-                    runCatching { setInstallerPackageName(context.packageName) }
+                    runCatching { setInstallerPackageName(INSTALLER_PACKAGE) }
                     if (Build.VERSION.SDK_INT >= 33) {
                         runCatching { setPackageSource(PackageInstaller.PACKAGE_SOURCE_LOCAL_FILE) }
                     }
                 } else {
-                    runCatching { setInstallerPackageName(VerificationBypass.forgedInstaller(context)) }
+                    runCatching { setInstallerPackageName(INSTALLER_PACKAGE) }
                     if (Build.VERSION.SDK_INT >= 33) {
                         runCatching { setPackageSource(PackageInstaller.PACKAGE_SOURCE_STORE) }
                     }

@@ -525,6 +525,12 @@ private fun ReadyBody(
                         InfoRow(
                             tr("APK 路径", "APK path"),
                             app.apkPath ?: "—",
+                            true,
+                            stacked = true
+                        )
+                        InfoRow(
+                            tr("安装途径", "Installed by"),
+                            app.installerPackage ?: "—",
                             false,
                             stacked = true
                         )

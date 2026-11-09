@@ -26,7 +26,9 @@ data class InstalledApp(
     val targetSdk: Int,
     val minSdk: Int,
     val signers: List<SignerInfo>,
-    val icon: Bitmap?
+    val icon: Bitmap?,
+    /** 系统记录的安装来源包名（如 com.android.vending），拿不到就是 null。 */
+    val installerPackage: String? = null
 )
 
 /** 待安装 APK 的完整信息。 */
@@ -186,7 +188,10 @@ object ApkInspector {
             targetSdk = ai.targetSdkVersion,
             minSdk = if (Build.VERSION.SDK_INT >= 24) ai.minSdkVersion else 0,
             signers = readSigners(pi),
-            icon = icon
+            icon = icon,
+            installerPackage = runCatching {
+                pm.getInstallSourceInfo(packageName).installingPackageName
+            }.getOrNull()
         )
     }
 

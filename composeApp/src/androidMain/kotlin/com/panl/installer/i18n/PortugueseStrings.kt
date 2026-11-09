@@ -461,4 +461,6 @@ internal val portugueseOverrides: Map<String, String> = mapOf(
     "高危操作" to "Altamente arriscado",
     "启用来源预设" to "Ativar fontes de instalação",
     "只允许列表里的应用发起安装" to "Apenas apps da lista podem iniciar instalações",
+    "安装途径" to "Instalado por",
+    "这个应用没有安装" to "Esta app não está instalada",
 )

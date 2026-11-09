@@ -461,4 +461,6 @@ internal val dutchOverrides: Map<String, String> = mapOf(
     "高危操作" to "Zeer riskant",
     "启用来源预设" to "Installatiebronnen inschakelen",
     "只允许列表里的应用发起安装" to "Alleen apps in de lijst mogen installaties starten",
+    "安装途径" to "Geïnstalleerd door",
+    "这个应用没有安装" to "Deze app is niet geïnstalleerd",
 )

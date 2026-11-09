@@ -326,10 +326,17 @@ private fun GlobalPage(page: Int, topPad: Dp, navBarH: Dp) {
         }
 
         items(entries, key = { it }) { entry ->
+            // 来源 / 黑名单存的是包名，能查到就显示应用名，查不到才退回包名
+            val pkg = entry.substringBefore(' ').trim()
+            val label = if (kind == ListKind.SharedUids) null else rememberAppLabel(pkg)
             EntryCard(
                 modifier = Modifier.animateItem(),
-                title = entry.substringAfter(' ', "").ifBlank { entry },
-                subtitle = if (entry.contains(' ')) entry.substringBefore(' ') else subtitleOf,
+                title = label ?: pkg.ifBlank { entry },
+                subtitle = when {
+                    kind == ListKind.SharedUids -> subtitleOf
+                    label != null -> pkg
+                    else -> tr("这个应用没有安装", "This app isn't installed")
+                },
                 removing = removing == entry,
                 onRequestDelete = { pendingDelete = entry },
                 onRemoved = {
@@ -382,6 +389,17 @@ private fun GlobalPage(page: Int, topPad: Dp, navBarH: Dp) {
                 adding = false
             }
         )
+    }
+}
+
+/** 包名 -> 应用名。查不到（没装 / 包名写错）返回 null。 */
+@Composable
+private fun rememberAppLabel(pkg: String): String? {
+    val pm = LocalContext.current.packageManager
+    return remember(pkg) {
+        runCatching { pm.getApplicationInfo(pkg, 0).loadLabel(pm).toString() }
+            .getOrNull()
+            ?.takeIf { it.isNotBlank() && it != pkg }
     }
 }
 
