@@ -36,6 +36,7 @@ object Notifications {
     // 完成时这条要走「实时通知」（胶囊 / 流体云），所以 importance 必须是 DEFAULT：
     // HIGH 会被系统当成普通横幅弹出来，MIN 又不能提升成实时活动
     const val CHANNEL_DONE = "install_done"
+
     private const val DONE_ID = 9100
 
     const val LIVE_ID = 9000
@@ -97,6 +98,7 @@ object Notifications {
         runCatching { nm.deleteNotificationChannel("install_done") }
         runCatching { nm.deleteNotificationChannel("install_done_live") }
         runCatching { nm.deleteNotificationChannel("install_done_banner") }
+        runCatching { nm.deleteNotificationChannel("install_done_card") }
         // 完成时的「实时通知」：用 DEFAULT 才能被提升成胶囊（HIGH 会变成普通横幅），
         // 但保留提示音，系统会把它弹出来一下，而不是安静躺着
         nm.createNotificationChannel(
@@ -274,17 +276,21 @@ object Notifications {
 
         if (popup) {
             // 装完把进度那条换成「完成」的实时通知（胶囊 / 流体云形态）：
-            // shortCriticalText + PROMOTED_ONGOING 缺一个就会被当成普通通知
+            // shortCriticalText + PROMOTED_ONGOING 缺一个就会被当成普通通知。
+            // 内容按「展开后的大卡片」来备：副标题给包名、正文走 BigText，
+            // 系统把胶囊拉成大卡片时这些字段就是卡片里的几行
             cancelProgress(context)
+            val detail = tr("点击打开", "Tap to open")
             val builder = Notification.Builder(context, CHANNEL_DONE)
                 .setSmallIcon(R.drawable.ic_stat_install)
                 .setContentTitle(tr("$label 已安装", "$label installed"))
-                .setContentText(tr("点击打开", "Tap to open"))
+                .setContentText(detail)
+                .setSubText(packageName)
+                .setStyle(Notification.BigTextStyle().bigText(detail))
                 .setContentIntent(tap)
                 .setColor(context.getColor(R.color.pui_magenta))
                 .setCategory(Notification.CATEGORY_STATUS)
                 .setOngoing(true)
-                .setAutoCancel(true)
                 .addAction(Notification.Action.Builder(icon, tr("打开", "Open"), open).build())
             if (clearMs > 0) builder.setTimeoutAfter(clearMs)
             if (Build.VERSION.SDK_INT >= 36) {
@@ -292,6 +298,7 @@ object Notifications {
                 builder.addExtras(Bundle().apply { putBoolean(EXTRA_REQUEST_PROMOTED_ONGOING, true) })
             }
             runCatching { nm.notify(DONE_ID, builder.build()) }
+
             return
         }
 
