@@ -140,6 +140,16 @@ fun InstallScreen(controller: InstallController, onClose: () -> Unit) {
                 label = "install-state"
             ) { st ->
                 when (st) {
+                    // 模块刷入：和浮窗共用同一份内容，外面套个居中容器
+                    is InstallUiState.ModuleConfirm -> Column(
+                        Modifier
+                            .fillMaxSize()
+                            .padding(horizontal = 8.dp, vertical = 24.dp),
+                        verticalArrangement = Arrangement.Center
+                    ) {
+                        ModuleSheet(st, controller, onClose)
+                    }
+
                     is InstallUiState.Loading -> SimpleStateBody(
                         title = tr("准备中", "Preparing"),
                         message = tr("正在读取安装包…", "Reading the APK…"),

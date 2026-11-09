@@ -49,6 +49,15 @@ sealed interface InstallUiState {
     ) : InstallUiState
     data class Failed(val info: ApkInfo?, val message: String) : InstallUiState
 
+    /** 选到的是模块 zip：确认后交给 root 刷入。 */
+    data class ModuleConfirm(
+        val module: com.panl.installer.core.ModuleInfo,
+        val rootMode: com.panl.installer.core.ModuleInstaller.RootMode,
+        val flashing: Boolean = false,
+        val output: String? = null,
+        val failed: Boolean = false
+    ) : InstallUiState
+
     /** 系统把别的应用创建的安装会话丢过来确认。 */
     data class SessionConfirm(
         val sessionId: Int,
@@ -166,14 +175,12 @@ class InstallController(
                 return@launch
             }
             safeRetryDone = false
-            // 模块 zip：里面是 module.prop 而不是 APK，交给刷入页处理
+            // 模块 zip：里面是 module.prop 而不是 APK，走模块刷入这条状态
             if (settings.moduleFlashEnabled) {
                 val module = withContext(Dispatchers.IO) { com.panl.installer.core.ModuleInspector.inspect(file) }
                 if (module != null) {
-                    activity.startActivity(
-                        com.panl.installer.ui.module.ModuleActivity.intent(activity, file)
-                    )
-                    activity.finish()
+                    val mode = withContext(Dispatchers.IO) { com.panl.installer.core.ModuleInstaller.detect() }
+                    state = InstallUiState.ModuleConfirm(module, mode)
                     return@launch
                 }
             }
@@ -206,6 +213,23 @@ class InstallController(
         val file = ApkStaging.stage(activity, uri)
         if (file != null && uri.scheme != "file") stagedFile = file
         return file
+    }
+
+    /** 刷入当前模块。 */
+    fun flashModule() {
+        val st = state as? InstallUiState.ModuleConfirm ?: return
+        if (st.flashing) return
+        state = st.copy(flashing = true, output = null, failed = false)
+        activity.lifecycleScope.launch {
+            val result = withContext(Dispatchers.IO) {
+                com.panl.installer.core.ModuleInstaller.install(st.module.file, st.rootMode)
+            }
+            com.panl.installer.core.InstallerLog.record(
+                activity, "MODULE",
+                "刷入 ${st.module.id} -> ${if (result.ok) "成功" else "失败"}"
+            )
+            state = st.copy(flashing = false, output = result.output, failed = !result.ok)
+        }
     }
 
     fun startInstall() {

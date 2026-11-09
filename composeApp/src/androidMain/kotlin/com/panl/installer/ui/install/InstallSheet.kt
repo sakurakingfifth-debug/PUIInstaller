@@ -22,6 +22,8 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.rememberCoroutineScope
+import kotlinx.coroutines.launch
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -35,6 +37,9 @@ import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.painterResource
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -171,6 +176,8 @@ fun InstallSheet(controller: InstallController, onClose: () -> Unit) {
                     is InstallUiState.Success -> SuccessSheet(st, controller, onClose)
 
                     is InstallUiState.Failed -> FailedSheet(st, controller, onClose)
+
+                    is InstallUiState.ModuleConfirm -> ModuleSheet(st, controller, onClose)
 
                     is InstallUiState.SessionConfirm -> SessionSheet(st, controller, onClose)
 
@@ -577,6 +584,170 @@ private fun FailedSheet(
             }
         }
         Spacer(Modifier.height(2.dp))
+    }
+}
+
+/**
+ * 模块刷入确认。和装 APK 共用同一个浮窗壳子，所以位置、遮罩、背景模糊全部跟着设置走。
+ */
+@Composable
+internal fun ModuleSheet(
+    st: InstallUiState.ModuleConfirm,
+    controller: InstallController,
+    onClose: () -> Unit
+) {
+    val scheme = MaterialTheme.colorScheme
+    val scope = rememberCoroutineScope()
+    val noRoot = st.rootMode == com.panl.installer.core.ModuleInstaller.RootMode.None
+
+    Column(
+        Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 20.dp),
+        horizontalAlignment = Alignment.CenterHorizontally
+    ) {
+        Text(
+            tr("刷入模块", "Flash module"),
+            style = MaterialTheme.typography.headlineSmall,
+            color = scheme.onSurface
+        )
+        Spacer(Modifier.height(12.dp))
+
+        Column(
+            Modifier
+                .fillMaxWidth()
+                .weight(1f, fill = false)
+                .verticalScroll(rememberScrollState()),
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            Text(
+                st.module.name,
+                style = MaterialTheme.typography.titleMedium,
+                fontWeight = FontWeight.SemiBold,
+                color = scheme.onSurface,
+                textAlign = TextAlign.Center
+            )
+            if (st.module.version.isNotBlank()) {
+                Spacer(Modifier.height(2.dp))
+                Text(
+                    st.module.version,
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = scheme.onSurfaceVariant
+                )
+            }
+            if (st.module.description.isNotBlank()) {
+                Spacer(Modifier.height(6.dp))
+                Text(
+                    st.module.description,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = scheme.onSurfaceVariant,
+                    textAlign = TextAlign.Center
+                )
+            }
+            Spacer(Modifier.height(8.dp))
+            Text(
+                tr("模块 ID · ${st.module.id}", "Module ID · ${st.module.id}"),
+                style = MaterialTheme.typography.bodySmall,
+                color = scheme.onSurfaceVariant
+            )
+            if (st.module.author.isNotBlank()) {
+                Text(
+                    tr("作者 · ${st.module.author}", "Author · ${st.module.author}"),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = scheme.onSurfaceVariant
+                )
+            }
+            Spacer(Modifier.height(10.dp))
+            Text(
+                when {
+                    noRoot -> tr(
+                        "没有检测到 Magisk / KernelSU / APatch",
+                        "No Magisk / KernelSU / APatch found"
+                    )
+                    else -> tr(
+                        "刷写方式 · ${com.panl.installer.core.ModuleInstaller.label(st.rootMode)}",
+                        "Flash with · ${com.panl.installer.core.ModuleInstaller.label(st.rootMode)}"
+                    )
+                },
+                style = MaterialTheme.typography.bodyMedium,
+                color = if (noRoot) scheme.error else scheme.onSurface,
+                textAlign = TextAlign.Center
+            )
+            st.output?.takeIf { it.isNotBlank() }?.let { out ->
+                Spacer(Modifier.height(10.dp))
+                Text(
+                    if (st.failed) tr("刷入失败", "Flash failed") else tr("刷入成功，重启后生效", "Flashed — takes effect after a reboot"),
+                    style = MaterialTheme.typography.bodyMedium,
+                    fontWeight = FontWeight.SemiBold,
+                    color = if (st.failed) scheme.error else scheme.primary
+                )
+                Spacer(Modifier.height(4.dp))
+                Text(
+                    out.take(600),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = scheme.onSurfaceVariant,
+                    textAlign = TextAlign.Center
+                )
+            }
+        }
+
+        Spacer(Modifier.height(14.dp))
+        Row(
+            Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(10.dp)
+        ) {
+            when {
+                st.flashing -> PuiButton(
+                    text = tr("正在刷入…", "Flashing…"),
+                    onClick = {},
+                    enabled = false,
+                    modifier = Modifier.weight(1f)
+                )
+
+                st.output != null && !st.failed -> {
+                    PuiButton(
+                        text = tr("稍后", "Later"),
+                        onClick = onClose,
+                        modifier = Modifier.weight(1f),
+                        style = PuiButtonStyle.Ghost
+                    )
+                    PuiButton(
+                        text = tr("立即重启", "Reboot now"),
+                        onClick = { scope.launch { com.panl.installer.core.RootShell.reboot() } },
+                        modifier = Modifier.weight(1.2f)
+                    )
+                }
+
+                st.failed -> {
+                    PuiButton(
+                        text = tr("关闭", "Close"),
+                        onClick = onClose,
+                        modifier = Modifier.weight(1f),
+                        style = PuiButtonStyle.Ghost
+                    )
+                    PuiButton(
+                        text = tr("重试", "Retry"),
+                        onClick = { controller.flashModule() },
+                        modifier = Modifier.weight(1f)
+                    )
+                }
+
+                else -> {
+                    PuiButton(
+                        text = tr("取消", "Cancel"),
+                        onClick = onClose,
+                        modifier = Modifier.weight(1f),
+                        style = PuiButtonStyle.Ghost
+                    )
+                    PuiButton(
+                        text = tr("刷入", "Flash"),
+                        onClick = { controller.flashModule() },
+                        enabled = !noRoot,
+                        modifier = Modifier.weight(1.2f)
+                    )
+                }
+            }
+        }
     }
 }
 

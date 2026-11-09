@@ -84,12 +84,6 @@
             android:exported="false" />
 
         <activity
-            android:name=".ui.module.ModuleActivity"
-            android:exported="false"
-            android:label="@string/app_name"
-            android:theme="@style/Theme.PuiInstaller" />
-
-        <activity
             android:name=".ui.InstallerGlobalActivity"
             android:exported="false"
             android:label="@string/app_name"

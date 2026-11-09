@@ -61,8 +61,11 @@ class InstallActivity : ComponentActivity() {
         get() = Settings.get(this).installStyle == STYLE_SHEET_LIVE
 
     override fun onCreate(savedInstanceState: Bundle?) {
-        val sheet = sheetStyle
-        val live = liveStyle
+        // 模块 zip 在实时通知模式下没有界面，但刷模块必须人工确认，所以 .zip 一律走浮窗
+        val isZip = intent?.data?.lastPathSegment?.endsWith(".zip", ignoreCase = true) == true
+        val forceSheet = intent?.getBooleanExtra(EXTRA_FORCE_SHEET, false) == true
+        val sheet = sheetStyle || forceSheet || (liveStyle && isZip)
+        val live = liveStyle && !sheet
         // 全屏态要显式换回不透明主题，否则窗口还是半透明的；实时通知模式用不可见窗口
         setTheme(
             when {
@@ -97,9 +100,12 @@ class InstallActivity : ComponentActivity() {
                         com.panl.installer.core.ModuleInspector.inspect(file)
                     }
                     if (module != null) {
+                        // 正常走不到这里（.zip 已经在 onCreate 里改走浮窗了），兜底直接提示
                         Notifications.cancelProgress(this@InstallActivity)
-                        startActivity(
-                            com.panl.installer.ui.module.ModuleActivity.intent(this@InstallActivity, file)
+                        Notifications.post(
+                            this@InstallActivity,
+                            tr("这是一个模块包", "This is a module package"),
+                            tr("请用浮窗样式刷入模块", "Switch to the sheet style to flash modules")
                         )
                         runCatching { finish() }
                         return@launch
@@ -168,6 +174,9 @@ class InstallActivity : ComponentActivity() {
     }
 
     companion object {
+        /** 模块 zip 从实时通知模式转浮窗时带这个 extra。 */
+        const val EXTRA_FORCE_SHEET = "force_sheet"
+
         const val STYLE_SHEET = "Sheet"
         const val STYLE_LIVE = "Live"
 
