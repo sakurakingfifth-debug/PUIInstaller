@@ -59,6 +59,7 @@ import com.panl.installer.ui.components.RelationBadge
 import com.panl.installer.ui.components.StatusGlyph
 import com.panl.installer.ui.components.puiCardBackdropBlur
 import com.panl.pui.PuiButton
+import com.panl.pui.PuiChip
 import com.panl.pui.PuiButtonStyle
 import com.panl.pui.PuiCard
 import com.panl.pui.PuiDialog
@@ -600,100 +601,101 @@ internal fun ModuleSheet(
     val scope = rememberCoroutineScope()
     val noRoot = st.rootMode == com.panl.installer.core.ModuleInstaller.RootMode.None
 
-    Column(
-        Modifier
-            .fillMaxWidth()
-            .padding(horizontal = 20.dp),
-        horizontalAlignment = Alignment.CenterHorizontally
-    ) {
-        Text(
-            tr("刷入模块", "Flash module"),
-            style = MaterialTheme.typography.headlineSmall,
-            color = scheme.onSurface
-        )
-        Spacer(Modifier.height(12.dp))
-
+    Column(Modifier.fillMaxSize().padding(horizontal = 20.dp)) {
         Column(
             Modifier
                 .fillMaxWidth()
-                .weight(1f, fill = false)
-                .verticalScroll(rememberScrollState()),
-            horizontalAlignment = Alignment.CenterHorizontally
+                .weight(1f)
+                .padding(top = 6.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.Center
         ) {
+            ModuleIconView(60.dp)
+            Spacer(Modifier.height(6.dp))
             Text(
                 st.module.name,
-                style = MaterialTheme.typography.titleMedium,
-                fontWeight = FontWeight.SemiBold,
+                style = MaterialTheme.typography.headlineSmall,
                 color = scheme.onSurface,
-                textAlign = TextAlign.Center
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis
             )
-            if (st.module.version.isNotBlank()) {
-                Spacer(Modifier.height(2.dp))
-                Text(
-                    st.module.version,
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = scheme.onSurfaceVariant
-                )
-            }
-            if (st.module.description.isNotBlank()) {
-                Spacer(Modifier.height(6.dp))
-                Text(
-                    st.module.description,
-                    style = MaterialTheme.typography.bodySmall,
-                    color = scheme.onSurfaceVariant,
-                    textAlign = TextAlign.Center
-                )
-            }
-            Spacer(Modifier.height(8.dp))
+            Spacer(Modifier.height(3.dp))
             Text(
-                tr("模块 ID · ${st.module.id}", "Module ID · ${st.module.id}"),
+                st.module.id,
                 style = MaterialTheme.typography.bodySmall,
-                color = scheme.onSurfaceVariant
+                color = scheme.onSurfaceVariant,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis
             )
-            if (st.module.author.isNotBlank()) {
-                Text(
-                    tr("作者 · ${st.module.author}", "Author · ${st.module.author}"),
-                    style = MaterialTheme.typography.bodySmall,
-                    color = scheme.onSurfaceVariant
-                )
+            Spacer(Modifier.height(8.dp))
+            androidx.compose.foundation.layout.FlowRow(
+                horizontalArrangement = Arrangement.spacedBy(6.dp),
+                verticalArrangement = Arrangement.spacedBy(6.dp),
+                modifier = Modifier.fillMaxWidth(),
+                itemVerticalAlignment = Alignment.CenterVertically
+            ) {
+                if (st.module.version.isNotBlank()) {
+                    PuiChip(text = st.module.version)
+                }
+                if (st.module.author.isNotBlank()) {
+                    PuiChip(text = st.module.author)
+                }
+                if (!noRoot) {
+                    PuiChip(text = com.panl.installer.core.ModuleInstaller.label(st.rootMode))
+                }
             }
-            Spacer(Modifier.height(10.dp))
-            Text(
-                when {
-                    noRoot -> tr(
-                        "没有检测到 Magisk / KernelSU / APatch",
-                        "No Magisk / KernelSU / APatch found"
+            Spacer(Modifier.height(12.dp))
+
+            // 和装 APK 那张「版本」卡一个位置，放模块描述 + 刷入结果
+            PuiCard(Modifier.fillMaxWidth()) {
+                Column(Modifier.fillMaxWidth().padding(16.dp)) {
+                    Text(
+                        tr("模块信息", "Module"),
+                        style = MaterialTheme.typography.titleSmall,
+                        fontWeight = FontWeight.SemiBold,
+                        color = scheme.onSurface
                     )
-                    else -> tr(
-                        "刷写方式 · ${com.panl.installer.core.ModuleInstaller.label(st.rootMode)}",
-                        "Flash with · ${com.panl.installer.core.ModuleInstaller.label(st.rootMode)}"
-                    )
-                },
-                style = MaterialTheme.typography.bodyMedium,
-                color = if (noRoot) scheme.error else scheme.onSurface,
-                textAlign = TextAlign.Center
-            )
-            st.output?.takeIf { it.isNotBlank() }?.let { out ->
-                Spacer(Modifier.height(10.dp))
-                Text(
-                    if (st.failed) tr("刷入失败", "Flash failed") else tr("刷入成功，重启后生效", "Flashed — takes effect after a reboot"),
-                    style = MaterialTheme.typography.bodyMedium,
-                    fontWeight = FontWeight.SemiBold,
-                    color = if (st.failed) scheme.error else scheme.primary
-                )
-                Spacer(Modifier.height(4.dp))
-                Text(
-                    out.take(600),
-                    style = MaterialTheme.typography.bodySmall,
-                    color = scheme.onSurfaceVariant,
-                    textAlign = TextAlign.Center
-                )
+                    if (st.module.description.isNotBlank()) {
+                        Spacer(Modifier.height(6.dp))
+                        Text(
+                            st.module.description,
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = scheme.onSurfaceVariant
+                        )
+                    }
+                    if (noRoot) {
+                        Spacer(Modifier.height(8.dp))
+                        Text(
+                            tr(
+                                "没有检测到 Magisk / KernelSU / APatch",
+                                "No Magisk / KernelSU / APatch found"
+                            ),
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = scheme.error
+                        )
+                    }
+                    st.output?.takeIf { it.isNotBlank() }?.let { out ->
+                        Spacer(Modifier.height(10.dp))
+                        Text(
+                            if (st.failed) tr("刷入失败", "Flash failed")
+                            else tr("刷入成功，重启后生效", "Flashed — takes effect after a reboot"),
+                            style = MaterialTheme.typography.bodyMedium,
+                            fontWeight = FontWeight.SemiBold,
+                            color = if (st.failed) scheme.error else scheme.primary
+                        )
+                        Spacer(Modifier.height(4.dp))
+                        Text(
+                            out.take(600),
+                            style = MaterialTheme.typography.bodySmall,
+                            color = scheme.onSurfaceVariant
+                        )
+                    }
+                }
             }
         }
 
-        Spacer(Modifier.height(14.dp))
         Row(
-            Modifier.fillMaxWidth(),
+            Modifier.fillMaxWidth().padding(bottom = 4.dp),
             horizontalArrangement = Arrangement.spacedBy(10.dp)
         ) {
             when {
@@ -748,6 +750,34 @@ internal fun ModuleSheet(
                 }
             }
         }
+    }
+}
+
+/** 模块图标：红色渐变圆角方块 + 白色 Box 图标，和装 APK 的应用图标同一个尺寸位置。 */
+@Composable
+private fun ModuleIconView(size: androidx.compose.ui.unit.Dp) {
+    Box(
+        Modifier
+            .size(size)
+            .clip(RoundedCornerShape(size * 0.26f))
+            .background(
+                androidx.compose.ui.graphics.Brush.linearGradient(
+                    listOf(
+                        androidx.compose.ui.graphics.Color(0xFFE2557A),
+                        androidx.compose.ui.graphics.Color(0xFFB01F45)
+                    )
+                )
+            ),
+        contentAlignment = Alignment.Center
+    ) {
+        androidx.compose.foundation.Image(
+            painter = painterResource(com.panl.installer.R.drawable.ic_box),
+            contentDescription = null,
+            modifier = Modifier.size(size * 0.5f),
+            colorFilter = androidx.compose.ui.graphics.ColorFilter.tint(
+                androidx.compose.ui.graphics.Color.White
+            )
+        )
     }
 }
 
