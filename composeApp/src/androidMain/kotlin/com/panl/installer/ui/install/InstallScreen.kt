@@ -144,7 +144,7 @@ fun InstallScreen(controller: InstallController, onClose: () -> Unit) {
                     is InstallUiState.ModuleConfirm -> Column(
                         Modifier
                             .fillMaxSize()
-                            .padding(horizontal = 8.dp, vertical = 24.dp),
+                            .padding(horizontal = 20.dp, vertical = 24.dp),
                         verticalArrangement = Arrangement.Center
                     ) {
                         ModuleSheet(st, controller, onClose)

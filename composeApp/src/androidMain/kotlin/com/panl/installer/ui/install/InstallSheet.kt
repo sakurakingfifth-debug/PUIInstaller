@@ -601,17 +601,17 @@ internal fun ModuleSheet(
     val scope = rememberCoroutineScope()
     val noRoot = st.rootMode == com.panl.installer.core.ModuleInstaller.RootMode.None
 
-    Column(Modifier.fillMaxSize().padding(horizontal = 20.dp)) {
+    Column(Modifier.fillMaxSize().padding(horizontal = 24.dp)) {
         Column(
             Modifier
                 .fillMaxWidth()
                 .weight(1f)
-                .padding(top = 6.dp),
+                .padding(top = 10.dp, bottom = 6.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Center
         ) {
             ModuleIconView(60.dp)
-            Spacer(Modifier.height(6.dp))
+            Spacer(Modifier.height(14.dp))
             Text(
                 st.module.name,
                 style = MaterialTheme.typography.headlineSmall,
@@ -629,7 +629,9 @@ internal fun ModuleSheet(
             )
             Spacer(Modifier.height(8.dp))
             androidx.compose.foundation.layout.FlowRow(
-                horizontalArrangement = Arrangement.spacedBy(6.dp),
+                horizontalArrangement = Arrangement.spacedBy(
+                    6.dp, Alignment.CenterHorizontally
+                ),
                 verticalArrangement = Arrangement.spacedBy(6.dp),
                 modifier = Modifier.fillMaxWidth(),
                 itemVerticalAlignment = Alignment.CenterVertically
@@ -644,11 +646,11 @@ internal fun ModuleSheet(
                     PuiChip(text = com.panl.installer.core.ModuleInstaller.label(st.rootMode))
                 }
             }
-            Spacer(Modifier.height(12.dp))
+            Spacer(Modifier.height(16.dp))
 
             // 和装 APK 那张「版本」卡一个位置，放模块描述 + 刷入结果
-            PuiCard(Modifier.fillMaxWidth()) {
-                Column(Modifier.fillMaxWidth().padding(16.dp)) {
+            PuiCard(Modifier.fillMaxWidth().padding(horizontal = 2.dp)) {
+                Column(Modifier.fillMaxWidth().padding(18.dp)) {
                     Text(
                         tr("模块信息", "Module"),
                         style = MaterialTheme.typography.titleSmall,
