@@ -466,4 +466,6 @@ internal val norwegianOverrides: Map<String, String> = mapOf(
     "已对所有用户卸载，系统分区里的 APK 也已删除。重启后彻底消失。" to "Avinstallert for alle brukere, og APK-en i systempartisjonen er slettet. Helt borte etter en omstart.",
     "已对所有用户卸载，但系统分区是只读的，APK 文件删不掉" to "Avinstallert for alle brukere, men systempartisjonen er skrivebeskyttet – APK-filen kan ikke slettes",
     "机器分区为 EROFS + dm-verity 只读，这是 Android 10 之后的设计，文件系统层面就不允许改，不是权限问题。" to "Systempartisjonene på denne enheten er EROFS + dm-verity skrivebeskyttet. Slik er Android 10+ – filsystemet selv forbyr skriving, det er ikke et tillatelsesproblem.",
+    "启用模块刷写" to "Aktiver modulflashing",
+    "在刷写任何模块前务必再次确认！" to "Dobbeltsjekk alltid før du flasher en modul!",
 )

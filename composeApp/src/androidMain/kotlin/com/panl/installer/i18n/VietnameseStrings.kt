@@ -466,4 +466,6 @@ internal val vietnameseOverrides: Map<String, String> = mapOf(
     "已对所有用户卸载，系统分区里的 APK 也已删除。重启后彻底消失。" to "Đã gỡ cho mọi người dùng và APK trong phân vùng hệ thống cũng đã xóa. Sẽ biến mất hoàn toàn sau khi khởi động lại.",
     "已对所有用户卸载，但系统分区是只读的，APK 文件删不掉" to "Đã gỡ cho mọi người dùng, nhưng phân vùng hệ thống chỉ đọc — không thể xóa tệp APK",
     "机器分区为 EROFS + dm-verity 只读，这是 Android 10 之后的设计，文件系统层面就不允许改，不是权限问题。" to "Phân vùng hệ thống của máy này là EROFS + dm-verity chỉ đọc. Đây là thiết kế từ Android 10 trở đi — chính hệ thống tệp chặn ghi, không phải vấn đề quyền.",
+    "启用模块刷写" to "Bật ghi mô-đun",
+    "在刷写任何模块前务必再次确认！" to "Luôn kiểm tra kỹ trước khi ghi mô-đun!",
 )

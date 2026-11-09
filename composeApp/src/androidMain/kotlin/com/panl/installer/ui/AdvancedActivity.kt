@@ -302,6 +302,24 @@ private fun AdvancedScreen(activity: ComponentActivity) {
 
             item {
                 Spacer(Modifier.height(18.dp))
+                PuiGroup(title = tr("ROOT", "ROOT")) {
+                    PuiSwitchRow(
+                        icon = null,
+                        iconPainter = painterResource(R.drawable.ic_security_safe),
+                        title = tr("启用模块刷写", "Enable module flashing"),
+                        subtitle = tr(
+                            "在刷写任何模块前务必再次确认！",
+                            "Always double-check before flashing any module!"
+                        ),
+                        checked = settings.moduleFlashEnabled,
+                        onChange = { settings.moduleFlashEnabled = it },
+                        showDivider = false
+                    )
+                }
+            }
+
+            item {
+                Spacer(Modifier.height(18.dp))
                 PuiGroup(title = null) {
                     PuiSwitchRow(
                         icon = null,

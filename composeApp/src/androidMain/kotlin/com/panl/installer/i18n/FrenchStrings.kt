@@ -466,4 +466,6 @@ internal val frenchOverrides: Map<String, String> = mapOf(
     "已对所有用户卸载，系统分区里的 APK 也已删除。重启后彻底消失。" to "Désinstallé pour tous les utilisateurs et l'APK de la partition système est supprimé. Disparu après un redémarrage.",
     "已对所有用户卸载，但系统分区是只读的，APK 文件删不掉" to "Désinstallé pour tous les utilisateurs, mais la partition système est en lecture seule — l'APK ne peut pas être supprimé",
     "机器分区为 EROFS + dm-verity 只读，这是 Android 10 之后的设计，文件系统层面就不允许改，不是权限问题。" to "Les partitions système de cet appareil sont en EROFS + dm-verity lecture seule. C'est le fonctionnement d'Android 10+ : le système de fichiers interdit l'écriture, ce n'est pas un problème de permissions.",
+    "启用模块刷写" to "Activer le flash de modules",
+    "在刷写任何模块前务必再次确认！" to "Vérifiez toujours deux fois avant de flasher un module !",
 )

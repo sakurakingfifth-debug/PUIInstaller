@@ -466,4 +466,6 @@ internal val turkishOverrides: Map<String, String> = mapOf(
     "已对所有用户卸载，系统分区里的 APK 也已删除。重启后彻底消失。" to "Tüm kullanıcılar için kaldırıldı ve sistem bölümündeki APK da silindi. Yeniden başlatmadan sonra tamamen kaybolur.",
     "已对所有用户卸载，但系统分区是只读的，APK 文件删不掉" to "Tüm kullanıcılar için kaldırıldı, ancak sistem bölümü salt okunur — APK dosyası silinemiyor",
     "机器分区为 EROFS + dm-verity 只读，这是 Android 10 之后的设计，文件系统层面就不允许改，不是权限问题。" to "Bu cihazın sistem bölümleri EROFS + dm-verity salt okunur. Android 10+ böyle çalışır — yazmayı dosya sistemi engeller, bu bir izin sorunu değildir.",
+    "启用模块刷写" to "Modül yüklemeyi etkinleştir",
+    "在刷写任何模块前务必再次确认！" to "Bir modülü yüklemeden önce mutlaka iki kez kontrol edin!",
 )

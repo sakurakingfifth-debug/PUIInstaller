@@ -106,6 +106,13 @@ class Settings private constructor(private val sp: SharedPreferences) {
     // ---------------- 安装器全局设置（移植自 InstallerX-Revived） ----------------
 
     /**
+     * 启用模块刷写：选到 zip 模块时，安装器可以直接把它交给 Magisk / KernelSU / APatch 刷入。
+     *
+     * 默认开 —— 用户点开一个模块 zip 就是想刷它，不用再去设置里开一遍。
+     */
+    var moduleFlashEnabled: Boolean by bool("module_flash_enabled", true)
+
+    /**
      * 启用来源预设：只有列表里的应用才能发起安装。
      *
      * 默认关 —— 列表只是「备好的一份白名单」，不打开就不生效，免得新装机器上

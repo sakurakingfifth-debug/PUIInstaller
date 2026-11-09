@@ -166,6 +166,17 @@ class InstallController(
                 return@launch
             }
             safeRetryDone = false
+            // 模块 zip：里面是 module.prop 而不是 APK，交给刷入页处理
+            if (settings.moduleFlashEnabled) {
+                val module = withContext(Dispatchers.IO) { com.panl.installer.core.ModuleInspector.inspect(file) }
+                if (module != null) {
+                    activity.startActivity(
+                        com.panl.installer.ui.module.ModuleActivity.intent(activity, file)
+                    )
+                    activity.finish()
+                    return@launch
+                }
+            }
             // 拆分包（.apks/.xapk/.apkm）：先解包，拿 base.apk 去解析，其余分片挂在 info 上
             val bundle = withContext(Dispatchers.IO) {
                 if (BundleReader.isBundle(file.name)) BundleReader.extract(activity, file) else null

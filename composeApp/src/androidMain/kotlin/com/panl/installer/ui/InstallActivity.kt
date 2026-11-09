@@ -91,6 +91,20 @@ class InstallActivity : ComponentActivity() {
             // 复制和启动服务不能跟着取消，否则就是「点了没反应」。
             appScope.launch {
                 val file = withContext(Dispatchers.IO) { ApkStaging.stage(this@InstallActivity, uri) }
+                // 模块 zip：里面是 module.prop 不是 APK，转给刷入页（设置里可关）
+                if (file != null && Settings.get(this@InstallActivity).moduleFlashEnabled) {
+                    val module = withContext(Dispatchers.IO) {
+                        com.panl.installer.core.ModuleInspector.inspect(file)
+                    }
+                    if (module != null) {
+                        Notifications.cancelProgress(this@InstallActivity)
+                        startActivity(
+                            com.panl.installer.ui.module.ModuleActivity.intent(this@InstallActivity, file)
+                        )
+                        runCatching { finish() }
+                        return@launch
+                    }
+                }
                 val info = file?.let { withContext(Dispatchers.IO) { ApkInspector.inspect(this@InstallActivity, it) } }
                 if (info == null) {
                     Notifications.cancelProgress(this@InstallActivity)
