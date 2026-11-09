@@ -463,4 +463,6 @@ internal val frenchOverrides: Map<String, String> = mapOf(
     "在安装页显示是哪个应用发起的安装" to "Afficher l'app qui a lancé l'installation",
     "安装途径" to "Installé par",
     "这个应用没有安装" to "Cette app n'est pas installée",
+    "已对所有用户卸载，系统分区里的 APK 也已删除。重启后彻底消失。" to "Désinstallé pour tous les utilisateurs et l'APK de la partition système est supprimé. Disparu après un redémarrage.",
+    "已对所有用户卸载，但系统分区是只读的，APK 文件删不掉" to "Désinstallé pour tous les utilisateurs, mais la partition système est en lecture seule — l'APK ne peut pas être supprimé",
 )

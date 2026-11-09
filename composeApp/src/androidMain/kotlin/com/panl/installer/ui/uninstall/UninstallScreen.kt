@@ -269,7 +269,11 @@ fun UninstallScreen(controller: UninstallController, onClose: () -> Unit) {
                         )
                         Spacer(Modifier.height(22.dp))
                         Text(
-                            tr("已彻底卸载", "Completely removed"),
+                            if (state.apkDeleted) {
+                                tr("已彻底卸载", "Completely removed")
+                            } else {
+                                tr("已卸载", "Uninstalled")
+                            },
                             style = MaterialTheme.typography.headlineSmall,
                             color = MaterialTheme.colorScheme.onSurface
                         )
@@ -281,10 +285,17 @@ fun UninstallScreen(controller: UninstallController, onClose: () -> Unit) {
                         )
                         Spacer(Modifier.height(4.dp))
                         Text(
-                            tr(
-                                "已对所有用户卸载。重启后系统分区里的 APK 也会被遮罩掉。",
-                                "Uninstalled for all users. After a reboot the APK in the system partition is masked too."
-                            ),
+                            if (state.apkDeleted) {
+                                tr(
+                                    "已对所有用户卸载，系统分区里的 APK 也已删除。重启后彻底消失。",
+                                    "Uninstalled for all users and the APK in the system partition is deleted. It's gone after a reboot."
+                                )
+                            } else {
+                                tr(
+                                    "已对所有用户卸载。但系统分区是只读的，APK 文件删不掉。",
+                                    "Uninstalled for all users, but the system partition is read-only — the APK file couldn't be deleted."
+                                )
+                            },
                             style = MaterialTheme.typography.bodyMedium,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                             textAlign = TextAlign.Center
@@ -297,17 +308,26 @@ fun UninstallScreen(controller: UninstallController, onClose: () -> Unit) {
                             .padding(horizontal = 16.dp, vertical = 12.dp),
                         horizontalArrangement = Arrangement.spacedBy(10.dp)
                     ) {
-                        PuiButton(
-                            text = tr("稍后", "Later"),
-                            onClick = onClose,
-                            modifier = Modifier.weight(1f),
-                            style = PuiButtonStyle.Ghost
-                        )
-                        PuiButton(
-                            text = tr("立即重启", "Reboot now"),
-                            onClick = { controller.rebootNow() },
-                            modifier = Modifier.weight(1.2f)
-                        )
+                        if (state.apkDeleted) {
+                            PuiButton(
+                                text = tr("稍后", "Later"),
+                                onClick = onClose,
+                                modifier = Modifier.weight(1f),
+                                style = PuiButtonStyle.Ghost
+                            )
+                            PuiButton(
+                                text = tr("立即重启", "Reboot now"),
+                                onClick = { controller.rebootNow() },
+                                modifier = Modifier.weight(1.2f)
+                            )
+                        } else {
+                            // 文件没删掉，重启也没意义
+                            PuiButton(
+                                text = tr("关闭", "Close"),
+                                onClick = onClose,
+                                modifier = Modifier.weight(1f)
+                            )
+                        }
                     }
                 }
 

@@ -463,4 +463,6 @@ internal val latinOverrides: Map<String, String> = mapOf(
     "在安装页显示是哪个应用发起的安装" to "Ostendere quae app institutionem incepit",
     "安装途径" to "Installatum ab",
     "这个应用没有安装" to "Haec app non installata est",
+    "已对所有用户卸载，系统分区里的 APK 也已删除。重启后彻底消失。" to "Pro omnibus usoribus deinstallatum et APK in partitione systematis deletum. Post restitutionem plane evanescet.",
+    "已对所有用户卸载，但系统分区是只读的，APK 文件删不掉" to "Pro omnibus usoribus deinstallatum, sed partitio systematis tantum legibilis est — APK deleri non potest",
 )

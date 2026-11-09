@@ -34,7 +34,11 @@ sealed interface UninstallUiState {
     data class NeedsReboot(val app: InstalledApp) : UninstallUiState
 
     /** 彻底卸载：已经对所有用户卸掉，并写了挂载遮罩，重启后 APK 才真正消失。 */
-    data class DeepRemoved(val app: InstalledApp) : UninstallUiState
+    /**
+     * 彻底卸载完成。
+     * @param apkDeleted 分区里的 APK 是否真的删掉了（EROFS 只读时删不掉，只能退化成「仅卸载」）
+     */
+    data class DeepRemoved(val app: InstalledApp, val apkDeleted: Boolean) : UninstallUiState
     data class Failed(val app: InstalledApp?, val message: String) : UninstallUiState
 }
 
@@ -158,8 +162,8 @@ class UninstallController(private val activity: ComponentActivity) {
                     )
                 }
                 state = when {
-                    result.ok && result.needsReboot -> UninstallUiState.DeepRemoved(app)
-                    result.ok -> UninstallUiState.Done(app)
+                    // 卸载成功就算「彻底卸载」这条路的终点，区别只在 APK 有没有真删掉
+                    result.ok -> UninstallUiState.DeepRemoved(app, result.apkDeleted)
                     else -> UninstallUiState.Failed(
                         app,
                         result.message ?: tr("卸载失败", "Uninstall failed")

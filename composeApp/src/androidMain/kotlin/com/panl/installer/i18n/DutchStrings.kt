@@ -463,4 +463,6 @@ internal val dutchOverrides: Map<String, String> = mapOf(
     "在安装页显示是哪个应用发起的安装" to "Toon welke app de installatie startte",
     "安装途径" to "Geïnstalleerd door",
     "这个应用没有安装" to "Deze app is niet geïnstalleerd",
+    "已对所有用户卸载，系统分区里的 APK 也已删除。重启后彻底消失。" to "Verwijderd voor alle gebruikers en de APK in de systeempartitie is verwijderd. Na een herstart helemaal weg.",
+    "已对所有用户卸载，但系统分区是只读的，APK 文件删不掉" to "Verwijderd voor alle gebruikers, maar de systeempartitie is alleen-lezen — het APK-bestand kan niet worden verwijderd",
 )

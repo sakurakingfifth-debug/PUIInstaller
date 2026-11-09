@@ -463,4 +463,6 @@ internal val vietnameseOverrides: Map<String, String> = mapOf(
     "在安装页显示是哪个应用发起的安装" to "Hiện ứng dụng nào đã bắt đầu cài đặt",
     "安装途径" to "Được cài bởi",
     "这个应用没有安装" to "Ứng dụng này chưa được cài",
+    "已对所有用户卸载，系统分区里的 APK 也已删除。重启后彻底消失。" to "Đã gỡ cho mọi người dùng và APK trong phân vùng hệ thống cũng đã xóa. Sẽ biến mất hoàn toàn sau khi khởi động lại.",
+    "已对所有用户卸载，但系统分区是只读的，APK 文件删不掉" to "Đã gỡ cho mọi người dùng, nhưng phân vùng hệ thống chỉ đọc — không thể xóa tệp APK",
 )

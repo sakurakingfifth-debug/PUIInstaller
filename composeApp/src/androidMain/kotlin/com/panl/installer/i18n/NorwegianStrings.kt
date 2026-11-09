@@ -463,4 +463,6 @@ internal val norwegianOverrides: Map<String, String> = mapOf(
     "在安装页显示是哪个应用发起的安装" to "Vis hvilken app som startet installasjonen",
     "安装途径" to "Installert av",
     "这个应用没有安装" to "Denne appen er ikke installert",
+    "已对所有用户卸载，系统分区里的 APK 也已删除。重启后彻底消失。" to "Avinstallert for alle brukere, og APK-en i systempartisjonen er slettet. Helt borte etter en omstart.",
+    "已对所有用户卸载，但系统分区是只读的，APK 文件删不掉" to "Avinstallert for alle brukere, men systempartisjonen er skrivebeskyttet – APK-filen kan ikke slettes",
 )

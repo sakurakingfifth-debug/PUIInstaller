@@ -463,4 +463,6 @@ internal val danishOverrides: Map<String, String> = mapOf(
     "在安装页显示是哪个应用发起的安装" to "Vis hvilken app der startede installationen",
     "安装途径" to "Installeret af",
     "这个应用没有安装" to "Denne app er ikke installeret",
+    "已对所有用户卸载，系统分区里的 APK 也已删除。重启后彻底消失。" to "Afinstalleret for alle brugere, og APK'en i systempartitionen er slettet. Helt væk efter en genstart.",
+    "已对所有用户卸载，但系统分区是只读的，APK 文件删不掉" to "Afinstalleret for alle brugere, men systempartitionen er skrivebeskyttet – APK-filen kan ikke slettes",
 )

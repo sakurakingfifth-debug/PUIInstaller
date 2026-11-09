@@ -463,4 +463,6 @@ internal val turkishOverrides: Map<String, String> = mapOf(
     "在安装页显示是哪个应用发起的安装" to "Yüklemeyi hangi uygulamanın başlattığını göster",
     "安装途径" to "Yükleyen",
     "这个应用没有安装" to "Bu uygulama yüklü değil",
+    "已对所有用户卸载，系统分区里的 APK 也已删除。重启后彻底消失。" to "Tüm kullanıcılar için kaldırıldı ve sistem bölümündeki APK da silindi. Yeniden başlatmadan sonra tamamen kaybolur.",
+    "已对所有用户卸载，但系统分区是只读的，APK 文件删不掉" to "Tüm kullanıcılar için kaldırıldı, ancak sistem bölümü salt okunur — APK dosyası silinemiyor",
 )
