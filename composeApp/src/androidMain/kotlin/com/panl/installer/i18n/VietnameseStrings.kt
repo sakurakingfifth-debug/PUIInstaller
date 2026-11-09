@@ -469,4 +469,9 @@ internal val vietnameseOverrides: Map<String, String> = mapOf(
     "启用模块刷写" to "Bật ghi mô-đun",
     "在刷写任何模块前务必再次确认！" to "Luôn kiểm tra kỹ trước khi ghi mô-đun!",
     "Beta版本" to "Bản Beta",
+    "默认安装器" to "Trình cài đặt mặc định",
+    "已设为默认，点 APK 会直接打开本安装器" to "Đã đặt mặc định — mở APK sẽ vào thẳng trình cài đặt này",
+    "未设为默认，点 APK 会先弹「打开方式」" to "Chưa mặc định — sẽ hỏi chọn ứng dụng khi mở APK",
+    "去设置" to "Thiết lập",
+    "已设置" to "Đã đặt",
 )

@@ -469,4 +469,9 @@ internal val latinOverrides: Map<String, String> = mapOf(
     "启用模块刷写" to "Modulorum institutionem accendere",
     "在刷写任何模块前务必再次确认！" to "Semper bis inspice antequam modulum instituas!",
     "Beta版本" to "Versio Beta",
+    "默认安装器" to "Installator praedefinitus",
+    "已设为默认，点 APK 会直接打开本安装器" to "In praedefinitum positum — APK hoc installatorem directo aperit",
+    "未设为默认，点 APK 会先弹「打开方式」" to "Non praedefinitus — quaeretur quae app APK aperiat",
+    "去设置" to "Constitue",
+    "已设置" to "Constitutum",
 )

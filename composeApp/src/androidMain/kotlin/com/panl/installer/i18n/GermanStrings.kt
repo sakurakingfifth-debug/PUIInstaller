@@ -469,4 +469,9 @@ internal val germanOverrides: Map<String, String> = mapOf(
     "启用模块刷写" to "Modul-Flashen aktivieren",
     "在刷写任何模块前务必再次确认！" to "Prüfe immer zweimal, bevor du ein Modul flashst!",
     "Beta版本" to "Beta-Version",
+    "默认安装器" to "Standard-Installer",
+    "已设为默认，点 APK 会直接打开本安装器" to "Als Standard festgelegt – ein Tippen auf eine APK öffnet diesen Installer direkt",
+    "未设为默认，点 APK 会先弹「打开方式」" to "Nicht Standard – beim Öffnen einer APK wird nach der App gefragt",
+    "去设置" to "Einrichten",
+    "已设置" to "Festgelegt",
 )

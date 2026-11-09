@@ -296,12 +296,34 @@ fun SettingsScreen(topPad: Dp) {
                     iconPainter = painterResource(R.drawable.ic_info_sparkle),
                     title = tr("关于", "About"),
                     subtitle = tr("版本 ${appVersion(context)}", "Version ${appVersion(context)}"),
-                    showDivider = false,
+                    showDivider = true,
                     showChevron = true,
                     onClick = {
                         tick()
                         showAbout = true
                     }
+                )
+                // 默认安装器：系统没有「设为默认」的 API，只能把用户送到系统设置里手动选
+                val isDefaultInstaller = PackageUtils.isDefaultInstaller(context)
+                PuiListRow(
+                    icon = null,
+                    iconPainter = painterResource(R.drawable.ic_3d_cube_scan),
+                    title = tr("默认安装器", "Default installer"),
+                    subtitle = if (isDefaultInstaller) {
+                        tr(
+                            "已设为默认，点 APK 会直接打开本安装器",
+                            "Set as default — tapping an APK opens this installer directly"
+                        )
+                    } else {
+                        tr(
+                            "未设为默认，点 APK 会先弹「打开方式」",
+                            "Not default — tapping an APK asks which app to use"
+                        )
+                    },
+                    trailingText = if (isDefaultInstaller) tr("已设置", "Set") else tr("去设置", "Set up"),
+                    showDivider = false,
+                    showChevron = !isDefaultInstaller,
+                    onClick = { openDefaultAppsSettings(context) }
                 )
             }
         }
@@ -383,5 +405,25 @@ internal fun BetaBadge(text: String) {
             style = MaterialTheme.typography.labelLarge,
             color = scheme.onSurfaceVariant
         )
+    }
+}
+
+/**
+ * 把用户送到系统的「默认应用」页。
+ *
+ * Android 没有「设为默认安装器」的 API（不像浏览器/短信有 RoleManager 角色），
+ * 只能引导用户自己去选；默认应用页打不开就退回本应用的信息页。
+ */
+private fun openDefaultAppsSettings(context: android.content.Context) {
+    val candidates = listOf(
+        Intent(AndroidSettings.ACTION_MANAGE_DEFAULT_APPS_SETTINGS),
+        Intent(
+            AndroidSettings.ACTION_APPLICATION_DETAILS_SETTINGS,
+            Uri.fromParts("package", context.packageName, null)
+        ),
+        Intent(AndroidSettings.ACTION_MANAGE_APPLICATIONS_SETTINGS)
+    )
+    for (i in candidates) {
+        if (runCatching { context.startActivity(i) }.isSuccess) return
     }
 }

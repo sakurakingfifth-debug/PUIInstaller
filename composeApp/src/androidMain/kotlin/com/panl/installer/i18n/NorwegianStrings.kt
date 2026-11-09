@@ -469,4 +469,9 @@ internal val norwegianOverrides: Map<String, String> = mapOf(
     "启用模块刷写" to "Aktiver modulflashing",
     "在刷写任何模块前务必再次确认！" to "Dobbeltsjekk alltid før du flasher en modul!",
     "Beta版本" to "Betaversjon",
+    "默认安装器" to "Standard installasjonsprogram",
+    "已设为默认，点 APK 会直接打开本安装器" to "Satt som standard – et trykk på en APK åpner dette programmet direkte",
+    "未设为默认，点 APK 会先弹「打开方式」" to "Ikke standard – du blir spurt hvilken app som skal åpne APK-en",
+    "去设置" to "Sett opp",
+    "已设置" to "Satt",
 )

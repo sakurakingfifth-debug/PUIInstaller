@@ -469,4 +469,9 @@ internal val frenchOverrides: Map<String, String> = mapOf(
     "启用模块刷写" to "Activer le flash de modules",
     "在刷写任何模块前务必再次确认！" to "Vérifiez toujours deux fois avant de flasher un module !",
     "Beta版本" to "Version bêta",
+    "默认安装器" to "Programme d'installation par défaut",
+    "已设为默认，点 APK 会直接打开本安装器" to "Défini par défaut — un APK ouvre directement cet installateur",
+    "未设为默认，点 APK 会先弹「打开方式」" to "Pas par défaut — Android demandera quelle app utiliser",
+    "去设置" to "Configurer",
+    "已设置" to "Défini",
 )

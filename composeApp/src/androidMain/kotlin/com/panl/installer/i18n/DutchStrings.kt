@@ -469,4 +469,9 @@ internal val dutchOverrides: Map<String, String> = mapOf(
     "启用模块刷写" to "Module-flashen inschakelen",
     "在刷写任何模块前务必再次确认！" to "Controleer altijd dubbel voordat je een module flasht!",
     "Beta版本" to "Bètaversie",
+    "默认安装器" to "Standaard-installatieprogram",
+    "已设为默认，点 APK 会直接打开本安装器" to "Ingesteld als standaard — een APK opent direct in deze installer",
+    "未设为默认，点 APK 会先弹「打开方式」" to "Niet standaard — bij een APK wordt gevraagd welke app het opent",
+    "去设置" to "Instellen",
+    "已设置" to "Ingesteld",
 )

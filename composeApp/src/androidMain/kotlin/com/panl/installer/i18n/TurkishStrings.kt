@@ -469,4 +469,9 @@ internal val turkishOverrides: Map<String, String> = mapOf(
     "启用模块刷写" to "Modül yüklemeyi etkinleştir",
     "在刷写任何模块前务必再次确认！" to "Bir modülü yüklemeden önce mutlaka iki kez kontrol edin!",
     "Beta版本" to "Beta sürümü",
+    "默认安装器" to "Varsayılan yükleyici",
+    "已设为默认，点 APK 会直接打开本安装器" to "Varsayılan olarak ayarlandı — APK doğrudan bu yükleyicide açılır",
+    "未设为默认，点 APK 会先弹「打开方式」" to "Varsayılan değil — APK açılırken hangi uygulama sorulur",
+    "去设置" to "Ayarla",
+    "已设置" to "Ayarlandı",
 )

@@ -469,4 +469,9 @@ internal val danishOverrides: Map<String, String> = mapOf(
     "启用模块刷写" to "Aktivér modulflashning",
     "在刷写任何模块前务必再次确认！" to "Dobbelttjek altid, før du flasher et modul!",
     "Beta版本" to "Beta-version",
+    "默认安装器" to "Standard-installationsprogram",
+    "已设为默认，点 APK 会直接打开本安装器" to "Sat som standard – et tryk på en APK åbner dette program direkte",
+    "未设为默认，点 APK 会先弹「打开方式」" to "Ikke standard – der spørges, hvilken app der skal åbne APK'en",
+    "去设置" to "Opsæt",
+    "已设置" to "Sat",
 )

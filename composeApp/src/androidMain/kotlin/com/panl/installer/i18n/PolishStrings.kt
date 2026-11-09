@@ -469,4 +469,9 @@ internal val polishOverrides: Map<String, String> = mapOf(
     "启用模块刷写" to "Włącz flashowanie modułów",
     "在刷写任何模块前务必再次确认！" to "Zawsze sprawdź dwa razy przed flashowaniem modułu!",
     "Beta版本" to "Wersja beta",
+    "默认安装器" to "Domyślny instalator",
+    "已设为默认，点 APK 会直接打开本安装器" to "Ustawiono jako domyślny — APK otworzy bezpośrednio ten instalator",
+    "未设为默认，点 APK 会先弹「打开方式」" to "Nie jest domyślny — przy APK pojawi się pytanie o aplikację",
+    "去设置" to "Ustaw",
+    "已设置" to "Ustawiono",
 )
