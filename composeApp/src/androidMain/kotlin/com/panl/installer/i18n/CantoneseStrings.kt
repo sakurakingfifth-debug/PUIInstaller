@@ -254,4 +254,5 @@ internal val cantoneseOverrides: Map<String, String> = mapOf(
     "这个应用没有安装" to "呢個應用未安裝",
     "已对所有用户卸载，系统分区里的 APK 也已删除。重启后彻底消失。" to "已經對所有用戶卸載，系統分區嘅 APK 都刪埋。重啟之後會完全消失。",
     "已对所有用户卸载，但系统分区是只读的，APK 文件删不掉" to "已經對所有用戶卸載，但系統分區係唯讀嘅，APK 檔案刪唔到",
+    "机器分区为 EROFS + dm-verity 只读，这是 Android 10 之后的设计，文件系统层面就不允许改，不是权限问题。" to "機器分區係 EROFS + dm-verity 唯讀，呢個係 Android 10 之後嘅設計，檔案系統層面就唔准改，唔係權限問題。",
 )

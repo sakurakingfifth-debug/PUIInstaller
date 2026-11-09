@@ -465,4 +465,5 @@ internal val portugueseOverrides: Map<String, String> = mapOf(
     "这个应用没有安装" to "Esta app não está instalada",
     "已对所有用户卸载，系统分区里的 APK 也已删除。重启后彻底消失。" to "Desinstalado para todos os usuários e o APK da partição do sistema foi apagado. Some por completo após reiniciar.",
     "已对所有用户卸载，但系统分区是只读的，APK 文件删不掉" to "Desinstalado para todos os usuários, mas a partição do sistema é somente leitura — o APK não pode ser apagado",
+    "机器分区为 EROFS + dm-verity 只读，这是 Android 10 之后的设计，文件系统层面就不允许改，不是权限问题。" to "As partições do sistema deste dispositivo são EROFS + dm-verity somente leitura. É o design do Android 10+: o próprio sistema de arquivos proíbe escrita, não é questão de permissão.",
 )

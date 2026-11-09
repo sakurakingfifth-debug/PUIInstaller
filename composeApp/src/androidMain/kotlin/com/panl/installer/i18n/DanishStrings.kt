@@ -465,4 +465,5 @@ internal val danishOverrides: Map<String, String> = mapOf(
     "这个应用没有安装" to "Denne app er ikke installeret",
     "已对所有用户卸载，系统分区里的 APK 也已删除。重启后彻底消失。" to "Afinstalleret for alle brugere, og APK'en i systempartitionen er slettet. Helt væk efter en genstart.",
     "已对所有用户卸载，但系统分区是只读的，APK 文件删不掉" to "Afinstalleret for alle brugere, men systempartitionen er skrivebeskyttet – APK-filen kan ikke slettes",
+    "机器分区为 EROFS + dm-verity 只读，这是 Android 10 之后的设计，文件系统层面就不允许改，不是权限问题。" to "Enhedens systempartition er EROFS + dm-verity skrivebeskyttet. Sådan er Android 10+ – filsystemet forbyder skrivning, det er ikke et tilladelsesproblem.",
 )

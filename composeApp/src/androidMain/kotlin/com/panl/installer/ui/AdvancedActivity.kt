@@ -38,6 +38,7 @@ import androidx.lifecycle.compose.LocalLifecycleOwner
 import kotlinx.coroutines.launch
 import com.panl.installer.ui.components.puiCardBackdropBlur
 import com.panl.installer.ui.main.DangerBadge
+import com.panl.installer.core.PartitionSupport
 import com.panl.installer.core.RootCheck
 import com.panl.installer.core.RootState
 import com.panl.installer.R
@@ -86,6 +87,8 @@ private fun AdvancedScreen(activity: ComponentActivity) {
     val blurH = rememberPuiTopBlurHeight()
     var showSystemWarning by remember { mutableStateOf(false) }
     var showDeepWarning by remember { mutableStateOf(false) }
+    // 系统分区是 EROFS 的话，彻底卸载删不掉 APK，开关直接置灰
+    val erofsReadOnly = remember { com.panl.installer.core.PartitionSupport.isErofs() }
     var showRootRequired by remember { mutableStateOf(false) }
     var rootState by remember { mutableStateOf(RootState.Checking) }
     var rootTick by remember { mutableIntStateOf(0) }
@@ -273,12 +276,27 @@ private fun AdvancedScreen(activity: ComponentActivity) {
                             "操作不可逆，操作前请三思",
                             "Irreversible — think twice before proceeding"
                         ),
-                        checked = settings.deepUninstallSystemApps,
+                        // EROFS 只读的机器上这个功能根本做不到（APK 物理删不掉），直接置灰
+                        checked = settings.deepUninstallSystemApps && !erofsReadOnly,
                         onChange = { on ->
-                            if (on) showDeepWarning = true else settings.deepUninstallSystemApps = false
+                            if (!erofsReadOnly) {
+                                if (on) showDeepWarning = true else settings.deepUninstallSystemApps = false
+                            }
                         },
-                        showDivider = false
+                        showDivider = erofsReadOnly,
+                        enabled = !erofsReadOnly
                     )
+                    if (erofsReadOnly) {
+                        Text(
+                            tr(
+                                "机器分区为 EROFS + dm-verity 只读，这是 Android 10 之后的设计，文件系统层面就不允许改，不是权限问题。",
+                                "This device's system partitions are EROFS + dm-verity read-only. That's how Android 10+ works — the filesystem itself forbids writes, it's not a permission issue."
+                            ),
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            modifier = Modifier.padding(start = 16.dp, end = 16.dp, top = 12.dp, bottom = 14.dp)
+                        )
+                    }
                 }
             }
 

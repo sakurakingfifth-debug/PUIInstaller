@@ -465,4 +465,5 @@ internal val latinOverrides: Map<String, String> = mapOf(
     "这个应用没有安装" to "Haec app non installata est",
     "已对所有用户卸载，系统分区里的 APK 也已删除。重启后彻底消失。" to "Pro omnibus usoribus deinstallatum et APK in partitione systematis deletum. Post restitutionem plane evanescet.",
     "已对所有用户卸载，但系统分区是只读的，APK 文件删不掉" to "Pro omnibus usoribus deinstallatum, sed partitio systematis tantum legibilis est — APK deleri non potest",
+    "机器分区为 EROFS + dm-verity 只读，这是 Android 10 之后的设计，文件系统层面就不允许改，不是权限问题。" to "Partitiones systematis huius machinae EROFS + dm-verity tantum legibiles sunt. Hoc est consilium Android 10+, systema fasciculorum ipsum scriptionem vetat, non est problema permissionum.",
 )
