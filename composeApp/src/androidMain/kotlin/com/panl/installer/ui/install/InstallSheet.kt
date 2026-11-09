@@ -140,7 +140,20 @@ fun InstallSheet(controller: InstallController, onClose: () -> Unit) {
             // 额外用 SizeTransform 把卡片高度也一起补间，否则换页时卡片会瞬间弹一下
             androidx.compose.animation.AnimatedContent(
                 targetState = state,
-                contentKey = { it::class },
+                contentKey = { st ->
+                    // 模块刷入的「确认 / 刷入中 / 成功 / 失败」是同一个类，
+                    // 用类当 key 的话状态切换不会播动画，这里按阶段拆开
+                    if (st is InstallUiState.ModuleConfirm) {
+                        when {
+                            st.flashing -> "module-flashing"
+                            st.output != null && st.failed -> "module-failed"
+                            st.output != null -> "module-done"
+                            else -> "module-confirm"
+                        }
+                    } else {
+                        st::class
+                    }
+                },
                 transitionSpec = {
                     (
                         androidx.compose.animation.fadeIn(
@@ -675,6 +688,22 @@ internal fun ModuleSheet(
                             style = MaterialTheme.typography.bodyMedium,
                             color = scheme.error
                         )
+                    }
+                    if (st.flashing) {
+                        Spacer(Modifier.height(12.dp))
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            androidx.compose.material3.CircularProgressIndicator(
+                                modifier = Modifier.size(16.dp),
+                                strokeWidth = 2.dp,
+                                color = scheme.primary
+                            )
+                            Spacer(Modifier.width(8.dp))
+                            Text(
+                                tr("正在刷入模块…", "Flashing module…"),
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = scheme.primary
+                            )
+                        }
                     }
                     st.output?.takeIf { it.isNotBlank() }?.let { out ->
                         Spacer(Modifier.height(10.dp))

@@ -119,7 +119,20 @@ fun InstallScreen(controller: InstallController, onClose: () -> Unit) {
             // 不按类型去重的话整个转场会被进度刷新打断
             androidx.compose.animation.AnimatedContent(
                 targetState = state,
-                contentKey = { it::class },
+                contentKey = { st ->
+                    // 模块刷入的「确认 / 刷入中 / 成功 / 失败」是同一个类，
+                    // 用类当 key 的话状态切换不会播动画，这里按阶段拆开
+                    if (st is InstallUiState.ModuleConfirm) {
+                        when {
+                            st.flashing -> "module-flashing"
+                            st.output != null && st.failed -> "module-failed"
+                            st.output != null -> "module-done"
+                            else -> "module-confirm"
+                        }
+                    } else {
+                        st::class
+                    }
+                },
                 transitionSpec = {
                     (
                         androidx.compose.animation.fadeIn(
