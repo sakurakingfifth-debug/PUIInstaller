@@ -468,4 +468,5 @@ internal val japaneseOverrides: Map<String, String> = mapOf(
     "机器分区为 EROFS + dm-verity 只读，这是 Android 10 之后的设计，文件系统层面就不允许改，不是权限问题。" to "この端末のシステムパーティションは EROFS + dm-verity の読み取り専用です。Android 10 以降の設計で、ファイルシステム自体が書き込みを禁止しているため、権限の問題ではありません。",
     "启用模块刷写" to "モジュールの書き込みを有効化",
     "在刷写任何模块前务必再次确认！" to "モジュールを書き込む前によく確認してください！",
+    "Beta版本" to "ベータ版",
 )

@@ -468,4 +468,5 @@ internal val turkishOverrides: Map<String, String> = mapOf(
     "机器分区为 EROFS + dm-verity 只读，这是 Android 10 之后的设计，文件系统层面就不允许改，不是权限问题。" to "Bu cihazın sistem bölümleri EROFS + dm-verity salt okunur. Android 10+ böyle çalışır — yazmayı dosya sistemi engeller, bu bir izin sorunu değildir.",
     "启用模块刷写" to "Modül yüklemeyi etkinleştir",
     "在刷写任何模块前务必再次确认！" to "Bir modülü yüklemeden önce mutlaka iki kez kontrol edin!",
+    "Beta版本" to "Beta sürümü",
 )

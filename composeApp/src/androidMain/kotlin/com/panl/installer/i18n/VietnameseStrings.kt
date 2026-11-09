@@ -468,4 +468,5 @@ internal val vietnameseOverrides: Map<String, String> = mapOf(
     "机器分区为 EROFS + dm-verity 只读，这是 Android 10 之后的设计，文件系统层面就不允许改，不是权限问题。" to "Phân vùng hệ thống của máy này là EROFS + dm-verity chỉ đọc. Đây là thiết kế từ Android 10 trở đi — chính hệ thống tệp chặn ghi, không phải vấn đề quyền.",
     "启用模块刷写" to "Bật ghi mô-đun",
     "在刷写任何模块前务必再次确认！" to "Luôn kiểm tra kỹ trước khi ghi mô-đun!",
+    "Beta版本" to "Bản Beta",
 )

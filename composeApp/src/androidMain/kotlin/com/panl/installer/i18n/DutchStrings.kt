@@ -468,4 +468,5 @@ internal val dutchOverrides: Map<String, String> = mapOf(
     "机器分区为 EROFS + dm-verity 只读，这是 Android 10 之后的设计，文件系统层面就不允许改，不是权限问题。" to "De systeempartities van dit toestel zijn EROFS + dm-verity alleen-lezen. Zo werkt Android 10+ — het bestandssysteem zelf verbiedt schrijven, het is geen rechtenprobleem.",
     "启用模块刷写" to "Module-flashen inschakelen",
     "在刷写任何模块前务必再次确认！" to "Controleer altijd dubbel voordat je een module flasht!",
+    "Beta版本" to "Bètaversie",
 )

@@ -468,4 +468,5 @@ internal val latinOverrides: Map<String, String> = mapOf(
     "机器分区为 EROFS + dm-verity 只读，这是 Android 10 之后的设计，文件系统层面就不允许改，不是权限问题。" to "Partitiones systematis huius machinae EROFS + dm-verity tantum legibiles sunt. Hoc est consilium Android 10+, systema fasciculorum ipsum scriptionem vetat, non est problema permissionum.",
     "启用模块刷写" to "Modulorum institutionem accendere",
     "在刷写任何模块前务必再次确认！" to "Semper bis inspice antequam modulum instituas!",
+    "Beta版本" to "Versio Beta",
 )

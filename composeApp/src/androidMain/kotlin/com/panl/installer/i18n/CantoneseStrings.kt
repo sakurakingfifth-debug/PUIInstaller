@@ -257,4 +257,5 @@ internal val cantoneseOverrides: Map<String, String> = mapOf(
     "机器分区为 EROFS + dm-verity 只读，这是 Android 10 之后的设计，文件系统层面就不允许改，不是权限问题。" to "機器分區係 EROFS + dm-verity 唯讀，呢個係 Android 10 之後嘅設計，檔案系統層面就唔准改，唔係權限問題。",
     "启用模块刷写" to "啟用模組刷寫",
     "在刷写任何模块前务必再次确认！" to "刷寫任何模組之前一定要再確認！",
+    "Beta版本" to "Beta 版本",
 )

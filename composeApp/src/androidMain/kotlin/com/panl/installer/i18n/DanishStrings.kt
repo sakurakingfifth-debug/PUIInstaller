@@ -468,4 +468,5 @@ internal val danishOverrides: Map<String, String> = mapOf(
     "机器分区为 EROFS + dm-verity 只读，这是 Android 10 之后的设计，文件系统层面就不允许改，不是权限问题。" to "Enhedens systempartition er EROFS + dm-verity skrivebeskyttet. Sådan er Android 10+ – filsystemet forbyder skrivning, det er ikke et tilladelsesproblem.",
     "启用模块刷写" to "Aktivér modulflashning",
     "在刷写任何模块前务必再次确认！" to "Dobbelttjek altid, før du flasher et modul!",
+    "Beta版本" to "Beta-version",
 )

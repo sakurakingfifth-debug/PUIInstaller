@@ -468,4 +468,5 @@ internal val italianOverrides: Map<String, String> = mapOf(
     "机器分区为 EROFS + dm-verity 只读，这是 Android 10 之后的设计，文件系统层面就不允许改，不是权限问题。" to "Le partizioni di sistema di questo dispositivo sono EROFS + dm-verity in sola lettura. È il design di Android 10+: il filesystem stesso vieta la scrittura, non è un problema di permessi.",
     "启用模块刷写" to "Attiva flash dei moduli",
     "在刷写任何模块前务必再次确认！" to "Controlla sempre due volte prima di flashare un modulo!",
+    "Beta版本" to "Versione beta",
 )

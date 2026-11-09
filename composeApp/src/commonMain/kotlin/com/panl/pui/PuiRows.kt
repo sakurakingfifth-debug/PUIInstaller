@@ -166,7 +166,9 @@ fun PuiSwitchRow(
     showDivider: Boolean,
     enabled: Boolean = true,
     /** 标题**下方**的小徽标（高危这类）。放在标题右边会把标题挤断行，所以单起一行。 */
-    titleBadge: (@Composable () -> Unit)? = null
+    titleBadge: (@Composable () -> Unit)? = null,
+    /** 标题**右边**的小徽标（Beta 这类短标签）。标题过长会省略，不会挤断。 */
+    titleInlineBadge: (@Composable () -> Unit)? = null
 ) {
     val dim = if (enabled) 1f else 0.45f
     Column {
@@ -192,11 +194,20 @@ fun PuiSwitchRow(
                 Spacer(Modifier.width(14.dp))
             }
             Column(Modifier.weight(1f)) {
-                Text(
-                    title,
-                    style = MaterialTheme.typography.titleMedium,
-                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = dim)
-                )
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Text(
+                        title,
+                        style = MaterialTheme.typography.titleMedium,
+                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = dim),
+                        maxLines = 1,
+                        overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
+                        modifier = Modifier.weight(1f, fill = false)
+                    )
+                    if (titleInlineBadge != null) {
+                        Spacer(Modifier.width(8.dp))
+                        titleInlineBadge()
+                    }
+                }
                 if (subtitle.isNotEmpty()) {
                     Spacer(Modifier.height(2.dp))
                     Text(

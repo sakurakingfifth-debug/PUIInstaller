@@ -37,6 +37,7 @@ import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import kotlinx.coroutines.launch
 import com.panl.installer.ui.components.puiCardBackdropBlur
+import com.panl.installer.ui.main.BetaBadge
 import com.panl.installer.ui.main.DangerBadge
 import com.panl.installer.core.PartitionSupport
 import com.panl.installer.core.RootCheck
@@ -307,6 +308,7 @@ private fun AdvancedScreen(activity: ComponentActivity) {
                         icon = null,
                         iconPainter = painterResource(R.drawable.ic_security_safe),
                         title = tr("启用模块刷写", "Enable module flashing"),
+                        titleInlineBadge = { BetaBadge(tr("Beta版本", "Beta")) },
                         subtitle = tr(
                             "在刷写任何模块前务必再次确认！",
                             "Always double-check before flashing any module!"

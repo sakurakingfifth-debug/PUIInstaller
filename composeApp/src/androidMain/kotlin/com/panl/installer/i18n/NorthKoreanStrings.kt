@@ -472,4 +472,5 @@ internal val northKoreanOverrides: Map<String, String> = mapOf(
     "机器分区为 EROFS + dm-verity 只读，这是 Android 10 之后的设计，文件系统层面就不允许改，不是权限问题。" to "이 기기의 시스템 파티션은 EROFS + dm-verity 읽기전용입니다. Android 10 이후의 설계로, 파일체계 자체가 쓰기를 막는것이라 권한 문제가 아닙니다.",
     "启用模块刷写" to "모듈 플래시 사용",
     "在刷写任何模块前务必再次确认！" to "모듈을 플래시하기 전에 반드시 다시 확인하세요!",
+    "Beta版本" to "베타 판본",
 )
