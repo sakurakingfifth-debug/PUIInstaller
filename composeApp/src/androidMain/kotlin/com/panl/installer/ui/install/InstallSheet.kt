@@ -293,7 +293,8 @@ private fun ReadySheet(
                 info = info,
                 showOsdk = Settings.get(LocalContext.current).showOsdk,
                 showApi = true,
-                twoRows = true
+                twoRows = true,
+                showSource = Settings.get(LocalContext.current).sourcePresetEnabled
             )
         }
 

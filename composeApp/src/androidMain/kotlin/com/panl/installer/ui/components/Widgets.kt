@@ -592,7 +592,9 @@ fun InstallInfoChips(
     /** 显示 目标 API / 最低 API。全屏页的详情卡已有这两行，就不重复加胶囊。 */
     showApi: Boolean = false,
     /** 胶囊多于 3 个时拆成两行均分，避免一行挤满、贴到两边。 */
-    twoRows: Boolean = false
+    twoRows: Boolean = false,
+    /** 显示「安装来源」胶囊（发起安装的应用包名），由设置里的开关控制。 */
+    showSource: Boolean = false
 ) {
     val chips = buildList {
         val signer = info.primarySigner
@@ -611,7 +613,10 @@ fun InstallInfoChips(
         if (info.signers.any { it.aospKey != null }) {
             add(tr("AOSP 密钥", "AOSP key") to InfoChipTone.Danger)
         }
-        info.sourceLabel?.let { add(tr("来自 $it", "From $it") to InfoChipTone.Neutral) }
+        // 安装来源：显示发起安装的应用包名（如 com.android.vending），开关在「来源预设」页
+        if (showSource) {
+            info.sourcePackage?.let { add(it to InfoChipTone.Neutral) }
+        }
         // 只在国内库全按 16 KB 对齐时显示；纯 Java 应用（没有 .so）不显示
         if (info.supports16K == true) {
             add(tr("16 KB 页面", "16 KB pages") to InfoChipTone.Neutral)

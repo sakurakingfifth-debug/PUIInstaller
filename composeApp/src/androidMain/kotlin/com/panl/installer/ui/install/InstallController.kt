@@ -107,25 +107,6 @@ class InstallController(
             return
         }
 
-        // 受管安装器：列表非空时只允许这些应用发起安装（拿不到来源就放行）
-        val allowed = settings.managedInstallerPackages
-        val caller = activity.launchedFromPackage
-        // 自己拉起的不算「外部来源」，否则应用内的选择安装包会被自己拦掉
-        val selfCaller = caller != null && caller.equals(activity.packageName, ignoreCase = true)
-        if (settings.sourcePresetEnabled && allowed.isNotEmpty() && caller != null && !selfCaller &&
-            !allowed.contains(caller.lowercase())
-        ) {
-            InstallerLog.record(activity, "INSTALL", "受管安装器拦截 $caller")
-            state = InstallUiState.Failed(
-                null,
-                tr(
-                    "该安装请求来自未受管的应用（$caller），已拒绝",
-                    "This install request comes from an unmanaged app ($caller) — blocked"
-                )
-            )
-            return
-        }
-
         val data: Uri? = intent.data
         if (data == null) {
             state = InstallUiState.Error(tr("没有拿到安装包", "No APK received"), tr("Intent 里没有文件地址", "The intent has no file URI"))
@@ -194,6 +175,7 @@ class InstallController(
             val info = withContext(Dispatchers.IO) { ApkInspector.inspect(activity, target) }
                 ?.copy(
                     sourceLabel = resolveSourceLabel(activity),
+                    sourcePackage = resolveSourcePackage(activity),
                     splits = bundle?.splits.orEmpty()
                 )
             if (info == null) {
@@ -483,6 +465,13 @@ class InstallController(
         return runCatching {
             pm.getApplicationInfo(pkg, 0).loadLabel(pm).toString()
         }.getOrNull()?.takeIf { it.isNotBlank() }
+    }
+
+    /** 发起这次安装的应用包名，拿不到（老系统 / 系统进程）返回 null。 */
+    private fun resolveSourcePackage(activity: android.app.Activity): String? {
+        if (android.os.Build.VERSION.SDK_INT < 34) return null
+        val pkg = runCatching { activity.launchedFromPackage }.getOrNull() ?: return null
+        return pkg.takeIf { it.isNotBlank() && it != "android" }
     }
 
     /** 结构性校验：能不能当 zip 打开、有没有 manifest。 */

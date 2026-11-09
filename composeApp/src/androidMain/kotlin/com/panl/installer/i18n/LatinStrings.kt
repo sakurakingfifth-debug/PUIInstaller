@@ -459,8 +459,8 @@ internal val latinOverrides: Map<String, String> = mapOf(
     "已对所有用户卸载。重启后系统分区里的 APK 也会被遮罩掉。" to "Pro omnibus usoribus deinstallatum. Post restitutionem etiam APK in partitione systematis celabitur.",
     "卸载失败：ROOT 没权限，也没能写入挂载遮罩" to "Deinstalatio defecit — nulla potestas ROOT neque larva scripta",
     "高危操作" to "Periculosissimum",
-    "启用来源预设" to "Fontes institutionis accendere",
-    "只允许列表里的应用发起安装" to "Solae app in indice institutionem incipere possunt",
+    "显示安装来源" to "Fontem institutionis ostendere",
+    "在安装页显示是哪个应用发起的安装" to "Ostendere quae app institutionem incepit",
     "安装途径" to "Installatum ab",
     "这个应用没有安装" to "Haec app non installata est",
 )

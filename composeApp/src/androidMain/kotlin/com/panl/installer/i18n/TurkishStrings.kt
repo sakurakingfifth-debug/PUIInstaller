@@ -459,8 +459,8 @@ internal val turkishOverrides: Map<String, String> = mapOf(
     "已对所有用户卸载。重启后系统分区里的 APK 也会被遮罩掉。" to "Tüm kullanıcılar için kaldırıldı. Yeniden başlatmadan sonra sistem bölümündeki APK da gizlenecek.",
     "卸载失败：ROOT 没权限，也没能写入挂载遮罩" to "Kaldırma başarısız — ROOT erişimi yok ve maske yazılamadı",
     "高危操作" to "Çok riskli",
-    "启用来源预设" to "Yükleme kaynaklarını etkinleştir",
-    "只允许列表里的应用发起安装" to "Yalnızca listedeki uygulamalar yükleme başlatabilir",
+    "显示安装来源" to "Yükleme kaynağını göster",
+    "在安装页显示是哪个应用发起的安装" to "Yüklemeyi hangi uygulamanın başlattığını göster",
     "安装途径" to "Yükleyen",
     "这个应用没有安装" to "Bu uygulama yüklü değil",
 )

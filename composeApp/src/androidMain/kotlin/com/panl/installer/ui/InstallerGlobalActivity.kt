@@ -281,10 +281,10 @@ private fun GlobalPage(page: Int, topPad: Dp, navBarH: Dp) {
                     PuiSwitchRow(
                         icon = null,
                         iconPainter = painterResource(R.drawable.ic_receipt_item),
-                        title = tr("启用来源预设", "Enable install sources"),
+                        title = tr("显示安装来源", "Show install source"),
                         subtitle = tr(
-                            "只允许列表里的应用发起安装",
-                            "Only listed apps may start installs"
+                            "在安装页显示是哪个应用发起的安装",
+                            "Show which app started the install"
                         ),
                         checked = settings.sourcePresetEnabled,
                         onChange = {

@@ -459,8 +459,8 @@ internal val polishOverrides: Map<String, String> = mapOf(
     "已对所有用户卸载。重启后系统分区里的 APK 也会被遮罩掉。" to "Odinstalowano dla wszystkich użytkowników. Po restarcie APK w partycji systemowej też zostanie zamaskowany.",
     "卸载失败：ROOT 没权限，也没能写入挂载遮罩" to "Nie udało się usunąć — brak dostępu ROOT i nie zapisano maski",
     "高危操作" to "Bardzo ryzykowne",
-    "启用来源预设" to "Włącz źródła instalacji",
-    "只允许列表里的应用发起安装" to "Tylko aplikacje z listy mogą rozpocząć instalację",
+    "显示安装来源" to "Pokaż źródło instalacji",
+    "在安装页显示是哪个应用发起的安装" to "Pokaż, która aplikacja rozpoczęła instalację",
     "安装途径" to "Zainstalowane przez",
     "这个应用没有安装" to "Ta aplikacja nie jest zainstalowana",
 )

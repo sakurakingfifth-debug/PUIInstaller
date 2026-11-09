@@ -53,6 +53,8 @@ data class ApkInfo(
     val maxOsdk: String? = null,
     /** 这次安装是谁发起的（发起应用的名字），拿不到就是 null。 */
     val sourceLabel: String? = null,
+    /** 发起这次安装的应用包名（launchedFromPackage），拿不到就是 null。 */
+    val sourcePackage: String? = null,
     /** native 库是否全部按 16 KB 对齐；null 表示没有 native 库。 */
     val supports16K: Boolean? = null,
     /** APK 里带的 ABI（lib/<abi>/），空表示纯 Java。 */

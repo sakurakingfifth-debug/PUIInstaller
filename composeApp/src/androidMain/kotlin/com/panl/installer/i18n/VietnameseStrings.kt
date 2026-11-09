@@ -459,8 +459,8 @@ internal val vietnameseOverrides: Map<String, String> = mapOf(
     "已对所有用户卸载。重启后系统分区里的 APK 也会被遮罩掉。" to "Đã gỡ cho mọi người dùng. Sau khi khởi động lại, APK trong phân vùng hệ thống cũng sẽ bị che.",
     "卸载失败：ROOT 没权限，也没能写入挂载遮罩" to "Gỡ thất bại — không có quyền ROOT và không ghi được mặt nạ",
     "高危操作" to "Rất rủi ro",
-    "启用来源预设" to "Bật nguồn cài đặt",
-    "只允许列表里的应用发起安装" to "Chỉ ứng dụng trong danh sách mới được bắt đầu cài đặt",
+    "显示安装来源" to "Hiện nguồn cài đặt",
+    "在安装页显示是哪个应用发起的安装" to "Hiện ứng dụng nào đã bắt đầu cài đặt",
     "安装途径" to "Được cài bởi",
     "这个应用没有安装" to "Ứng dụng này chưa được cài",
 )
