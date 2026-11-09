@@ -33,7 +33,9 @@ object Notifications {
     const val CHANNEL_LIVE = "install_live"
 
     /** 完成时「弹出来」用的实时通知渠道：带提示音，系统会把它展开一下。 */
-    const val CHANNEL_DONE = "install_done"
+    // 换过两次 ID：旧 ID 的 importance 被系统锁死（mImportanceLockedDefaultApp=true），
+    // 怎么重建都还是 DEFAULT，弹不出横幅
+    const val CHANNEL_DONE = "install_done_banner"
     private const val DONE_ID = 9100
 
     const val LIVE_ID = 9000
@@ -91,22 +93,24 @@ object Notifications {
                 setShowBadge(false)
             }
         )
-        // 早期版本把这条渠道建成了 HIGH（会变成普通横幅），删掉重建一次
+        // 早期版本把这条渠道建成了 HIGH，后来又改回 DEFAULT；现在要的就是 HIGH 的横幅，
+        // 所以每次都删掉重建一次，保证 importance 跟代码一致（渠道建好之后 importance 改不了）
         runCatching { nm.deleteNotificationChannel("install_done") }
         runCatching { nm.deleteNotificationChannel("install_done_live") }
-        // 完成时的「实时通知」：用 DEFAULT 才能被提升成胶囊（HIGH 会变成普通横幅），
-        // 但保留提示音，系统会把它弹出来一下，而不是安静躺着
+        // 安装完成后的横幅：必须 IMPORTANCE_HIGH 才会以 heads-up 形式弹出来，
+        // 否则只会安静躺在通知栏里
         nm.createNotificationChannel(
             NotificationChannel(
                 CHANNEL_DONE,
                 tr("安装完成提醒", "Install finished"),
-                NotificationManager.IMPORTANCE_DEFAULT
+                NotificationManager.IMPORTANCE_HIGH
             ).apply {
                 description = tr(
-                    "自动安装结束后弹出实时通知",
-                    "Live notification shown when an automatic install finishes"
+                    "安装完成后弹出的横幅提醒",
+                    "Heads-up banner shown when an install finishes"
                 )
                 setShowBadge(false)
+                enableVibration(true)
             }
         )
         // 实时活动要求渠道不能是 IMPORTANCE_MIN；这里用 DEFAULT，才能被系统提升
@@ -270,7 +274,7 @@ object Notifications {
         val icon = Icon.createWithResource(context, R.drawable.ic_stat_install)
 
         if (popup) {
-            // 仍然是「实时通知」（能提升成胶囊），只是换到会响的渠道，让它自己弹出来
+            // 装完弹横幅：走 HIGH 渠道 + 响铃，系统才会把它 heads-up 顶出来
             cancelProgress(context)
             val builder = Notification.Builder(context, CHANNEL_DONE)
                 .setSmallIcon(R.drawable.ic_stat_install)
@@ -279,14 +283,11 @@ object Notifications {
                 .setContentIntent(tap)
                 .setColor(context.getColor(R.color.pui_magenta))
                 .setCategory(Notification.CATEGORY_STATUS)
-                .setOngoing(true)
+                .setPriority(Notification.PRIORITY_HIGH)
+                .setDefaults(Notification.DEFAULT_ALL)
                 .setAutoCancel(true)
                 .addAction(Notification.Action.Builder(icon, tr("打开", "Open"), open).build())
             if (clearMs > 0) builder.setTimeoutAfter(clearMs)
-            if (Build.VERSION.SDK_INT >= 36) {
-                builder.setShortCriticalText(tr("完成", "Done"))
-                builder.addExtras(Bundle().apply { putBoolean(EXTRA_REQUEST_PROMOTED_ONGOING, true) })
-            }
             runCatching { nm.notify(DONE_ID, builder.build()) }
             return
         }
