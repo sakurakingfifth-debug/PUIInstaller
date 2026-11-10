@@ -48,6 +48,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.panl.installer.R
+import com.panl.installer.core.ApkDownloader
 import com.panl.installer.core.ApkInfo
 import com.panl.installer.core.Formatters
 import com.panl.installer.core.Settings
@@ -182,6 +183,8 @@ fun InstallScreen(controller: InstallController, onClose: () -> Unit) {
                     is InstallUiState.Ready -> ReadyBody(st.info, controller, onClose, topPad = blurH)
 
                     is InstallUiState.Installing -> InstallingBody(st, controller, onClose)
+
+                    is InstallUiState.Downloading -> DownloadingBody(st, controller, onClose)
 
                     is InstallUiState.Success -> SuccessBody(st, controller, onClose)
 
@@ -525,6 +528,101 @@ private fun InstallingBody(
                 textAlign = TextAlign.Center
             )
         }
+    }
+}
+
+
+// ---------------- 下载中 ----------------
+
+@Composable
+private fun DownloadingBody(
+    state: InstallUiState.Downloading,
+    controller: InstallController,
+    onClose: () -> Unit
+) {
+    val scheme = MaterialTheme.colorScheme
+    val fraction = if (state.total > 0) {
+        (state.received.toFloat() / state.total).coerceIn(0f, 1f)
+    } else {
+        null
+    }
+    val speed = ApkDownloader.speedText(state.speedBps)
+
+    Column(Modifier.fillMaxSize()) {
+        Column(
+            Modifier
+                .weight(1f)
+                .fillMaxWidth()
+                .padding(horizontal = 32.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.Center
+        ) {
+            StatusGlyph(
+                icon = PuiIcon.Download,
+                tint = scheme.onPrimaryContainer,
+                container = scheme.primaryContainer,
+                size = 96.dp,
+                painter = painterResource(R.drawable.ic_cloud_download)
+            )
+            Spacer(Modifier.height(22.dp))
+            Text(
+                tr("正在下载", "Downloading"),
+                style = MaterialTheme.typography.headlineSmall,
+                color = scheme.onSurface
+            )
+            Spacer(Modifier.height(6.dp))
+            Text(
+                state.fileName,
+                style = MaterialTheme.typography.bodyMedium,
+                color = scheme.onSurfaceVariant,
+                maxLines = 2,
+                overflow = TextOverflow.Ellipsis,
+                textAlign = TextAlign.Center
+            )
+            Spacer(Modifier.height(26.dp))
+            if (fraction == null) {
+                PuiIndeterminateBar()
+                Spacer(Modifier.height(10.dp))
+                Text(
+                    listOf(Formatters.size(state.received).takeIf { state.received > 0 } ?: "—", speed)
+                        .filter { it.isNotBlank() }
+                        .joinToString(" · "),
+                    style = MaterialTheme.typography.labelLarge,
+                    color = scheme.primary
+                )
+            } else {
+                PuiProgressBar(progress = fraction, height = 6.dp)
+                Spacer(Modifier.height(8.dp))
+                Text(
+                    "${(fraction * 100).toInt()}%",
+                    style = MaterialTheme.typography.labelLarge,
+                    color = scheme.primary
+                )
+                Spacer(Modifier.height(4.dp))
+                Text(
+                    listOf(
+                        "${Formatters.size(state.received)} / ${Formatters.size(state.total)}",
+                        speed
+                    ).filter { it.isNotBlank() }.joinToString(" · "),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = scheme.onSurfaceVariant
+                )
+            }
+            Spacer(Modifier.height(24.dp))
+            Text(
+                tr("下载完成后可以直接安装，不用再回浏览器", "It installs right after the download — no need to go back to the browser"),
+                style = MaterialTheme.typography.bodySmall,
+                color = scheme.onSurfaceVariant,
+                textAlign = TextAlign.Center
+            )
+        }
+        BottomActionBar(
+            primaryText = tr("取消下载", "Cancel download"),
+            onPrimary = {
+                controller.cancelDownload()
+                onClose()
+            }
+        )
     }
 }
 

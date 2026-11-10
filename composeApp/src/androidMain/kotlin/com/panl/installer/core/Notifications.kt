@@ -59,9 +59,10 @@ object Notifications {
 
     /**
      * 安装阶段。weight 决定这一段占整条进度条的多少，
-     * 总和 10 → 准备 20%、复制 50%、安装 30%。
+     * 总和 16 → 下载 37%、准备 12%、复制 31%、安装 19%。
      */
     enum class Stage(val weight: Int) {
+        DOWNLOADING(6),
         PREPARING(2),
         COPYING(5),
         INSTALLING(3)
@@ -217,7 +218,13 @@ object Notifications {
         val live = Settings.get(context).notificationsLive
         val builder = Notification.Builder(context, if (live) CHANNEL_LIVE else CHANNEL_ID)
             .setSmallIcon(R.drawable.ic_stat_install)
-            .setContentTitle(tr("正在安装 $label", "Installing $label"))
+            .setContentTitle(
+                if (stage == Stage.DOWNLOADING) {
+                    tr("正在下载 $label", "Downloading $label")
+                } else {
+                    tr("正在安装 $label", "Installing $label")
+                }
+            )
             .setContentText(text)
             .setOngoing(true)
             .setOnlyAlertOnce(true)
@@ -236,6 +243,7 @@ object Notifications {
             // 胶囊里那行短文本：复制阶段显示百分比，其余显示状态词
             builder.setShortCriticalText(
                 when (stage) {
+                    Stage.DOWNLOADING -> "$percent%"
                     Stage.COPYING -> "$percent%"
                     Stage.PREPARING -> tr("准备中", "Preparing")
                     Stage.INSTALLING -> tr("安装中", "Installing")

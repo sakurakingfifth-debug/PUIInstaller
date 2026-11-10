@@ -11,10 +11,12 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.lifecycle.lifecycleScope
 import com.panl.installer.core.ApkInfo
+import com.panl.installer.core.ApkDownloader
 import com.panl.installer.core.ApkInspector
 import com.panl.installer.core.ApkStaging
 import com.panl.installer.core.BiometricGate
 import com.panl.installer.core.BundleReader
+import com.panl.installer.core.Formatters
 import com.panl.installer.core.InstallEngine
 import com.panl.installer.core.InstallHistory
 import com.panl.installer.core.LiveInstallService
@@ -39,6 +41,19 @@ import com.panl.installer.i18n.tr
 sealed interface InstallUiState {
     data object Loading : InstallUiState
     data class Preparing(val progress: Float?) : InstallUiState
+
+    /**
+     * 从分享链接下载安装包。
+     *
+     * @param total 服务器没给 Content-Length 时是 -1（进度条走不确定态）
+     */
+    data class Downloading(
+        val url: String,
+        val fileName: String,
+        val received: Long,
+        val total: Long,
+        val speedBps: Long
+    ) : InstallUiState
     data class Ready(val info: ApkInfo) : InstallUiState
     data class Error(val title: String, val message: String) : InstallUiState
     data class Installing(val stage: String, val progress: Float?) : InstallUiState
@@ -116,6 +131,12 @@ class InstallController(
             return
         }
 
+        // 浏览器「分享链接」发过来的：只有一段文本，里面是 http(s) 地址
+        if (intent.action == Intent.ACTION_SEND && intent.data == null) {
+            handleSharedLink(intent)
+            return
+        }
+
         val data: Uri? = intent.data
         if (data == null) {
             state = InstallUiState.Error(tr("没有拿到安装包", "No APK received"), tr("Intent 里没有文件地址", "The intent has no file URI"))
@@ -124,6 +145,84 @@ class InstallController(
         sourceUri = data
         InstallEngine.Bus.outcome = null
         load(data)
+    }
+
+    // ---------------- 分享链接 → 下载 → 安装 ----------------
+
+    private var downloader: ApkDownloader? = null
+
+    /** 下下来的缓存副本：退出时删掉（它只服务于这一次安装）。 */
+    private var downloadedFile: File? = null
+
+    private fun handleSharedLink(intent: Intent) {
+        val text = intent.getCharSequenceExtra(Intent.EXTRA_TEXT)?.toString()
+            ?: intent.getStringExtra(Intent.EXTRA_SUBJECT)
+        val url = ApkDownloader.extractUrl(text)
+        if (url == null) {
+            state = InstallUiState.Error(
+                tr("没有找到下载链接", "No download link found"),
+                tr("分享内容里没有 http(s) 地址", "The shared text has no http(s) URL")
+            )
+            return
+        }
+        startDownload(url)
+    }
+
+    /** 用户在下载页点了取消。 */
+    fun cancelDownload() {
+        downloader?.cancel()
+    }
+
+    private fun startDownload(url: String) {
+        InstallEngine.Bus.outcome = null
+        val name = ApkDownloader.guessName(url)
+        state = InstallUiState.Downloading(url, name, 0, -1, 0)
+        val engine = ApkDownloader(activity)
+        downloader = engine
+        InstallerLog.record(activity, "DOWNLOAD", "开始下载 $url")
+        activity.lifecycleScope.launch {
+            val result = withContext(Dispatchers.IO) {
+                engine.download(url) { received, total, speed ->
+                    // 回调在 IO 线程：进度必须回主线程改 Compose 状态
+                    activity.runOnUiThread {
+                        val current = state
+                        if (current is InstallUiState.Downloading && current.url == url) {
+                            state = current.copy(received = received, total = total, speedBps = speed)
+                        }
+                    }
+                }
+            }
+            downloader = null
+            when (result) {
+                is ApkDownloader.Result.Success -> {
+                    downloadedFile = result.file
+                    InstallerLog.record(
+                        activity, "DOWNLOAD",
+                        "下载完成 ${result.file.name} (${Formatters.size(result.file.length())})"
+                    )
+                    safeRetryDone = false
+                    // 用 file:// 走原本那条「读取安装包」的路：模块识别、拆分包解包、解析都在里面
+                    val uri = Uri.fromFile(result.file)
+                    sourceUri = uri
+                    load(uri)
+                }
+
+                is ApkDownloader.Result.Failure -> {
+                    InstallerLog.record(activity, "DOWNLOAD", "下载失败 $url: ${result.message}")
+                    state = InstallUiState.Error(
+                        tr("下载失败", "Download failed"),
+                        result.message
+                    )
+                }
+
+                ApkDownloader.Result.Cancelled -> {
+                    state = InstallUiState.Error(
+                        tr("已取消下载", "Download cancelled"),
+                        tr("安装包没有下载完", "The APK wasn't fully downloaded")
+                    )
+                }
+            }
+        }
     }
 
     private fun handleConfirmSession(intent: Intent) {
@@ -658,8 +757,12 @@ class InstallController(
     fun cleanupOnExit() {
         // 交给服务之后这份缓存还有用，删了服务就读不到了
         if (handedOff) return
+        // 页面被关掉时别再继续下（下载循环会自己删掉半截文件）
+        downloader?.cancel()
         stagedFile?.delete()
         bundleDir?.deleteRecursively()
+        // 下载下来的副本只服务于这一次安装
+        downloadedFile?.delete()
     }
 
     companion object {

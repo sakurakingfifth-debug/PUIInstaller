@@ -9,6 +9,8 @@
 
     <!-- 普通安装器能力 -->
     <uses-permission android:name="android.permission.REQUEST_INSTALL_PACKAGES" />
+    <!-- 分享链接直接下载安装包（不再经过浏览器下载） -->
+    <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.QUERY_ALL_PACKAGES" />
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
     <!-- 进阶功能「忽略电池优化」：后台管理严格的 ROM 上，实时通知的安装会被掐掉 -->
@@ -41,7 +43,8 @@
         android:localeConfig="@xml/locales_config"
         android:roundIcon="@mipmap/ic_launcher"
         android:supportsRtl="true"
-        android:theme="@style/Theme.PuiInstaller">
+        android:theme="@style/Theme.PuiInstaller"
+        android:usesCleartextTraffic="true">
 
         <!-- 功能面板。桌面入口挂在下面的 activity-alias 上，这样能单独把图标藏起来 -->
         <activity
@@ -249,6 +252,14 @@
             <intent-filter>
                 <action android:name="android.content.pm.action.CONFIRM_INSTALL" />
                 <category android:name="android.intent.category.DEFAULT" />
+            </intent-filter>
+
+            <!-- 浏览器长按 APK 链接 →「分享链接」→ 分享面板里选安装器。
+                 收到的是纯文本（链接），由安装器自己下载再安装，不用先让浏览器下到 Download。 -->
+            <intent-filter>
+                <action android:name="android.intent.action.SEND" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <data android:mimeType="text/plain" />
             </intent-filter>
         </activity>
 

@@ -47,6 +47,7 @@ import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import com.panl.installer.R
 import com.panl.installer.core.ApkInfo
+import com.panl.installer.core.ApkDownloader
 import com.panl.installer.ui.components.InstallInfoChips
 import com.panl.installer.core.Formatters
 import com.panl.installer.core.Settings
@@ -186,6 +187,8 @@ fun InstallSheet(controller: InstallController, onClose: () -> Unit) {
                     )
 
                     is InstallUiState.Installing -> InstallingSheet(st, onClose)
+
+                    is InstallUiState.Downloading -> DownloadingSheet(st, controller, onClose)
 
                     is InstallUiState.Success -> SuccessSheet(st, controller, onClose)
 
@@ -449,6 +452,100 @@ private fun InstallingSheet(state: InstallUiState.Installing, onClose: () -> Uni
                 )
             }
         }
+    }
+}
+
+/**
+ * 从分享链接下载安装包。和安装中同一个骨架：图标 → 文件名 → 进度 → 取消。
+ *
+ * 下载完成后会自动切到 [ReadySheet]，用户不用回浏览器再点一次。
+ */
+@Composable
+private fun DownloadingSheet(
+    state: InstallUiState.Downloading,
+    controller: InstallController,
+    onClose: () -> Unit
+) {
+    val scheme = MaterialTheme.colorScheme
+    val fraction = if (state.total > 0) {
+        (state.received.toFloat() / state.total).coerceIn(0f, 1f)
+    } else {
+        null
+    }
+    val speed = ApkDownloader.speedText(state.speedBps)
+
+    Column(Modifier.fillMaxSize().padding(horizontal = 20.dp)) {
+        Column(
+            Modifier
+                .fillMaxWidth()
+                .weight(1f)
+                .padding(top = 8.dp, bottom = 10.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.Center
+        ) {
+            StatusGlyph(
+                icon = PuiIcon.Download,
+                tint = scheme.onPrimaryContainer,
+                container = scheme.primaryContainer,
+                size = 68.dp,
+                painter = painterResource(R.drawable.ic_cloud_download)
+            )
+            Spacer(Modifier.height(14.dp))
+            Text(
+                state.fileName,
+                style = MaterialTheme.typography.titleMedium,
+                color = scheme.onSurface,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis
+            )
+            Spacer(Modifier.height(4.dp))
+            Text(
+                tr("正在下载安装包", "Downloading the APK"),
+                style = MaterialTheme.typography.bodySmall,
+                color = scheme.onSurfaceVariant
+            )
+            Spacer(Modifier.height(18.dp))
+            if (fraction == null) {
+                PuiIndeterminateBar()
+                Spacer(Modifier.height(10.dp))
+                Text(
+                    listOf(Formatters.size(state.received).takeIf { state.received > 0 } ?: "—", speed)
+                        .filter { it.isNotBlank() }
+                        .joinToString(" · "),
+                    style = MaterialTheme.typography.labelLarge,
+                    color = scheme.primary
+                )
+            } else {
+                PuiProgressBar(progress = fraction, height = 6.dp)
+                Spacer(Modifier.height(8.dp))
+                Text(
+                    "${(fraction * 100).toInt()}%",
+                    style = MaterialTheme.typography.labelLarge,
+                    color = scheme.primary
+                )
+                Spacer(Modifier.height(4.dp))
+                Text(
+                    listOf(
+                        "${Formatters.size(state.received)} / ${Formatters.size(state.total)}",
+                        speed
+                    ).filter { it.isNotBlank() }.joinToString(" · "),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = scheme.onSurfaceVariant
+                )
+            }
+        }
+        PuiButton(
+            text = tr("取消下载", "Cancel download"),
+            onClick = {
+                controller.cancelDownload()
+                onClose()
+            },
+            modifier = Modifier
+                .fillMaxWidth()
+                .navigationBarsPadding(),
+            style = PuiButtonStyle.Ghost
+        )
+        Spacer(Modifier.height(2.dp))
     }
 }
 

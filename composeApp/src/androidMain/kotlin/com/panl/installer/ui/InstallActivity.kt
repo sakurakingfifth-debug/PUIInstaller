@@ -1,6 +1,7 @@
 package com.panl.installer.ui
 
 import android.content.Intent
+import android.net.Uri
 import android.os.Build
 import android.os.Bundle
 import android.view.WindowManager
@@ -9,9 +10,12 @@ import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.lifecycle.lifecycleScope
 import com.panl.installer.R
+import com.panl.installer.core.ApkDownloader
 import com.panl.installer.core.ApkInspector
 import com.panl.installer.core.ApkStaging
 import com.panl.installer.core.BiometricInstallActivity
+import com.panl.installer.core.Formatters
+import com.panl.installer.core.InstallerLog
 import com.panl.installer.core.LiveInstallService
 import com.panl.installer.core.Notifications
 import com.panl.installer.core.Settings
@@ -82,7 +86,13 @@ class InstallActivity : ComponentActivity() {
         if (live) {
             val uri = intent?.data
             val auto = intent?.getBooleanExtra(Notifications.EXTRA_LIVE_AUTO_START, false) == true
-            if (uri == null) {
+            // 「分享链接」：浏览器分享过来的是文本，不是文件，得先自己下载
+            val sharedUrl = if (intent?.action == Intent.ACTION_SEND) {
+                ApkDownloader.extractUrl(intent.getCharSequenceExtra(Intent.EXTRA_TEXT)?.toString())
+            } else {
+                null
+            }
+            if (uri == null && sharedUrl == null) {
                 finish()
                 return
             }
@@ -93,7 +103,23 @@ class InstallActivity : ComponentActivity() {
             // 用应用级作用域而不是 lifecycleScope：Activity 被回收/被下一次点击顶掉时，
             // 复制和启动服务不能跟着取消，否则就是「点了没反应」。
             appScope.launch {
-                val file = withContext(Dispatchers.IO) { ApkStaging.stage(this@InstallActivity, uri) }
+                val localUri = if (uri != null) {
+                    uri
+                } else {
+                    val downloaded = downloadForLive(sharedUrl!!)
+                    if (downloaded == null) {
+                        Notifications.cancelProgress(this@InstallActivity)
+                        Notifications.post(
+                            this@InstallActivity,
+                            tr("下载失败", "Download failed"),
+                            tr("无法从链接下载安装包", "Couldn't download the APK from that link")
+                        )
+                        runCatching { finish() }
+                        return@launch
+                    }
+                    downloaded
+                }
+                val file = withContext(Dispatchers.IO) { ApkStaging.stage(this@InstallActivity, localUri) }
                 // 模块 zip：里面是 module.prop 不是 APK，转给刷入页（设置里可关）
                 if (file != null && Settings.get(this@InstallActivity).moduleFlashEnabled) {
                     val module = withContext(Dispatchers.IO) {
@@ -117,7 +143,7 @@ class InstallActivity : ComponentActivity() {
                     Notifications.post(
                         this@InstallActivity,
                         tr("读取安装包失败", "Failed to read the APK"),
-                        tr("无法打开 $uri", "Can't open $uri")
+                        tr("无法打开 $localUri", "Can't open $localUri")
                     )
                 } else if (
                     // 「自动安装」有两种来源：intent 里的 extra，或者设置里那个开关
@@ -126,10 +152,10 @@ class InstallActivity : ComponentActivity() {
                 ) {
                     // 自动安装 + 生物识别：先过认证，再交给服务（服务里没有界面，弹不了认证框）
                     BiometricInstallActivity.start(
-                        this@InstallActivity, info.file, info.label, info.packageName, uri
+                        this@InstallActivity, info.file, info.label, info.packageName, localUri
                     )
                 } else {
-                    LiveInstallService.start(this@InstallActivity, info, uri, auto)
+                    LiveInstallService.start(this@InstallActivity, info, localUri, auto)
                 }
                 runCatching { finish() }
             }
@@ -160,6 +186,41 @@ class InstallActivity : ComponentActivity() {
         super.onDestroy()
         // 流体云模式没有初始化 controller（页面直接 finish 了）
         if (::controller.isInitialized && isFinishing) controller.cleanupOnExit()
+    }
+
+    /**
+     * 实时通知模式下的「分享链接」：下载进度写进那条实时通知，下完交给 [LiveInstallService]，
+     * 全程不出现界面 —— 和点开本地 APK 的行为完全一致。
+     *
+     * @return 落地后的 file:// Uri；失败返回 null。
+     */
+    private suspend fun downloadForLive(url: String): Uri? {
+        val name = ApkDownloader.guessName(url)
+        val engine = ApkDownloader(this)
+        InstallerLog.record(this, "DOWNLOAD", "开始下载 $url")
+        val result = withContext(Dispatchers.IO) {
+            var lastAt = 0L
+            engine.download(url) { received, total, speed ->
+                // 通知栏刷新不用太勤，600ms 一次看着已经很连续了
+                val now = android.os.SystemClock.elapsedRealtime()
+                if (lastAt != 0L && now - lastAt < 600) return@download
+                lastAt = now
+                Notifications.showInstall(
+                    context = this@InstallActivity,
+                    label = name,
+                    stage = Notifications.Stage.DOWNLOADING,
+                    fraction = if (total > 0) received.toFloat() / total else null,
+                    text = listOf(Formatters.size(received), ApkDownloader.speedText(speed))
+                        .filter { it.isNotBlank() }
+                        .joinToString(" · "),
+                    promoted = Notifications.canPromote(this@InstallActivity)
+                )
+            }
+        }
+        return (result as? ApkDownloader.Result.Success)?.file?.let {
+            InstallerLog.record(this, "DOWNLOAD", "下载完成 ${it.name} (${Formatters.size(it.length())})")
+            Uri.fromFile(it)
+        }
     }
 
     /** 系统级背景模糊（Android 12+，需要设备支持 cross-window blur）。 */
