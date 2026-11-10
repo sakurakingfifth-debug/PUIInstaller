@@ -2,6 +2,7 @@ package com.panl.installer.ui.install
 
 import android.app.Activity
 import androidx.compose.foundation.background
+import androidx.compose.animation.core.animateFloat
 import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.border
 import androidx.compose.foundation.gestures.detectTapGestures
@@ -32,6 +33,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalContext
@@ -474,6 +476,38 @@ private fun DownloadingSheet(
     }
     val speed = ApkDownloader.speedText(state.speedBps)
 
+    // 下载过程要有「在动」的感觉：进度条按 450ms 匀速补间（不是每 250ms 硬跳一格），
+    // 百分比数字跟着补间往上数，图标做一次很轻的呼吸缩放。
+    val shown by androidx.compose.animation.core.animateFloatAsState(
+        targetValue = fraction ?: 0f,
+        animationSpec = androidx.compose.animation.core.tween(
+            durationMillis = 450,
+            easing = androidx.compose.animation.core.LinearEasing
+        ),
+        label = "download-fraction"
+    )
+    val shownPercent by androidx.compose.animation.core.animateIntAsState(
+        targetValue = ((fraction ?: 0f) * 100).toInt(),
+        animationSpec = androidx.compose.animation.core.tween(
+            durationMillis = 400,
+            easing = androidx.compose.animation.core.LinearEasing
+        ),
+        label = "download-percent"
+    )
+    val pulse by androidx.compose.animation.core.rememberInfiniteTransition(label = "download-pulse")
+        .animateFloat(
+            initialValue = 1f,
+            targetValue = 1.05f,
+            animationSpec = androidx.compose.animation.core.infiniteRepeatable(
+                animation = androidx.compose.animation.core.tween(
+                    durationMillis = 1100,
+                    easing = androidx.compose.animation.core.FastOutSlowInEasing
+                ),
+                repeatMode = androidx.compose.animation.core.RepeatMode.Reverse
+            ),
+            label = "download-pulse-scale"
+        )
+
     Column(Modifier.fillMaxSize().padding(horizontal = 20.dp)) {
         Column(
             Modifier
@@ -483,13 +517,20 @@ private fun DownloadingSheet(
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Center
         ) {
-            StatusGlyph(
-                icon = PuiIcon.Download,
-                tint = scheme.onPrimaryContainer,
-                container = scheme.primaryContainer,
-                size = 68.dp,
-                painter = painterResource(R.drawable.ic_cloud_download)
-            )
+            Box(
+                Modifier.graphicsLayer {
+                    scaleX = pulse
+                    scaleY = pulse
+                }
+            ) {
+                StatusGlyph(
+                    icon = PuiIcon.Download,
+                    tint = scheme.onPrimaryContainer,
+                    container = scheme.primaryContainer,
+                    size = 68.dp,
+                    painter = painterResource(R.drawable.ic_document_download)
+                )
+            }
             Spacer(Modifier.height(14.dp))
             Text(
                 state.fileName,
@@ -516,10 +557,10 @@ private fun DownloadingSheet(
                     color = scheme.primary
                 )
             } else {
-                PuiProgressBar(progress = fraction, height = 6.dp)
+                PuiProgressBar(progress = shown, height = 6.dp)
                 Spacer(Modifier.height(8.dp))
                 Text(
-                    "${(fraction * 100).toInt()}%",
+                    "$shownPercent%",
                     style = MaterialTheme.typography.labelLarge,
                     color = scheme.primary
                 )

@@ -39,6 +39,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.rotate
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalHapticFeedback
@@ -548,6 +549,27 @@ private fun DownloadingBody(
     }
     val speed = ApkDownloader.speedText(state.speedBps)
 
+    // 和浮窗版同一套动画：进度匀速补间、百分比跟着数、图标轻微呼吸
+    val shown by animateFloatAsState(
+        targetValue = fraction ?: 0f,
+        animationSpec = tween(durationMillis = 450, easing = androidx.compose.animation.core.LinearEasing),
+        label = "download-fraction"
+    )
+    val shownPercent by androidx.compose.animation.core.animateIntAsState(
+        targetValue = ((fraction ?: 0f) * 100).toInt(),
+        animationSpec = tween(durationMillis = 400, easing = androidx.compose.animation.core.LinearEasing),
+        label = "download-percent"
+    )
+    val pulse by rememberInfiniteTransition(label = "download-pulse").animateFloat(
+        initialValue = 1f,
+        targetValue = 1.05f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(durationMillis = 1100, easing = androidx.compose.animation.core.FastOutSlowInEasing),
+            repeatMode = RepeatMode.Reverse
+        ),
+        label = "download-pulse-scale"
+    )
+
     Column(Modifier.fillMaxSize()) {
         Column(
             Modifier
@@ -557,13 +579,20 @@ private fun DownloadingBody(
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Center
         ) {
-            StatusGlyph(
-                icon = PuiIcon.Download,
-                tint = scheme.onPrimaryContainer,
-                container = scheme.primaryContainer,
-                size = 96.dp,
-                painter = painterResource(R.drawable.ic_cloud_download)
-            )
+            Box(
+                Modifier.graphicsLayer {
+                    scaleX = pulse
+                    scaleY = pulse
+                }
+            ) {
+                StatusGlyph(
+                    icon = PuiIcon.Download,
+                    tint = scheme.onPrimaryContainer,
+                    container = scheme.primaryContainer,
+                    size = 96.dp,
+                    painter = painterResource(R.drawable.ic_document_download)
+                )
+            }
             Spacer(Modifier.height(22.dp))
             Text(
                 tr("正在下载", "Downloading"),
@@ -591,10 +620,10 @@ private fun DownloadingBody(
                     color = scheme.primary
                 )
             } else {
-                PuiProgressBar(progress = fraction, height = 6.dp)
+                PuiProgressBar(progress = shown, height = 6.dp)
                 Spacer(Modifier.height(8.dp))
                 Text(
-                    "${(fraction * 100).toInt()}%",
+                    "$shownPercent%",
                     style = MaterialTheme.typography.labelLarge,
                     color = scheme.primary
                 )
