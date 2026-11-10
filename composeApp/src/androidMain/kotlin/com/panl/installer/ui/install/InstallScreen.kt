@@ -740,6 +740,16 @@ private fun SuccessBody(
                     color = MaterialTheme.colorScheme.error,
                     textAlign = TextAlign.Center
                 )
+                Spacer(Modifier.height(4.dp))
+                Text(
+                    tr(
+                        "需要给安装器「所有文件访问权限」，或用 ROOT 删",
+                        "Grant \"All files access\" to the installer, or use ROOT"
+                    ),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    textAlign = TextAlign.Center
+                )
             } else if (controller.hasSourceFile()) {
                 Spacer(Modifier.height(8.dp))
                 PuiButton(

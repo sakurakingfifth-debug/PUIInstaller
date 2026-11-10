@@ -294,7 +294,31 @@ object SourceCleaner {
                 }
             }
         }
+        // 「删不掉」的很大一部分其实是「已经没了」：用户先点过一次、或者装完自动删过，
+        // 再点一次时 provider 的 delete 返回 0、File.delete() 也返回 false。
+        // 以「现在还在不在」为准，别把已删除报成失败。
+        if (!ok && !exists(context, uri)) {
+            Log.i(TAG, "source already gone: $uri")
+            return true
+        }
         return ok
+    }
+
+    /** 这个安装包还在不在。file 看文件系统，content 走 provider 查一次。 */
+    fun exists(context: Context, uri: Uri?): Boolean {
+        if (uri == null) return false
+        return when (uri.scheme?.lowercase()) {
+            "file" -> uri.path?.let { File(it).exists() } ?: false
+            "content" -> runCatching {
+                context.contentResolver.query(
+                    uri,
+                    arrayOf(android.provider.OpenableColumns.SIZE),
+                    null, null, null
+                )?.use { it.moveToFirst() } ?: false
+                // 查不了（provider 抛权限/异常）时按「还在」处理，别把按钮藏掉
+            }.getOrDefault(true)
+            else -> false
+        }
     }
 
     private fun deletePath(path: String?): Boolean {
@@ -319,7 +343,8 @@ object SourceCleaner {
             // readlink 只需要 fd 本身，不需要对目标文件有任何权限
             val real = android.system.Os.readlink(link)
             // 管道 / socket 会返回 "pipe:[123]"，不是路径
-            real?.takeIf { it.startsWith("/") && it.endsWith(".apk", ignoreCase = true) }
+            real?.takeIf { it.startsWith("/") }
+                ?.takeIf { isDeletableName(it) }
                 ?.let(::normalizeMount)
         }
     }.getOrElse {
@@ -344,6 +369,14 @@ object SourceCleaner {
         return path
     }
 
+    /** 只允许删安装包这类文件：从 provider 反查出来的路径，多一道保险。 */
+    private fun isDeletableName(path: String?): Boolean {
+        if (path.isNullOrBlank()) return false
+        val n = path.lowercase()
+        return n.endsWith(".apk") || n.endsWith(".apk.1") ||
+            n.endsWith(".apks") || n.endsWith(".xapk") || n.endsWith(".apkm")
+    }
+
     /**
      * 用 ROOT 删一个真实路径。
      *
@@ -352,8 +385,9 @@ object SourceCleaner {
      * 删除结果用 su 自己确认：应用侧 stat 不到别人的目录，`File.exists()` 会骗人。
      */
     private suspend fun deleteViaRoot(path: String?): Boolean {
-        if (path.isNullOrBlank() || !path.endsWith(".apk", ignoreCase = true)) return false
-        val quoted = "'" + path.replace("'", "'\\''") + "'"
+        if (!isDeletableName(path)) return false
+        val real = path!!
+        val quoted = "'" + real.replace("'", "'\\''") + "'"
         val command = "rm -f $quoted; if [ -e $quoted ]; then echo STILL; else echo GONE; fi"
         val (code, out) = kotlinx.coroutines.withTimeoutOrNull(20_000) {
             RootShell.run(command)

@@ -363,6 +363,7 @@ class InstallController(
                 return@launch
             }
             installedInfo = info
+            sourceExists = withContext(Dispatchers.IO) { SourceCleaner.exists(activity, uri) }
             state = InstallUiState.Ready(info)
         }
     }
@@ -561,6 +562,7 @@ class InstallController(
                 val ok = withContext(Dispatchers.IO) {
                     SourceCleaner.delete(activity, sourceUri, null)
                 }
+                if (ok) sourceExists = false
                 state = InstallUiState.Success(info, deleted = ok, deleteFailed = !ok)
             } else {
                 state = InstallUiState.Success(info, deleted = false, deleteFailed = false)
@@ -594,19 +596,16 @@ class InstallController(
     }
 
     /** 源文件还在不在 —— 结果页据此决定要不要显示「删除安装包」。 */
-    fun hasSourceFile(): Boolean {
-        val uri = sourceUri ?: return false
-        return when (uri.scheme?.lowercase()) {
-            "file" -> uri.path?.let { File(it).exists() } ?: false
-            "content" -> true
-            else -> false
-        }
-    }
+    fun hasSourceFile(): Boolean = sourceExists
+
+    /** 安装包是否还在（装完、删完之后都按真实情况更新，避免「已删还让你再删一次」）。 */
+    private var sourceExists by mutableStateOf(false)
 
     private fun deleteSource() {
         val current = state as? InstallUiState.Success ?: return
         activity.lifecycleScope.launch {
             val ok = withContext(Dispatchers.IO) { SourceCleaner.delete(activity, sourceUri, null) }
+            if (ok) sourceExists = false
             state = current.copy(deleted = ok, deleteFailed = !ok)
         }
     }

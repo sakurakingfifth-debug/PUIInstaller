@@ -661,6 +661,18 @@ private fun SuccessSheet(
                     style = MaterialTheme.typography.bodySmall,
                     color = if (state.deleted) scheme.primary else scheme.error
                 )
+                if (state.deleteFailed) {
+                    Spacer(Modifier.height(4.dp))
+                    Text(
+                        tr(
+                            "需要给安装器「所有文件访问权限」，或用 ROOT 删",
+                            "Grant \"All files access\" to the installer, or use ROOT"
+                        ),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = scheme.onSurfaceVariant,
+                        textAlign = TextAlign.Center
+                    )
+                }
             } else if (controller.hasSourceFile()) {
                 Spacer(Modifier.height(6.dp))
                 PuiButton(
