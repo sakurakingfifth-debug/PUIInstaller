@@ -382,7 +382,9 @@ class InstallController(
         state = st.copy(flashing = true, output = null, failed = false)
         activity.lifecycleScope.launch {
             val result = withContext(Dispatchers.IO) {
-                com.panl.installer.core.ModuleInstaller.install(st.module.file, st.rootMode)
+                com.panl.installer.core.ModuleInstaller.install(
+                    st.module.file, st.rootMode, st.module.id
+                )
             }
             com.panl.installer.core.InstallerLog.record(
                 activity, "MODULE",

@@ -849,6 +849,15 @@ internal fun ModuleSheet(
                             style = MaterialTheme.typography.bodyMedium,
                             color = scheme.error
                         )
+                        Spacer(Modifier.height(4.dp))
+                        Text(
+                            tr(
+                                "如果已经装了 root，请在 root 管理器里给安装器授权后再试",
+                                "If root is installed, grant root to this installer in your root manager"
+                            ),
+                            style = MaterialTheme.typography.bodySmall,
+                            color = scheme.onSurfaceVariant
+                        )
                     }
                     if (st.flashing) {
                         Spacer(Modifier.height(12.dp))
