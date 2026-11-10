@@ -47,13 +47,18 @@ class MainActivity : ComponentActivity() {
 
         // 退出动画：图标放大淡出、整层跟着淡出，正好接上同底色的品牌页
         splash.setOnExitAnimationListener { splashView ->
-            splashView.iconView?.animate()
-                ?.scaleX(1.12f)
-                ?.scaleY(1.12f)
-                ?.alpha(0f)
-                ?.setDuration(220L)
-                ?.setInterpolator(DecelerateInterpolator())
-                ?.start()
+            // 系统启动图里不一定有图标层（ColorOS 自绘、或作为系统应用运行时都可能没有），
+            // androidx 的 iconView getter 拿不到会直接抛 NPE，所以整段包住：
+            // 拿不到图标就只做整层淡出，不能让启动崩在这儿。
+            runCatching {
+                splashView.iconView?.animate()
+                    ?.scaleX(1.12f)
+                    ?.scaleY(1.12f)
+                    ?.alpha(0f)
+                    ?.setDuration(220L)
+                    ?.setInterpolator(DecelerateInterpolator())
+                    ?.start()
+            }
             splashView.view.animate()
                 .alpha(0f)
                 .setStartDelay(40L)
