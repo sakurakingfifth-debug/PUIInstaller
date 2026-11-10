@@ -205,7 +205,8 @@ fun InstallSheet(controller: InstallController, onClose: () -> Unit) {
                         message = st.message,
                         icon = PuiIcon.Warning,
                         danger = true,
-                        onClose = onClose
+                        onClose = onClose,
+                        painter = painterResource(R.drawable.ic_danger)
                     )
 
                     else -> MessageSheet(

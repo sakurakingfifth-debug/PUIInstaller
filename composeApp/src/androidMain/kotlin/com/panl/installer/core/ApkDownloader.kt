@@ -91,12 +91,15 @@ class ApkDownloader(private val context: Context) {
                 return Result.Failure("下载不完整（${Formatters.size(received)} / ${Formatters.size(total)}）")
             }
             if (!looksLikeZip(out)) {
-                val head = runCatching { out.readBytes().take(200).toByteArray().decodeToString() }.getOrDefault("")
+                val raw = runCatching { out.readBytes().take(400).toByteArray() }.getOrDefault(ByteArray(0))
                 out.delete()
-                return if (head.contains("<html", ignoreCase = true) || head.contains("<!doctype", ignoreCase = true)) {
-                    Result.Failure("链接返回的是网页，不是安装包")
+                val head = String(raw).lowercase()
+                // gzip 开头（1f 8b）多半是服务器无视 identity 压过的网页
+                val gzip = raw.size >= 2 && raw[0] == 0x1f.toByte() && raw[1] == 0x8b.toByte()
+                return if (gzip || head.contains("<html") || head.contains("<!doctype") || head.contains("<head")) {
+                    Result.Failure("这个链接是网页，不是安装包的下载地址")
                 } else {
-                    Result.Failure("下载到的文件不是安装包")
+                    Result.Failure("这个链接返回的不是安装包文件")
                 }
             }
             Result.Success(out)

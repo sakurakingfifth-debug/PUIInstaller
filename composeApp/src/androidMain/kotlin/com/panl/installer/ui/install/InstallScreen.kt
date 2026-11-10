@@ -196,7 +196,8 @@ fun InstallScreen(controller: InstallController, onClose: () -> Unit) {
                         message = st.message,
                         icon = PuiIcon.Warning,
                         onClose = onClose,
-                        tone = Tone.Error
+                        tone = Tone.Error,
+                        iconPainter = painterResource(R.drawable.ic_danger)
                     )
 
                     is InstallUiState.SessionConfirm -> SessionConfirmBody(st, controller, onClose)
