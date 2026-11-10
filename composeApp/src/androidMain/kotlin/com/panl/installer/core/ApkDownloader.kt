@@ -25,6 +25,9 @@ class ApkDownloader(private val context: Context) {
         data class Success(val file: File) : Result
         data class Failure(val message: String) : Result
         data object Cancelled : Result
+
+        /** 服务器返回的是 JS 验证页（蓝奏云/阿里云 ESA 这类），需要先用 WebView 过一遍验证。 */
+        data object NeedsWeb : Result
     }
 
     @Volatile
@@ -37,14 +40,51 @@ class ApkDownloader(private val context: Context) {
 
     /**
      * @param onProgress received / total（total 未知时是 -1）/ 速度（字节每秒）
+     * @param cookie 过了站点验证之后拿到的 Cookie，会原样带上
      */
-    fun download(url: String, onProgress: (received: Long, total: Long, speedBps: Long) -> Unit): Result {
+    fun download(
+        url: String,
+        cookie: String? = null,
+        onProgress: (received: Long, total: Long, speedBps: Long) -> Unit
+    ): Result {
         val dir = File(context.cacheDir, "downloads").apply { mkdirs() }
         sweep(dir)
         var conn: HttpURLConnection? = null
         var out: File? = null
         return try {
-            val (response, finalUrl) = open(url)
+            // 带 cookie 时把几种常见组合都试一遍：不同网盘对 Referer / Cookie 范围要求不一样，
+            // 400 / 403 基本都是这两个头不对
+            val (response, finalUrl) = if (cookie.isNullOrBlank()) {
+                open(url)
+            } else {
+                val referer = runCatching { URL(url).let { "${it.protocol}://${it.host}/" } }.getOrNull()
+                val onlyVerify = cookie.split(";")
+                    .map { it.trim() }
+                    .firstOrNull { it.startsWith("acw_sc__v2=") }
+                val variants = buildList {
+                    if (onlyVerify != null) {
+                        add(onlyVerify to null)
+                        add(onlyVerify to referer)
+                    }
+                    add(cookie to null)
+                    add(cookie to referer)
+                }
+                var picked: Pair<HttpURLConnection, URL>? = null
+                for ((c, r) in variants) {
+                    val pair = open(url, c, r)
+                    val code = pair.first.responseCode
+                    InstallerLog.record(
+                        context, "DOWNLOAD",
+                        "重试验证 cookie=${if (c.length > 24) c.take(24) + "…" else c} referer=$r -> $code ${pair.second}"
+                    )
+                    if (code in 200..299) {
+                        picked = pair
+                        break
+                    }
+                    runCatching { pair.first.disconnect() }
+                }
+                picked ?: open(url, cookie, null)
+            }
             conn = response
             if (response.responseCode !in 200..299) {
                 return Result.Failure("服务器返回 HTTP ${response.responseCode}")
@@ -91,15 +131,21 @@ class ApkDownloader(private val context: Context) {
                 return Result.Failure("下载不完整（${Formatters.size(received)} / ${Formatters.size(total)}）")
             }
             if (!looksLikeZip(out)) {
-                val raw = runCatching { out.readBytes().take(400).toByteArray() }.getOrDefault(ByteArray(0))
+                val text = peekText(out)
                 out.delete()
-                val head = String(raw).lowercase()
-                // gzip 开头（1f 8b）多半是服务器无视 identity 压过的网页
-                val gzip = raw.size >= 2 && raw[0] == 0x1f.toByte() && raw[1] == 0x8b.toByte()
-                return if (gzip || head.contains("<html") || head.contains("<!doctype") || head.contains("<head")) {
-                    Result.Failure("这个链接是网页，不是安装包的下载地址")
-                } else {
-                    Result.Failure("这个链接返回的不是安装包文件")
+                val head = text.lowercase()
+                // 阿里云 ESA 的 JS 验证：一段算 arg1 的脚本，跑完才给 cookie
+                val challenge = head.contains("arg1=") &&
+                    (head.contains("acw_sc") || head.contains("document.cookie"))
+                val html = head.contains("<html") || head.contains("<!doctype") ||
+                    head.contains("<head") || head.contains("<script")
+                return when {
+                    challenge && cookie == null -> Result.NeedsWeb
+                    html -> Result.Failure(
+                        if (cookie == null) "这个链接是网页，不是安装包的下载地址"
+                        else "验证没通过，链接仍然返回网页"
+                    )
+                    else -> Result.Failure("这个链接返回的不是安装包文件")
                 }
             }
             Result.Success(out)
@@ -115,7 +161,11 @@ class ApkDownloader(private val context: Context) {
     }
 
     /** 打开连接并跟完跳转，返回最后一跳的响应和最终 URL。 */
-    private fun open(url: String): Pair<HttpURLConnection, URL> {
+    private fun open(
+        url: String,
+        cookie: String? = null,
+        referer: String? = null
+    ): Pair<HttpURLConnection, URL> {
         var current = URL(url)
         repeat(8) {
             val conn = (current.openConnection() as HttpURLConnection).apply {
@@ -123,11 +173,11 @@ class ApkDownloader(private val context: Context) {
                 connectTimeout = 15_000
                 readTimeout = 30_000
                 setRequestProperty("Accept-Encoding", "identity")
-                // 有些 CDN 会拒掉默认的 "Dalvik/..." UA
-                setRequestProperty(
-                    "User-Agent",
-                    "Mozilla/5.0 (Linux; Android ${android.os.Build.VERSION.RELEASE}) PUIInstaller"
-                )
+                // 统一用浏览器 UA：网盘的 Cookie 是跟 UA 绑定的，
+                // 拿 WebView 领的 cookie 却用 "Dalvik/..." 去请求会被判定为异常
+                setRequestProperty("User-Agent", WebGate.UA)
+                if (!cookie.isNullOrBlank()) setRequestProperty("Cookie", cookie)
+                if (!referer.isNullOrBlank()) setRequestProperty("Referer", referer)
             }
             val code = conn.responseCode
             if (code in 300..399) {
@@ -155,6 +205,40 @@ class ApkDownloader(private val context: Context) {
         // 去掉路径分隔符等非法字符，避免写文件时越界
         val safe = decoded.replace(Regex("""[\\/:*?"<>|]"""), "_").trim()
         return safe.ifBlank { "download.apk" }.take(120)
+    }
+
+    /**
+     * 读文件开头当文本看（可能是网页）。
+     *
+     * 服务器经常无视 `Accept-Encoding: identity` 硬塞 gzip，这时候不能直接看字节，
+     * 否则永远认不出「JS 验证页」。
+     */
+    private fun peekText(file: File, limit: Int = 8192): String = runCatching {
+        val head = ByteArray(2)
+        val isGzip = file.inputStream().use { input ->
+            val n = input.read(head)
+            n == 2 && head[0] == 0x1f.toByte() && head[1] == 0x8b.toByte()
+        }
+        if (isGzip) {
+            java.util.zip.GZIPInputStream(file.inputStream()).use { gz ->
+                String(readUpTo(gz, limit))
+            }
+        } else {
+            file.inputStream().use { input -> String(readUpTo(input, limit)) }
+        }
+    }.getOrDefault("")
+
+    private fun readUpTo(input: java.io.InputStream, limit: Int): ByteArray {
+        val out = java.io.ByteArrayOutputStream(limit)
+        val buf = ByteArray(4096)
+        var left = limit
+        while (left > 0) {
+            val n = input.read(buf, 0, minOf(buf.size, left))
+            if (n <= 0) break
+            out.write(buf, 0, n)
+            left -= n
+        }
+        return out.toByteArray()
     }
 
     /** 是 ZIP 吗（APK / .apks / .xapk / .apkm 都是 zip）。 */

@@ -19,6 +19,7 @@ import com.panl.installer.core.InstallerLog
 import com.panl.installer.core.LiveInstallService
 import com.panl.installer.core.Notifications
 import com.panl.installer.core.Settings
+import com.panl.installer.core.WebGate
 import com.panl.installer.i18n.tr
 import com.panl.installer.ui.install.InstallController
 import com.panl.installer.ui.install.InstallScreen
@@ -205,24 +206,41 @@ class InstallActivity : ComponentActivity() {
         val name = ApkDownloader.guessName(url)
         val engine = ApkDownloader(this)
         InstallerLog.record(this, "DOWNLOAD", "开始下载 $url")
-        val result = withContext(Dispatchers.IO) {
-            var lastAt = 0L
-            engine.download(url) { received, total, speed ->
-                // 通知栏刷新不用太勤，600ms 一次看着已经很连续了
-                val now = android.os.SystemClock.elapsedRealtime()
-                if (lastAt != 0L && now - lastAt < 600) return@download
-                lastAt = now
-                Notifications.showInstall(
-                    context = this@InstallActivity,
-                    label = name,
-                    stage = Notifications.Stage.DOWNLOADING,
-                    fraction = if (total > 0) received.toFloat() / total else null,
-                    text = listOf(Formatters.size(received), ApkDownloader.speedText(speed))
-                        .filter { it.isNotBlank() }
-                        .joinToString(" · "),
-                    promoted = Notifications.canPromote(this@InstallActivity)
-                )
+        var cookie: String? = null
+        var target = url
+        var result: ApkDownloader.Result = ApkDownloader.Result.Failure("下载失败")
+        var round = 0
+        while (round < 2) {
+            result = withContext(Dispatchers.IO) {
+                var lastAt = 0L
+                engine.download(target, cookie) { received, total, speed ->
+                    // 通知栏刷新不用太勤，600ms 一次看着已经很连续了
+                    val now = android.os.SystemClock.elapsedRealtime()
+                    if (lastAt != 0L && now - lastAt < 600) return@download
+                    lastAt = now
+                    Notifications.showInstall(
+                        context = this@InstallActivity,
+                        label = name,
+                        stage = Notifications.Stage.DOWNLOADING,
+                        fraction = if (total > 0) received.toFloat() / total else null,
+                        text = listOf(Formatters.size(received), ApkDownloader.speedText(speed))
+                            .filter { it.isNotBlank() }
+                            .joinToString(" · "),
+                        promoted = Notifications.canPromote(this@InstallActivity)
+                    )
+                }
             }
+            if (result !is ApkDownloader.Result.NeedsWeb || round == 1) break
+            round++
+            // 网盘直链的 JS 验证：借内置浏览器过一遍拿 cookie / 它给的一次性直链
+            InstallerLog.record(this, "DOWNLOAD", "链接需要网页验证，改用内置浏览器 $url")
+            val gate = WebGate.harvest(this, target)
+            cookie = gate?.cookie
+            if (cookie.isNullOrBlank()) {
+                result = ApkDownloader.Result.Failure("这个链接要做网页验证，内置浏览器没能通过")
+                break
+            }
+            if (!gate?.downloadUrl.isNullOrBlank()) target = gate!!.downloadUrl!!
         }
         return (result as? ApkDownloader.Result.Success)?.file?.let {
             InstallerLog.record(this, "DOWNLOAD", "下载完成 ${it.name} (${Formatters.size(it.length())})")

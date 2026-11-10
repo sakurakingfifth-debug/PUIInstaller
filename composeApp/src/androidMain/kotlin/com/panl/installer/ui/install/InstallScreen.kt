@@ -197,7 +197,9 @@ fun InstallScreen(controller: InstallController, onClose: () -> Unit) {
                         icon = PuiIcon.Warning,
                         onClose = onClose,
                         tone = Tone.Error,
-                        iconPainter = painterResource(R.drawable.ic_danger)
+                        iconPainter = painterResource(R.drawable.ic_danger),
+                        actionText = st.openUrl?.let { tr("用浏览器下载", "Open in browser") },
+                        onAction = st.openUrl?.let { url -> { controller.openInBrowser(url) } }
                     )
 
                     is InstallUiState.SessionConfirm -> SessionConfirmBody(st, controller, onClose)
@@ -610,7 +612,15 @@ private fun DownloadingBody(
                 textAlign = TextAlign.Center
             )
             Spacer(Modifier.height(26.dp))
-            if (fraction == null) {
+            if (state.verifying) {
+                PuiIndeterminateBar()
+                Spacer(Modifier.height(10.dp))
+                Text(
+                    tr("正在完成网页验证…", "Verifying the page…"),
+                    style = MaterialTheme.typography.labelLarge,
+                    color = scheme.primary
+                )
+            } else if (fraction == null) {
                 PuiIndeterminateBar()
                 Spacer(Modifier.height(10.dp))
                 Text(
@@ -876,7 +886,9 @@ private fun SimpleStateBody(
     icon: PuiIcon,
     onClose: () -> Unit,
     tone: Tone = Tone.Normal,
-    iconPainter: androidx.compose.ui.graphics.painter.Painter? = null
+    iconPainter: androidx.compose.ui.graphics.painter.Painter? = null,
+    actionText: String? = null,
+    onAction: (() -> Unit)? = null
 ) {
     val scheme = MaterialTheme.colorScheme
     Column(Modifier.fillMaxSize()) {
@@ -908,6 +920,9 @@ private fun SimpleStateBody(
                 color = scheme.onSurfaceVariant,
                 textAlign = TextAlign.Center
             )
+        }
+        if (actionText != null && onAction != null) {
+            BottomActionBar(primaryText = actionText, onPrimary = onAction)
         }
     }
 }

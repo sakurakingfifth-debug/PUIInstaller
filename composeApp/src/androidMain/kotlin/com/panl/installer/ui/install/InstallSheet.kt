@@ -206,7 +206,9 @@ fun InstallSheet(controller: InstallController, onClose: () -> Unit) {
                         icon = PuiIcon.Warning,
                         danger = true,
                         onClose = onClose,
-                        painter = painterResource(R.drawable.ic_danger)
+                        painter = painterResource(R.drawable.ic_danger),
+                        actionText = st.openUrl?.let { tr("用浏览器下载", "Open in browser") },
+                        onAction = st.openUrl?.let { url -> { controller.openInBrowser(url) } }
                     )
 
                     else -> MessageSheet(
@@ -547,7 +549,15 @@ private fun DownloadingSheet(
                 color = scheme.onSurfaceVariant
             )
             Spacer(Modifier.height(18.dp))
-            if (fraction == null) {
+            if (state.verifying) {
+                PuiIndeterminateBar()
+                Spacer(Modifier.height(10.dp))
+                Text(
+                    tr("正在完成网页验证…", "Verifying the page…"),
+                    style = MaterialTheme.typography.labelLarge,
+                    color = scheme.primary
+                )
+            } else if (fraction == null) {
                 PuiIndeterminateBar()
                 Spacer(Modifier.height(10.dp))
                 Text(
@@ -1018,7 +1028,9 @@ private fun MessageSheet(
     icon: PuiIcon,
     danger: Boolean = false,
     onClose: () -> Unit,
-    painter: androidx.compose.ui.graphics.painter.Painter? = null
+    painter: androidx.compose.ui.graphics.painter.Painter? = null,
+    actionText: String? = null,
+    onAction: (() -> Unit)? = null
 ) {
     val scheme = MaterialTheme.colorScheme
     Column(Modifier.fillMaxSize().padding(horizontal = 20.dp)) {
@@ -1044,6 +1056,17 @@ private fun MessageSheet(
                 color = scheme.onSurfaceVariant,
                 textAlign = TextAlign.Center
             )
+        }
+        if (actionText != null && onAction != null) {
+            PuiButton(
+                text = actionText,
+                onClick = onAction,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .navigationBarsPadding(),
+                style = PuiButtonStyle.Filled
+            )
+            Spacer(Modifier.height(8.dp))
         }
     }
 }

@@ -27,6 +27,7 @@ import com.panl.installer.corepatch.CorePatchPrefs
 import com.panl.installer.core.SessionInstaller
 import com.panl.installer.core.SourceCleaner
 import com.panl.installer.core.VersionRelation
+import com.panl.installer.core.WebGate
 import androidx.compose.runtime.snapshotFlow
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.filterNotNull
@@ -52,10 +53,17 @@ sealed interface InstallUiState {
         val fileName: String,
         val received: Long,
         val total: Long,
-        val speedBps: Long
+        val speedBps: Long,
+        /** 链接外面有 JS 验证，正在用内置浏览器过一遍（蓝奏云 / 阿里云 ESA 这类）。 */
+        val verifying: Boolean = false
     ) : InstallUiState
     data class Ready(val info: ApkInfo) : InstallUiState
-    data class Error(val title: String, val message: String) : InstallUiState
+    data class Error(
+        val title: String,
+        val message: String,
+        /** 这个链接只能交回浏览器下载时，带上原始地址（错误页会显示「用浏览器下载」）。 */
+        val openUrl: String? = null
+    ) : InstallUiState
     data class Installing(val stage: String, val progress: Float?) : InstallUiState
     data class Success(
         val info: ApkInfo,
@@ -173,6 +181,14 @@ class InstallController(
         downloader?.cancel()
     }
 
+    /** 把链接交回浏览器（网盘直链有 JS 验证 / 防盗链时只能这样）。 */
+    fun openInBrowser(url: String) {
+        runCatching {
+            activity.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(url)))
+        }
+        activity.finish()
+    }
+
     private fun startDownload(url: String) {
         InstallEngine.Bus.outcome = null
         val name = ApkDownloader.guessName(url)
@@ -181,15 +197,42 @@ class InstallController(
         downloader = engine
         InstallerLog.record(activity, "DOWNLOAD", "开始下载 $url")
         activity.lifecycleScope.launch {
-            val result = withContext(Dispatchers.IO) {
-                engine.download(url) { received, total, speed ->
-                    // 回调在 IO 线程：进度必须回主线程改 Compose 状态
-                    activity.runOnUiThread {
-                        val current = state
-                        if (current is InstallUiState.Downloading && current.url == url) {
-                            state = current.copy(received = received, total = total, speedBps = speed)
+            var cookie: String? = null
+            var target = url
+            var result: ApkDownloader.Result = ApkDownloader.Result.Failure("下载失败")
+            // 最多两轮：第一轮直连；被 JS 验证挡住时用内置浏览器过一遍，再拿它给的直链重下
+            var round = 0
+            while (round < 2) {
+                result = withContext(Dispatchers.IO) {
+                    engine.download(target, cookie) { received, total, speed ->
+                        // 回调在 IO 线程：进度必须回主线程改 Compose 状态
+                        activity.runOnUiThread {
+                            val current = state
+                            if (current is InstallUiState.Downloading && current.url == url) {
+                                state = current.copy(received = received, total = total, speedBps = speed)
+                            }
                         }
                     }
+                }
+                if (result !is ApkDownloader.Result.NeedsWeb || round == 1) break
+                round++
+                (state as? InstallUiState.Downloading)?.let { state = it.copy(verifying = true) }
+                InstallerLog.record(activity, "DOWNLOAD", "链接需要网页验证，改用内置浏览器过验证 $url")
+                val gate = WebGate.harvest(activity, target)
+                cookie = gate?.cookie
+                if (cookie.isNullOrBlank()) {
+                    result = ApkDownloader.Result.Failure(
+                        "这个链接要做网页验证，内置浏览器没能通过（可能是验证码或需要登录）"
+                    )
+                    break
+                }
+                // 网盘的直链往往是一次性的：优先用验证页自己跳出来的那个地址
+                if (!gate?.downloadUrl.isNullOrBlank()) {
+                    target = gate!!.downloadUrl!!
+                    InstallerLog.record(activity, "DOWNLOAD", "使用验证页给出的直链 $target")
+                }
+                (state as? InstallUiState.Downloading)?.let {
+                    state = it.copy(verifying = false, received = 0, total = -1, speedBps = 0)
                 }
             }
             downloader = null
@@ -209,9 +252,19 @@ class InstallController(
 
                 is ApkDownloader.Result.Failure -> {
                     InstallerLog.record(activity, "DOWNLOAD", "下载失败 $url: ${result.message}")
+                    // 4xx 基本都是网盘的防盗链 / 一次性验证：安装器直接下不了，交回浏览器最稳
+                    val friendly = if (result.message.contains("HTTP 4")) {
+                        tr(
+                            "这个链接有网页验证或防盗链，安装器直接下载不了",
+                            "This link needs a browser check or blocks direct downloads"
+                        )
+                    } else {
+                        result.message
+                    }
                     state = InstallUiState.Error(
                         tr("下载失败", "Download failed"),
-                        result.message
+                        friendly + tr("（可以点下面的按钮用浏览器下载）", " (you can open it in a browser below)"),
+                        openUrl = url
                     )
                 }
 
@@ -219,6 +272,13 @@ class InstallController(
                     state = InstallUiState.Error(
                         tr("已取消下载", "Download cancelled"),
                         tr("安装包没有下载完", "The APK wasn't fully downloaded")
+                    )
+                }
+
+                ApkDownloader.Result.NeedsWeb -> {
+                    state = InstallUiState.Error(
+                        tr("下载失败", "Download failed"),
+                        tr("这个链接需要网页验证", "This link needs a browser check")
                     )
                 }
             }
