@@ -196,6 +196,38 @@ object Notifications {
     }
 
     /**
+     * 实时通知模式下拿到了模块 zip：刷模块必须有人点确认，但这时候再拉一个浮窗
+     * 会跟正在退场的 Activity 撞车（ColorOS 会把这次启动丢掉），所以留一条「点此刷入」。
+     */
+    fun showModuleReady(context: Context, moduleName: String, file: java.io.File) {
+        val nm = context.getSystemService(NotificationManager::class.java) ?: return
+        val open = Intent(context, com.panl.installer.ui.InstallActivity::class.java)
+            .setAction(Intent.ACTION_VIEW)
+            .setDataAndType(
+                android.net.Uri.fromFile(file),
+                "application/vnd.android.package-archive"
+            )
+            .putExtra(com.panl.installer.ui.InstallActivity.EXTRA_FORCE_SHEET, true)
+            .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+        val pending = PendingIntent.getActivity(
+            context,
+            9210,
+            open,
+            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+        )
+        // 用「安装完成提醒」那条 DEFAULT 渠道：LOW 渠道的静默通知在 ColorOS 上会被折叠、看不见
+        val notification = Notification.Builder(context, CHANNEL_DONE)
+            .setSmallIcon(R.drawable.ic_stat_install)
+            .setContentTitle(tr("模块已下载：$moduleName", "Module downloaded: $moduleName"))
+            .setContentText(tr("点此刷入", "Tap to flash"))
+            .setContentIntent(pending)
+            .setAutoCancel(true)
+            .setColor(context.getColor(R.color.pui_magenta))
+            .build()
+        runCatching { nm.notify(9210, notification) }
+    }
+
+    /**
      * 实时活动：按阶段加权算出总进度。
      *
      * @param fraction 当前阶段内的进度 0..1；null 表示这一段没法量化（写会话之后系统不回报）

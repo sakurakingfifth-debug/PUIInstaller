@@ -120,19 +120,18 @@ class InstallActivity : ComponentActivity() {
                     downloaded
                 }
                 val file = withContext(Dispatchers.IO) { ApkStaging.stage(this@InstallActivity, localUri) }
-                // 模块 zip：里面是 module.prop 不是 APK，转给刷入页（设置里可关）
+                // 模块 zip（里面是 module.prop 不是 APK）：实时通知模式没有界面，刷模块又必须人工确认，
+                // 所以改成用浮窗重新打开自己，直接进刷入页
                 if (file != null && Settings.get(this@InstallActivity).moduleFlashEnabled) {
                     val module = withContext(Dispatchers.IO) {
                         com.panl.installer.core.ModuleInspector.inspect(file)
                     }
                     if (module != null) {
-                        // 正常走不到这里（.zip 已经在 onCreate 里改走浮窗了），兜底直接提示
+                        // 刷模块必须有人点确认，但这个 Activity 正在退场，自己再拉一个浮窗
+                        // 会被 ColorOS 丢掉（launch 被判定 delivered-to-top 后整条丢弃），
+                        // 所以留一条「点此刷入」的通知，点开就是浮窗刷入页
                         Notifications.cancelProgress(this@InstallActivity)
-                        Notifications.post(
-                            this@InstallActivity,
-                            tr("这是一个模块包", "This is a module package"),
-                            tr("请用浮窗样式刷入模块", "Switch to the sheet style to flash modules")
-                        )
+                        Notifications.showModuleReady(this@InstallActivity, module.name, file)
                         runCatching { finish() }
                         return@launch
                     }
@@ -166,7 +165,9 @@ class InstallActivity : ComponentActivity() {
         controller = InstallController(this, handOffToLive = handOffStyle)
         setContent {
             InstallerTheme {
-                if (sheetStyle) {
+                // 用 sheet（含 forceSheet）而不是 sheetStyle：
+                // 实时通知模式下刷模块会强制转成浮窗，只看设置会把内容渲染成全屏
+                if (sheet) {
                     InstallSheet(controller = controller, onClose = { finish() })
                 } else {
                     InstallScreen(controller = controller, onClose = { finish() })
@@ -179,6 +180,12 @@ class InstallActivity : ComponentActivity() {
     override fun onNewIntent(intent: Intent) {
         super.onNewIntent(intent)
         setIntent(intent)
+        // 实时通知模式下这个 Activity 没有 controller（页面直接 finish 了），
+        // 复用实例时再来一个 intent 只会崩，忽略即可
+        if (!::controller.isInitialized) {
+            runCatching { finish() }
+            return
+        }
         controller.handleIntent(intent)
     }
 
