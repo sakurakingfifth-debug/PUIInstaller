@@ -24,6 +24,8 @@ import com.panl.installer.i18n.tr
 import com.panl.installer.ui.install.InstallController
 import com.panl.installer.ui.install.InstallScreen
 import com.panl.installer.ui.install.InstallSheet
+import com.panl.installer.ui.install.displayNameOf
+import com.panl.installer.ui.install.sharedStream
 import com.panl.installer.ui.theme.InstallerTheme
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -66,8 +68,11 @@ class InstallActivity : ComponentActivity() {
         get() = Settings.get(this).installStyle == STYLE_SHEET_LIVE
 
     override fun onCreate(savedInstanceState: Bundle?) {
-        // 模块 zip 在实时通知模式下没有界面，但刷模块必须人工确认，所以 .zip 一律走浮窗
-        val isZip = intent?.data?.lastPathSegment?.endsWith(".zip", ignoreCase = true) == true
+        // 模块 zip 在实时通知模式下没有界面，但刷模块必须人工确认，所以 .zip 一律走浮窗。
+        // 分享过来的可能是 content://，path 段里没有文件名，得问 provider 要显示名。
+        val incomingUri = intent?.data ?: intent?.sharedStream()
+        val incomingName = displayNameOf(incomingUri) ?: incomingUri?.lastPathSegment
+        val isZip = incomingName?.endsWith(".zip", ignoreCase = true) == true
         val forceSheet = intent?.getBooleanExtra(EXTRA_FORCE_SHEET, false) == true
         val sheet = sheetStyle || forceSheet || (liveStyle && isZip)
         val live = liveStyle && !sheet
@@ -85,7 +90,8 @@ class InstallActivity : ComponentActivity() {
 
         // 实时通知：界面完全不出现，把 uri 丢给服务就撤
         if (live) {
-            val uri = intent?.data
+            // 分享文件来的是 EXTRA_STREAM，不一定是 intent.data
+            val uri = intent?.data ?: intent?.sharedStream()
             val auto = intent?.getBooleanExtra(Notifications.EXTRA_LIVE_AUTO_START, false) == true
             // 「分享链接」：浏览器分享过来的是文本，不是文件，得先自己下载
             val sharedUrl = if (intent?.action == Intent.ACTION_SEND) {

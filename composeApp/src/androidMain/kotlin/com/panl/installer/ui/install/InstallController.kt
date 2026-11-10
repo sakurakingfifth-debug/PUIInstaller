@@ -139,6 +139,14 @@ class InstallController(
             return
         }
 
+        // 系统分享带来的文件：文件管理器 → 分享 → 安装器（APK / apks / xapk / apkm / 模块 zip）
+        intent.sharedStream()?.let { shared ->
+            sourceUri = shared
+            InstallEngine.Bus.outcome = null
+            load(shared)
+            return
+        }
+
         // 浏览器「分享链接」发过来的：只有一段文本，里面是 http(s) 地址
         if (intent.action == Intent.ACTION_SEND && intent.data == null) {
             handleSharedLink(intent)

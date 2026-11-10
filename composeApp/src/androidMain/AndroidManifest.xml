@@ -261,6 +261,35 @@
                 <category android:name="android.intent.category.DEFAULT" />
                 <data android:mimeType="text/plain" />
             </intent-filter>
+
+            <!-- 文件管理器 / MT 管理器 →「分享」→ 选安装器，直接装本机的包装文件。
+                 以前只登记了 text/plain，所以分享文件时分享面板里根本看不到安装器。 -->
+            <intent-filter>
+                <action android:name="android.intent.action.SEND" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <data android:mimeType="application/vnd.android.package-archive" />
+            </intent-filter>
+            <!-- 拆分包（.apks / .xapk / .apkm）和 Magisk/KernelSU 模块包本质都是 zip。
+                 文件管理器认得出扩展名时给 application/vnd.*，认不出时给 zip；
+                 两种都要登记，否则「分享模块 zip」里看不到安装器。 -->
+            <intent-filter>
+                <action android:name="android.intent.action.SEND" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <data android:mimeType="application/zip" />
+                <data android:mimeType="application/x-zip-compressed" />
+                <data android:mimeType="application/vnd.apkm" />
+                <data android:mimeType="application/vnd.apks" />
+                <data android:mimeType="application/vnd.xapk" />
+                <data android:mimeType="application/x-apkm" />
+                <data android:mimeType="application/x-apks" />
+                <data android:mimeType="application/x-xapk" />
+            </intent-filter>
+            <!-- 认不出类型的（微信/QQ 下的 xxx.apk.1、部分网盘），给了才能分享进来 -->
+            <intent-filter>
+                <action android:name="android.intent.action.SEND" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <data android:mimeType="application/octet-stream" />
+            </intent-filter>
         </activity>
 
         <!-- 卸载 / 应用信息页：DELETE、UNINSTALL_PACKAGE、SHOW_APP_INFO -->
