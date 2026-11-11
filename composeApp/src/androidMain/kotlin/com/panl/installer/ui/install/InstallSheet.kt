@@ -1135,6 +1135,8 @@ private fun SheetVersionCard(info: ApkInfo) {
 
             Box(
                 Modifier
+                    // 版本号改成轮播后会占满整列，文字会贴到圆钮上；这里留出呼吸位
+                    .padding(horizontal = 8.dp)
                     .size(32.dp)
                     .clip(CircleShape)
                     .background(scheme.surfaceContainerHighest),
