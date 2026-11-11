@@ -141,12 +141,10 @@ fun VersionCompareCard(info: ApkInfo, modifier: Modifier = Modifier) {
                         color = scheme.onSurfaceVariant
                     )
                     Spacer(Modifier.height(2.dp))
-                    Text(
-                        installed?.versionName ?: tr("未安装", "Not installed"),
+                    MarqueeText(
+                        text = installed?.versionName ?: tr("未安装", "Not installed"),
                         style = MaterialTheme.typography.titleLarge,
-                        color = if (installed == null) scheme.onSurfaceVariant else scheme.onSurface,
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis
+                        color = if (installed == null) scheme.onSurfaceVariant else scheme.onSurface
                     )
                     Text(
                         if (installed != null) "(${installed.versionCode})" else "—",
@@ -179,12 +177,11 @@ fun VersionCompareCard(info: ApkInfo, modifier: Modifier = Modifier) {
                         color = scheme.onSurfaceVariant
                     )
                     Spacer(Modifier.height(2.dp))
-                    Text(
-                        info.versionName,
+                    MarqueeText(
+                        text = info.versionName,
                         style = MaterialTheme.typography.titleLarge,
                         color = if (relation == VersionRelation.DOWNGRADE) scheme.error else scheme.primary,
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis
+                        alignment = Alignment.CenterEnd
                     )
                     Text(
                         "(${info.versionCode})",

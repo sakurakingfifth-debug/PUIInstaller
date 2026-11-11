@@ -61,6 +61,7 @@ import com.panl.pui.puiEdgeHaptic
 import com.panl.pui.PuiTopFade
 import com.panl.pui.rememberPuiTopBlurHeight
 import com.panl.pui.puiProgressiveTopBlur
+import com.panl.installer.ui.components.MarqueeText
 import com.panl.installer.ui.components.RelationBadge
 import com.panl.installer.ui.components.SignerCard
 import com.panl.installer.ui.components.InstallInfoChips
@@ -314,12 +315,11 @@ private fun AppHeader(info: ApkInfo) {
             overflow = TextOverflow.Ellipsis
         )
         Spacer(Modifier.height(4.dp))
-        Text(
-            info.packageName,
+        MarqueeText(
+            text = info.packageName,
             style = MaterialTheme.typography.bodySmall,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
-            maxLines = 1,
-            overflow = TextOverflow.Ellipsis
+            alignment = Alignment.Center
         )
         Spacer(Modifier.height(10.dp))
         // 版本关系徽标只留在下面的版本卡里，这里不再重复
@@ -711,12 +711,10 @@ private fun SuccessBody(
                 AppIconView(state.info.icon, 44.dp, corner = 13.dp)
                 Spacer(Modifier.width(12.dp))
                 Column {
-                    Text(
-                        state.info.label,
+                    MarqueeText(
+                        text = state.info.label,
                         style = MaterialTheme.typography.titleMedium,
-                        color = MaterialTheme.colorScheme.onSurface,
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis
+                        color = MaterialTheme.colorScheme.onSurface
                     )
                     Spacer(Modifier.height(2.dp))
                     Text(

@@ -58,6 +58,7 @@ import com.panl.installer.ui.InstallActivity
 import com.panl.installer.ui.components.AppIconView
 import com.panl.installer.ui.components.BottomActionBar
 import com.panl.installer.ui.components.PuiIndeterminateBar
+import com.panl.installer.ui.components.MarqueeText
 import com.panl.installer.ui.components.RelationBadge
 import com.panl.installer.ui.components.StatusGlyph
 import com.panl.installer.ui.components.puiCardBackdropBlur
@@ -293,20 +294,18 @@ private fun ReadySheet(
         ) {
             AppIconView(info.icon, 60.dp)
             Spacer(Modifier.height(6.dp))
-            Text(
-                info.label,
+            MarqueeText(
+                text = info.label,
                 style = MaterialTheme.typography.headlineSmall,
                 color = scheme.onSurface,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis
+                alignment = Alignment.Center
             )
             Spacer(Modifier.height(3.dp))
-            Text(
-                info.packageName,
+            MarqueeText(
+                text = info.packageName,
                 style = MaterialTheme.typography.bodySmall,
                 color = scheme.onSurfaceVariant,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis
+                alignment = Alignment.Center
             )
             if (info.splits.isNotEmpty()) {
                 Spacer(Modifier.height(4.dp))
@@ -537,12 +536,11 @@ private fun DownloadingSheet(
                 )
             }
             Spacer(Modifier.height(14.dp))
-            Text(
-                state.fileName,
+            MarqueeText(
+                text = state.fileName,
                 style = MaterialTheme.typography.titleMedium,
                 color = scheme.onSurface,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis
+                alignment = Alignment.Center
             )
             Spacer(Modifier.height(4.dp))
             Text(
@@ -642,12 +640,10 @@ private fun SuccessSheet(
                 AppIconView(state.info.icon, 40.dp, corner = 12.dp)
                 Spacer(Modifier.width(10.dp))
                 Column {
-                    Text(
-                        state.info.label,
+                    MarqueeText(
+                        text = state.info.label,
                         style = MaterialTheme.typography.titleMedium,
-                        color = scheme.onSurface,
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis
+                        color = scheme.onSurface
                     )
                     Text(
                         "${state.info.versionName} (${state.info.versionCode})",
@@ -788,12 +784,11 @@ internal fun ModuleSheet(
         ) {
             ModuleIconView(60.dp)
             Spacer(Modifier.height(14.dp))
-            Text(
-                st.module.name,
+            MarqueeText(
+                text = st.module.name,
                 style = MaterialTheme.typography.headlineSmall,
                 color = scheme.onSurface,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis
+                alignment = Alignment.Center
             )
             Spacer(Modifier.height(3.dp))
             Text(
@@ -1126,12 +1121,10 @@ private fun SheetVersionCard(info: ApkInfo) {
             Column(Modifier.weight(1f)) {
                 Text(tr("当前", "Current"), style = MaterialTheme.typography.bodySmall, color = scheme.onSurfaceVariant)
                 Spacer(Modifier.height(2.dp))
-                Text(
-                    installed?.versionName ?: tr("未安装", "Not installed"),
+                MarqueeText(
+                    text = installed?.versionName ?: tr("未安装", "Not installed"),
                     style = MaterialTheme.typography.titleMedium,
-                    color = if (installed == null) scheme.onSurfaceVariant else scheme.onSurface,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis
+                    color = if (installed == null) scheme.onSurfaceVariant else scheme.onSurface
                 )
                 Text(
                     if (installed != null) "(${installed.versionCode})" else "—",
@@ -1153,12 +1146,11 @@ private fun SheetVersionCard(info: ApkInfo) {
             Column(Modifier.weight(1f), horizontalAlignment = Alignment.End) {
                 Text(tr("新版本", "New"), style = MaterialTheme.typography.bodySmall, color = scheme.onSurfaceVariant)
                 Spacer(Modifier.height(2.dp))
-                Text(
-                    info.versionName,
+                MarqueeText(
+                    text = info.versionName,
                     style = MaterialTheme.typography.titleMedium,
                     color = if (relation == VersionRelation.DOWNGRADE) scheme.error else scheme.primary,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis
+                    alignment = Alignment.CenterEnd
                 )
                 Text(
                     "(${info.versionCode})",
