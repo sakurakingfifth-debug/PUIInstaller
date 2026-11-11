@@ -5,6 +5,7 @@ import androidx.compose.foundation.MarqueeSpacing
 import androidx.compose.foundation.basicMarquee
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -20,9 +21,20 @@ import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.drawWithContent
+import androidx.compose.ui.graphics.BlendMode
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.CompositingStrategy
+import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.text.AnnotatedString
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.rememberTextMeasurer
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.panl.pui.PuiButton
@@ -229,35 +241,16 @@ private fun BatchRow(item: BatchItem, index: Int, compact: Boolean) {
         Spacer(Modifier.width(12.dp))
 
         Column(Modifier.weight(1f)) {
-            // 长文件名（com.android.vending_53.9.23-34_0_PR_1012244613-85392340_4arch...）
-            // 一行放不下：以前直接省略号截断，看不出是哪个文件。改成轮播，
-            // 放得下时不动，放不下就慢慢滚过去，滚完停一下再从头来。
-            Text(
-                item.name,
+            MarqueeLine(
+                text = item.name,
                 style = MaterialTheme.typography.bodyMedium,
-                color = scheme.onSurface,
-                maxLines = 1,
-                overflow = TextOverflow.Clip,
-                modifier = Modifier.basicMarquee(
-                    iterations = Int.MAX_VALUE,
-                    initialDelayMillis = 1200,
-                    repeatDelayMillis = 1600,
-                    spacing = MarqueeSpacing(48.dp)
-                )
+                color = scheme.onSurface
             )
             itemDetail(item)?.let { detail ->
-                Text(
-                    detail,
+                MarqueeLine(
+                    text = detail,
                     style = MaterialTheme.typography.labelSmall,
-                    color = if (item.status == BatchStatus.Failed) scheme.error else scheme.onSurfaceVariant,
-                    maxLines = 1,
-                    overflow = TextOverflow.Clip,
-                    modifier = Modifier.basicMarquee(
-                        iterations = Int.MAX_VALUE,
-                        initialDelayMillis = 1200,
-                        repeatDelayMillis = 1600,
-                        spacing = MarqueeSpacing(48.dp)
-                    )
+                    color = if (item.status == BatchStatus.Failed) scheme.error else scheme.onSurfaceVariant
                 )
             }
         }
@@ -267,6 +260,73 @@ private fun BatchRow(item: BatchItem, index: Int, compact: Boolean) {
             statusText,
             style = MaterialTheme.typography.labelMedium,
             color = accent
+        )
+    }
+}
+
+/**
+ * 一行文本：放不下就轮播，并且在左右两端做渐隐，不让文字在边缘被硬生生切断。
+ *
+ * 只有真的超出宽度时才加渐隐层 —— 短名字（`x.apk`）不该被压暗两头。
+ * 渐隐用 DstIn 合成实现：先画文字，再用一条「两端透明、中间不透明」的黑条
+ * 乘掉 alpha。必须套一层 Offscreen 的 graphicsLayer，否则 DstIn 会把背后的
+ * 卡片背景一起啃掉；也必须排在 basicMarquee 外层，否则渐变会跟着文字一起滚。
+ */
+@OptIn(ExperimentalFoundationApi::class)
+@Composable
+private fun MarqueeLine(
+    text: String,
+    style: TextStyle,
+    color: Color
+) {
+    val measurer = rememberTextMeasurer()
+    BoxWithConstraints(Modifier.fillMaxWidth()) {
+        val widthPx = constraints.maxWidth
+        val overflows = remember(text, style, widthPx) {
+            widthPx > 0 && measurer.measure(
+                text = AnnotatedString(text),
+                style = style,
+                maxLines = 1,
+                softWrap = false,
+                overflow = TextOverflow.Clip
+            ).size.width > widthPx
+        }
+        val fadePx = with(LocalDensity.current) { 18.dp.toPx() }
+
+        Text(
+            text = text,
+            style = style,
+            color = color,
+            maxLines = 1,
+            overflow = TextOverflow.Clip,
+            modifier = Modifier
+                .then(
+                    if (!overflows) {
+                        Modifier
+                    } else {
+                        Modifier
+                            .graphicsLayer { compositingStrategy = CompositingStrategy.Offscreen }
+                            .drawWithContent {
+                                drawContent()
+                                val f = (fadePx / size.width.coerceAtLeast(1f)).coerceIn(0f, 0.4f)
+                                drawRect(
+                                    brush = Brush.horizontalGradient(
+                                        0f to Color.Transparent,
+                                        f to Color.Black,
+                                        1f - f to Color.Black,
+                                        1f to Color.Transparent
+                                    ),
+                                    blendMode = BlendMode.DstIn
+                                )
+                            }
+                    }
+                )
+                .basicMarquee(
+                    iterations = Int.MAX_VALUE,
+                    initialDelayMillis = 1200,
+                    repeatDelayMillis = 1600,
+                    spacing = MarqueeSpacing(48.dp)
+                )
         )
     }
 }
