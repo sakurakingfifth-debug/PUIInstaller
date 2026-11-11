@@ -1,5 +1,8 @@
 package com.panl.installer.ui.install
 
+import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.foundation.MarqueeSpacing
+import androidx.compose.foundation.basicMarquee
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -183,6 +186,7 @@ private fun batchSubtitle(st: InstallUiState.Batch): String = when (st.phase) {
     )
 }
 
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
 private fun BatchRow(item: BatchItem, index: Int, compact: Boolean) {
     val scheme = MaterialTheme.colorScheme
@@ -225,12 +229,21 @@ private fun BatchRow(item: BatchItem, index: Int, compact: Boolean) {
         Spacer(Modifier.width(12.dp))
 
         Column(Modifier.weight(1f)) {
+            // 长文件名（com.android.vending_53.9.23-34_0_PR_1012244613-85392340_4arch...）
+            // 一行放不下：以前直接省略号截断，看不出是哪个文件。改成轮播，
+            // 放得下时不动，放不下就慢慢滚过去，滚完停一下再从头来。
             Text(
                 item.name,
                 style = MaterialTheme.typography.bodyMedium,
                 color = scheme.onSurface,
                 maxLines = 1,
-                overflow = TextOverflow.Ellipsis
+                overflow = TextOverflow.Clip,
+                modifier = Modifier.basicMarquee(
+                    iterations = Int.MAX_VALUE,
+                    initialDelayMillis = 1200,
+                    repeatDelayMillis = 1600,
+                    spacing = MarqueeSpacing(48.dp)
+                )
             )
             itemDetail(item)?.let { detail ->
                 Text(
@@ -238,7 +251,13 @@ private fun BatchRow(item: BatchItem, index: Int, compact: Boolean) {
                     style = MaterialTheme.typography.labelSmall,
                     color = if (item.status == BatchStatus.Failed) scheme.error else scheme.onSurfaceVariant,
                     maxLines = 1,
-                    overflow = TextOverflow.Ellipsis
+                    overflow = TextOverflow.Clip,
+                    modifier = Modifier.basicMarquee(
+                        iterations = Int.MAX_VALUE,
+                        initialDelayMillis = 1200,
+                        repeatDelayMillis = 1600,
+                        spacing = MarqueeSpacing(48.dp)
+                    )
                 )
             }
         }
