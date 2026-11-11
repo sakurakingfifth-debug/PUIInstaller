@@ -141,7 +141,8 @@ run_install() {
     hide_duplicates
     fix_labels
     clean_files
-    ui_print "- PUI Installer 3.7.44 installed, reboot to take effect"
+    ver=$(grep '^version=' "$MODPATH/module.prop" | cut -d= -f2)
+    ui_print "- PUI Installer $ver installed, reboot to take effect"
 }
 
 run_install

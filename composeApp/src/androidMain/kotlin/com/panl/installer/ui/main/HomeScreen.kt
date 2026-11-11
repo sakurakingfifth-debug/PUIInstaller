@@ -66,13 +66,18 @@ fun HomeScreen(
     val settings = Settings.get(context)
     val density = LocalDensity.current.density
 
-    val installPicker = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
-        if (uri != null) {
-            context.startActivity(
-                Intent(context, InstallActivity::class.java)
-                    .setData(uri)
-                    .addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
-            )
+    // 多选：只挑一个时走原来的单装页，挑多个才进批量列表
+    val installPicker = rememberLauncherForActivityResult(ActivityResultContracts.OpenMultipleDocuments()) { uris ->
+        if (!uris.isNullOrEmpty()) {
+            val intent = Intent(context, InstallActivity::class.java)
+                .addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+            if (uris.size == 1) {
+                intent.setData(uris.first())
+            } else {
+                intent.action = Intent.ACTION_SEND_MULTIPLE
+                intent.putParcelableArrayListExtra(Intent.EXTRA_STREAM, ArrayList(uris))
+            }
+            context.startActivity(intent)
         }
     }
     val signPicker = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
@@ -153,7 +158,7 @@ fun HomeScreen(
                 ActionTile(
                     iconRes = R.drawable.ic_folder_open,
                     title = tr("选择安装包", "Choose APK"),
-                    subtitle = tr("从文件里挑一个 APK", "Pick an APK from your files"),
+                    subtitle = tr("可多选，批量安装", "Pick one or more, install in batch"),
                     modifier = Modifier.weight(1f)
                 ) {
                     // 放开所有文件：.apk.1 和 .apks/.xapk/.apkm 的 mime 都是未知的，

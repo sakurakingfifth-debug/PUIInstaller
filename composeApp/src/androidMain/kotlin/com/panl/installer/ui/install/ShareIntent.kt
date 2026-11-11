@@ -7,22 +7,27 @@ import android.os.Parcelable
 import android.provider.OpenableColumns
 
 /**
- * 系统分享（ACTION_SEND / ACTION_SEND_MULTIPLE）带来的文件地址。
+ * 系统分享（ACTION_SEND / ACTION_SEND_MULTIPLE）带来的所有文件地址。
  *
- * 文件管理器、MT 管理器、相册之类走的是 `EXTRA_STREAM`（单个）或
- * `EXTRA_STREAM` 的 ArrayList（多选），少数 App 只塞 `ClipData`，
- * 三种都认；多选时只取第一个（安装本来就只能一个一个来）。
+ * 多选分享用的是 `EXTRA_STREAM` 的 ArrayList（ACTION_SEND_MULTIPLE），
+ * 少数 App 只塞 `ClipData`，两种都认；单个分享也走这里（返回 1 个）。
  */
 @Suppress("DEPRECATION")
-fun Intent.sharedStream(): Uri? {
-    (getParcelableExtra<Parcelable>(Intent.EXTRA_STREAM) as? Uri)?.let { return it }
-    val list = getParcelableArrayListExtra<Parcelable>(Intent.EXTRA_STREAM)
-    (list?.firstOrNull() as? Uri)?.let { return it }
-    clipData?.let { clip ->
-        if (clip.itemCount > 0) clip.getItemAt(0)?.uri?.let { return it }
+fun Intent.sharedStreams(): List<Uri> {
+    val out = ArrayList<Uri>(2)
+    (getParcelableExtra<Parcelable>(Intent.EXTRA_STREAM) as? Uri)?.let { out += it }
+    getParcelableArrayListExtra<Parcelable>(Intent.EXTRA_STREAM)?.forEach { item ->
+        (item as? Uri)?.let { out += it }
     }
-    return null
+    clipData?.let { clip ->
+        for (i in 0 until clip.itemCount) clip.getItemAt(i)?.uri?.let { out += it }
+    }
+    // 同一个文件可能在 EXTRA_STREAM 和 ClipData 里各出现一次
+    return out.distinct()
 }
+
+/** 取第一个分享文件（单文件安装的快捷方式）。 */
+fun Intent.sharedStream(): Uri? = sharedStreams().firstOrNull()
 
 /**
  * 这个 uri 对应的文件名（带扩展名）。分享过来的 content:// 的 path 段经常是

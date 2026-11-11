@@ -89,7 +89,41 @@ sealed interface InstallUiState {
         /** 从会话暂存目录里读到的安装包信息；读不到就是 null（会话不是我们建的时常见）。 */
         val apk: ApkInfo? = null
     ) : InstallUiState
+
+    /**
+     * 批量安装：多选文件（应用内）或多选分享（系统分享面板）过来的多个包 / 模块。
+     *
+     * 始终按列表顺序一个一个装 —— 系统的安装会话本来就是串行的，
+     * 并行反而会互相打断广播结果。列表里每一项自己有状态（待装 / 装中 / 成功 / 失败）。
+     */
+    data class Batch(
+        val items: List<BatchItem>,
+        val phase: BatchPhase = BatchPhase.Ready,
+        /** 正在准备第几项（1-based）；准备阶段用来显示「读取 2/5」。 */
+        val preparing: Int = 0
+    ) : InstallUiState {
+        val ok: Int get() = items.count { it.status == BatchStatus.Done }
+        val failed: Int get() = items.count { it.status == BatchStatus.Failed || it.status == BatchStatus.Skipped }
+    }
 }
+
+enum class BatchPhase { Preparing, Ready, Running, Done }
+
+enum class BatchStatus { Pending, Running, Done, Failed, Skipped }
+
+enum class BatchKind { Apk, Module, Unknown }
+
+/** 批量列表里的一项。 */
+data class BatchItem(
+    val uri: Uri,
+    val name: String,
+    val kind: BatchKind,
+    val apk: ApkInfo? = null,
+    val module: com.panl.installer.core.ModuleInfo? = null,
+    val status: BatchStatus = BatchStatus.Pending,
+    /** 失败原因 / 跳过原因，成功时为 null。 */
+    val note: String? = null
+)
 
 /**
  * 安装页控制器：负责「解析 intent → 准备 APK → 安装 → 清理」这条链路。
@@ -139,11 +173,17 @@ class InstallController(
             return
         }
 
-        // 系统分享带来的文件：文件管理器 → 分享 → 安装器（APK / apks / xapk / apkm / 模块 zip）
-        intent.sharedStream()?.let { shared ->
-            sourceUri = shared
+        // 系统分享带来的文件：文件管理器 → 分享 → 安装器（APK / apks / xapk / apkm / 模块 zip）。
+        // 多选分享（ACTION_SEND_MULTIPLE）会一次给好几个，走批量流程。
+        val shared = intent.sharedStreams()
+        if (shared.size > 1) {
+            startBatch(shared)
+            return
+        }
+        shared.firstOrNull()?.let { single ->
+            sourceUri = single
             InstallEngine.Bus.outcome = null
-            load(shared)
+            load(single)
             return
         }
 
@@ -823,13 +863,196 @@ class InstallController(
         }
     }
 
+    // ---------------- 批量安装 ----------------
+
+    /** 批量流程的协程；关闭页面时取消。 */
+    private var batchJob: kotlinx.coroutines.Job? = null
+
+    /** 用户在批量装的过程中点了「停止」：当前这项装完就不再往下走。 */
+    private var batchStopped = false
+
+    /** 批量里落地到缓存的副本（退出时统一删）。 */
+    private val batchStaged = mutableListOf<File>()
+
+    /** 批量里解包出来的临时目录（退出时统一删）。 */
+    private val batchDirs = mutableListOf<File>()
+
+    /**
+     * 批量入口。只有一项时退回单文件流程 —— 两者的 UI 完全不同，
+     * 一项也摆个列表反而多余。
+     */
+    fun startBatch(uris: List<Uri>) {
+        val list = uris.distinct()
+        if (list.isEmpty()) {
+            state = InstallUiState.Error(
+                tr("没有拿到安装包", "No APK received"),
+                tr("请重新选择文件", "Pick the files again")
+            )
+            return
+        }
+        if (list.size == 1) {
+            sourceUri = list.first()
+            InstallEngine.Bus.outcome = null
+            load(list.first())
+            return
+        }
+
+        batchStopped = false
+        InstallEngine.Bus.outcome = null
+        state = InstallUiState.Batch(emptyList(), BatchPhase.Preparing, preparing = 1)
+        batchJob = activity.lifecycleScope.launch {
+            val items = mutableListOf<BatchItem>()
+            for ((index, uri) in list.withIndex()) {
+                state = InstallUiState.Batch(items.toList(), BatchPhase.Preparing, preparing = index + 1)
+                items += inspectOne(uri, index)
+                state = InstallUiState.Batch(items.toList(), BatchPhase.Preparing, preparing = index + 1)
+            }
+            state = InstallUiState.Batch(items.toList(), BatchPhase.Ready)
+        }
+    }
+
+    /** 读一个文件，判断它是安装包还是模块。读不出来就记成 Unknown，列表里标红但不影响别的。 */
+    private suspend fun inspectOne(uri: Uri, index: Int): BatchItem {
+        val name = activity.displayNameOf(uri) ?: uri.lastPathSegment ?: "#${index + 1}"
+        val file = withContext(Dispatchers.IO) { ApkStaging.stage(activity, uri) }
+            ?: return BatchItem(uri, name, BatchKind.Unknown, note = tr("无法读取文件", "Can't read the file"))
+        // file:// 是原文件，不能当自己的缓存删
+        if (uri.scheme != "file") batchStaged += file
+
+        if (settings.moduleFlashEnabled) {
+            val module = withContext(Dispatchers.IO) { com.panl.installer.core.ModuleInspector.inspect(file) }
+            if (module != null) return BatchItem(uri, name, BatchKind.Module, module = module)
+        }
+
+        val bundle = withContext(Dispatchers.IO) {
+            if (BundleReader.isBundle(file.name)) BundleReader.extract(activity, file) else null
+        }
+        bundle?.let { batchDirs += it.dir }
+        val target = bundle?.base ?: file
+        val info = withContext(Dispatchers.IO) { ApkInspector.inspect(activity, target) }
+            ?.copy(
+                sourceLabel = resolveSourceLabel(activity),
+                sourcePackage = resolveSourcePackage(activity),
+                splits = bundle?.splits.orEmpty()
+            )
+        return if (info == null) {
+            BatchItem(uri, name, BatchKind.Unknown, note = tr("不是有效的安装包", "Not a valid APK"))
+        } else {
+            BatchItem(uri, name, BatchKind.Apk, apk = info)
+        }
+    }
+
+    /** 开始逐项安装。 */
+    fun runBatch() {
+        val st = state as? InstallUiState.Batch ?: return
+        if (st.phase != BatchPhase.Ready) return
+        batchStopped = false
+        state = st.copy(phase = BatchPhase.Running)
+        batchJob = activity.lifecycleScope.launch {
+            if (settings.biometricBeforeInstall) {
+                val passed = BiometricGate.authenticate(activity)
+                if (!passed) {
+                    // 认证没过：退回可再点的确认态，什么都不装
+                    state = st.copy(phase = BatchPhase.Ready)
+                    return@launch
+                }
+            }
+            val items = st.items.toMutableList()
+            val rootMode = if (items.any { it.kind == BatchKind.Module }) {
+                withContext(Dispatchers.IO) { com.panl.installer.core.ModuleInstaller.detect() }
+            } else {
+                com.panl.installer.core.ModuleInstaller.RootMode.None
+            }
+
+            for (i in items.indices) {
+                if (batchStopped) break
+                val item = items[i]
+                if (item.kind == BatchKind.Unknown) {
+                    items[i] = item.copy(status = BatchStatus.Skipped)
+                    state = InstallUiState.Batch(items.toList(), BatchPhase.Running)
+                    continue
+                }
+                items[i] = item.copy(status = BatchStatus.Running, note = null)
+                state = InstallUiState.Batch(items.toList(), BatchPhase.Running)
+                val (ok, note) = installOne(items[i], rootMode)
+                items[i] = items[i].copy(
+                    status = if (ok) BatchStatus.Done else BatchStatus.Failed,
+                    note = note
+                )
+                state = InstallUiState.Batch(items.toList(), BatchPhase.Running)
+            }
+
+            val done = items.count { it.status == BatchStatus.Done }
+            InstallerLog.record(activity, "BATCH", "批量安装结束：成功 $done / 共 ${items.size}")
+            state = InstallUiState.Batch(items.toList(), BatchPhase.Done)
+        }
+    }
+
+    /** 停止：当前这项装完就不再继续（已经开始的会话没法中途取消）。 */
+    fun stopBatch() {
+        batchStopped = true
+    }
+
+    private suspend fun installOne(item: BatchItem, rootMode: com.panl.installer.core.ModuleInstaller.RootMode): Pair<Boolean, String?> =
+        when (item.kind) {
+            BatchKind.Module -> {
+                val module = item.module ?: return false to tr("模块信息丢失", "Module info lost")
+                val r = withContext(Dispatchers.IO) {
+                    com.panl.installer.core.ModuleInstaller.install(module.file, rootMode, module.id)
+                }
+                InstallerLog.record(activity, "BATCH", "模块 ${module.id} -> ${r.ok}")
+                r.ok to (if (r.ok) null else r.output.take(160).ifBlank { tr("刷入失败", "Flash failed") })
+            }
+
+            BatchKind.Apk -> installApkOf(item)
+
+            BatchKind.Unknown -> false to item.note
+        }
+
+    /** 装一个 APK：和单个流程同一套会话 + 结果等待，只是不驱动 UI 状态。 */
+    private suspend fun installApkOf(item: BatchItem): Pair<Boolean, String?> {
+        val info = item.apk ?: return false to tr("安装包信息丢失", "APK info lost")
+        InstallEngine.Bus.outcome = null
+        val sessionId = InstallEngine.install(
+            context = activity,
+            apk = info.file,
+            packageName = info.packageName,
+            allowDowngrade = true,
+            safeMode = settings.safeMode,
+            splits = info.splits
+        ) { }
+        if (sessionId == -1) {
+            val message = InstallEngine.Bus.outcome?.message ?: tr("创建安装会话失败", "Failed to create the install session")
+            InstallerLog.record(activity, "BATCH", "会话失败 ${info.packageName}: $message")
+            return false to message
+        }
+        var outcome = withTimeoutOrNull(180_000) {
+            snapshotFlow { InstallEngine.Bus.outcome }.filterNotNull().first()
+        }
+        // 版本更低被系统拒时，核心破解的 hook 可能被别的模块顶掉，用 root 兜底
+        if (outcome != null && !outcome.success && outcome.downgradeBlocked && CorePatchPrefs.activeInSystem) {
+            val rootOutcome = withContext(Dispatchers.IO) { InstallEngine.installAsRoot(activity, info.file) }
+            if (rootOutcome.success) outcome = outcome.copy(success = true, message = "Success")
+        }
+        val result = outcome ?: return false to tr("安装超时", "Install timed out")
+        InstallerLog.record(
+            activity, "BATCH",
+            "${info.packageName} -> ${result.success} ${result.message}"
+        )
+        return result.success to (if (result.success) null else result.message)
+    }
+
     fun cleanupOnExit() {
         // 交给服务之后这份缓存还有用，删了服务就读不到了
         if (handedOff) return
         // 页面被关掉时别再继续下（下载循环会自己删掉半截文件）
         downloader?.cancel()
+        // 批量流程还在跑的话先掐掉，否则它会在页面没了之后继续装
+        batchJob?.cancel()
         stagedFile?.delete()
         bundleDir?.deleteRecursively()
+        batchStaged.forEach { runCatching { it.delete() } }
+        batchDirs.forEach { runCatching { it.deleteRecursively() } }
         // 下载下来的副本只服务于这一次安装
         downloadedFile?.delete()
     }

@@ -290,6 +290,31 @@
                 <category android:name="android.intent.category.DEFAULT" />
                 <data android:mimeType="application/octet-stream" />
             </intent-filter>
+
+            <!-- 多选分享（文件管理器里一次勾多个 → 分享）。系统发的是
+                 ACTION_SEND_MULTIPLE + EXTRA_STREAM 的 ArrayList，三个类型组要再登记一遍。 -->
+            <intent-filter>
+                <action android:name="android.intent.action.SEND_MULTIPLE" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <data android:mimeType="application/vnd.android.package-archive" />
+            </intent-filter>
+            <intent-filter>
+                <action android:name="android.intent.action.SEND_MULTIPLE" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <data android:mimeType="application/zip" />
+                <data android:mimeType="application/x-zip-compressed" />
+                <data android:mimeType="application/vnd.apkm" />
+                <data android:mimeType="application/vnd.apks" />
+                <data android:mimeType="application/vnd.xapk" />
+                <data android:mimeType="application/x-apkm" />
+                <data android:mimeType="application/x-apks" />
+                <data android:mimeType="application/x-xapk" />
+            </intent-filter>
+            <intent-filter>
+                <action android:name="android.intent.action.SEND_MULTIPLE" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <data android:mimeType="application/octet-stream" />
+            </intent-filter>
         </activity>
 
         <!-- 卸载 / 应用信息页：DELETE、UNINSTALL_PACKAGE、SHOW_APP_INFO -->

@@ -203,6 +203,8 @@ fun InstallScreen(controller: InstallController, onClose: () -> Unit) {
                     )
 
                     is InstallUiState.SessionConfirm -> SessionConfirmBody(st, controller, onClose)
+
+                    is InstallUiState.Batch -> BatchBody(st, controller, onClose, compact = false)
                 }
             }
         }

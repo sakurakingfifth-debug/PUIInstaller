@@ -26,6 +26,7 @@ import com.panl.installer.ui.install.InstallScreen
 import com.panl.installer.ui.install.InstallSheet
 import com.panl.installer.ui.install.displayNameOf
 import com.panl.installer.ui.install.sharedStream
+import com.panl.installer.ui.install.sharedStreams
 import com.panl.installer.ui.theme.InstallerTheme
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -73,8 +74,10 @@ class InstallActivity : ComponentActivity() {
         val incomingUri = intent?.data ?: intent?.sharedStream()
         val incomingName = displayNameOf(incomingUri) ?: incomingUri?.lastPathSegment
         val isZip = incomingName?.endsWith(".zip", ignoreCase = true) == true
+        // 多选分享要给人看列表、逐个确认结果，实时通知那种「无界面」形态不适合
+        val isBatch = (intent?.sharedStreams()?.size ?: 0) > 1
         val forceSheet = intent?.getBooleanExtra(EXTRA_FORCE_SHEET, false) == true
-        val sheet = sheetStyle || forceSheet || (liveStyle && isZip)
+        val sheet = sheetStyle || forceSheet || isBatch || (liveStyle && isZip)
         val live = liveStyle && !sheet
         // 全屏态要显式换回不透明主题，否则窗口还是半透明的；实时通知模式用不可见窗口
         setTheme(

@@ -200,6 +200,8 @@ fun InstallSheet(controller: InstallController, onClose: () -> Unit) {
 
                     is InstallUiState.SessionConfirm -> SessionSheet(st, controller, onClose)
 
+                    is InstallUiState.Batch -> BatchBody(st, controller, onClose, compact = true)
+
                     is InstallUiState.Error -> MessageSheet(
                         title = st.title,
                         message = st.message,
