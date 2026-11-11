@@ -268,6 +268,10 @@
                 <action android:name="android.intent.action.SEND" />
                 <category android:name="android.intent.category.DEFAULT" />
                 <data android:mimeType="application/vnd.android.package-archive" />
+                <!-- MT 管理器分享 .xapk/.apks 用的是**复数** -archives（实测抓到），不带这条分享面板里没有安装器 -->
+                <data android:mimeType="application/vnd.android.package-archives" />
+                <data android:mimeType="application/xapk" />
+                <data android:mimeType="application/apks" />
             </intent-filter>
             <!-- 拆分包（.apks / .xapk / .apkm）和 Magisk/KernelSU 模块包本质都是 zip。
                  文件管理器认得出扩展名时给 application/vnd.*，认不出时给 zip；
@@ -297,6 +301,9 @@
                 <action android:name="android.intent.action.SEND_MULTIPLE" />
                 <category android:name="android.intent.category.DEFAULT" />
                 <data android:mimeType="application/vnd.android.package-archive" />
+                <data android:mimeType="application/vnd.android.package-archives" />
+                <data android:mimeType="application/xapk" />
+                <data android:mimeType="application/apks" />
             </intent-filter>
             <intent-filter>
                 <action android:name="android.intent.action.SEND_MULTIPLE" />
