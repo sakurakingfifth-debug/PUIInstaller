@@ -1,0 +1,6 @@
+# 模块脚本必须是 LF：CRLF 会让设备上的 sh 直接报错
+magisk/*.sh text eol=lf
+magisk/module.prop text eol=lf
+magisk/META-INF/com/google/android/update-binary text eol=lf
+magisk/META-INF/com/google/android/updater-script text eol=lf
+tools/*.py text eol=lf
