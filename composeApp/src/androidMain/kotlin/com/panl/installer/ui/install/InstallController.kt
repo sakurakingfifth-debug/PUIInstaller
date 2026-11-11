@@ -376,11 +376,17 @@ class InstallController(
     private fun load(uri: Uri) {
         activity.lifecycleScope.launch {
             state = InstallUiState.Preparing(null)
-            val file = withContext(Dispatchers.IO) { stage(uri) }
-            if (file == null) {
-                state = InstallUiState.Error(tr("读取安装包失败", "Failed to read the APK"), tr("无法打开 $uri", "Can't open $uri"))
+            val result = withContext(Dispatchers.IO) { stage(uri) }
+            if (result !is ApkStaging.StageResult.Ok) {
+                val reason = (result as ApkStaging.StageResult.Failed).reason
+                InstallerLog.record(activity, "OPEN", "打开失败 uri=$uri 原因=$reason")
+                state = InstallUiState.Error(
+                    tr("读取安装包失败", "Failed to read the APK"),
+                    stageReason(reason, uri)
+                )
                 return@launch
             }
+            val file = result.file
             safeRetryDone = false
             // 模块 zip：里面是 module.prop 而不是 APK，走模块刷入这条状态
             if (settings.moduleFlashEnabled) {
@@ -417,10 +423,44 @@ class InstallController(
     }
 
     /** 只有 content:// 才需要复制；file:// 直接读原文件，**不能**当成自己的暂存副本删掉。 */
-    private fun stage(uri: Uri): File? {
-        val file = ApkStaging.stage(activity, uri)
-        if (file != null && uri.scheme != "file") stagedFile = file
-        return file
+    private fun stage(uri: Uri): ApkStaging.StageResult {
+        val result = ApkStaging.stageEx(activity, uri)
+        // 只有真复制到缓存的那份才由我们删；file:// 直接读原文件时绝不能删
+        if (result is ApkStaging.StageResult.Ok && result.copied) stagedFile = result.file
+        return result
+    }
+
+    /** 打不开时给一句人能听懂的原因，别甩一长串 URI。 */
+    private fun stageReason(reason: ApkStaging.Reason, uri: Uri): String {
+        val name = uri.lastPathSegment?.substringAfterLast('/').orEmpty()
+        return when (reason) {
+            ApkStaging.Reason.NOT_FOUND ->
+                tr(
+                    "文件不在了——可能已被移动、重命名或删除。请重新选择一次。",
+                    "The file is gone — it may have been moved, renamed or deleted. Pick it again."
+                )
+            ApkStaging.Reason.NO_PERMISSION ->
+                tr(
+                    "没有读取这个文件的权限。请给安装器「所有文件访问权限」，或把文件复制到「下载」目录再试。",
+                    "No permission to read this file. Grant \"All files access\" to the installer, or copy the file into Download and retry."
+                )
+            ApkStaging.Reason.READ_ERROR ->
+                tr("读取文件时出错，可能空间不足或文件已损坏。", "Failed while reading the file — out of space, or the file is corrupted.")
+            ApkStaging.Reason.APK1_DISABLED ->
+                tr("设置里关掉了「.apk.1 支持」，这个文件按普通文件处理。", "\".apk.1 support\" is off in settings, so this file isn't treated as an APK.")
+        }.let { if (name.isBlank()) it else "$name\n$it" }
+    }
+
+    /** 错误页「重新选择文件」：换一个 uri 重新走一遍读取。 */
+    fun openPicked(uri: Uri) {
+        // 上一轮的暂存/解包先清掉，避免叠一堆缓存
+        stagedFile?.delete()
+        bundleDir?.deleteRecursively()
+        stagedFile = null
+        bundleDir = null
+        sourceUri = uri
+        InstallEngine.Bus.outcome = null
+        load(uri)
     }
 
     /** 刷入当前模块。 */
@@ -914,10 +954,21 @@ class InstallController(
     /** 读一个文件，判断它是安装包还是模块。读不出来就记成 Unknown，列表里标红但不影响别的。 */
     private suspend fun inspectOne(uri: Uri, index: Int): BatchItem {
         val name = activity.displayNameOf(uri) ?: uri.lastPathSegment ?: "#${index + 1}"
-        val file = withContext(Dispatchers.IO) { ApkStaging.stage(activity, uri) }
-            ?: return BatchItem(uri, name, BatchKind.Unknown, note = tr("无法读取文件", "Can't read the file"))
-        // file:// 是原文件，不能当自己的缓存删
-        if (uri.scheme != "file") batchStaged += file
+        val staged = withContext(Dispatchers.IO) { ApkStaging.stageEx(activity, uri) }
+        val file = when (staged) {
+            is ApkStaging.StageResult.Ok -> staged.file
+            is ApkStaging.StageResult.Failed -> return BatchItem(
+                uri, name, BatchKind.Unknown,
+                note = when (staged.reason) {
+                    ApkStaging.Reason.NOT_FOUND -> tr("文件不在了", "File is gone")
+                    ApkStaging.Reason.NO_PERMISSION -> tr("没有读取权限", "No permission")
+                    ApkStaging.Reason.APK1_DISABLED -> tr(".apk.1 支持已关闭", ".apk.1 support is off")
+                    ApkStaging.Reason.READ_ERROR -> tr("无法读取文件", "Can't read the file")
+                }
+            )
+        }
+        // 只有复制到缓存的那份才由我们删
+        if (staged.copied) batchStaged += file
 
         if (settings.moduleFlashEnabled) {
             val module = withContext(Dispatchers.IO) { com.panl.installer.core.ModuleInspector.inspect(file) }

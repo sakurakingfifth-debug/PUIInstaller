@@ -92,6 +92,11 @@ import com.panl.installer.i18n.tr
 @Composable
 fun InstallScreen(controller: InstallController, onClose: () -> Unit) {
     val state = controller.state
+    // 错误页的「重新选择文件」：换一个文件重新读
+    val reselect = androidx.activity.compose.rememberLauncherForActivityResult(
+        androidx.activity.result.contract.ActivityResultContracts.OpenDocument()
+    ) { picked -> picked?.let { controller.openPicked(it) } }
+
     val settings = Settings.get(LocalContext.current)
     val density = LocalDensity.current.density
     // 和 PUI Demo 主页完全一致：状态栏 + 64dp
@@ -199,8 +204,10 @@ fun InstallScreen(controller: InstallController, onClose: () -> Unit) {
                         onClose = onClose,
                         tone = Tone.Error,
                         iconPainter = painterResource(R.drawable.ic_danger),
-                        actionText = st.openUrl?.let { tr("用浏览器下载", "Open in browser") },
+                        actionText = st.openUrl?.let { tr("用浏览器下载", "Open in browser") }
+                            ?: tr("重新选择文件", "Pick another file"),
                         onAction = st.openUrl?.let { url -> { controller.openInBrowser(url) } }
+                            ?: { reselect.launch(arrayOf("*/*")) }
                     )
 
                     is InstallUiState.SessionConfirm -> SessionConfirmBody(st, controller, onClose)

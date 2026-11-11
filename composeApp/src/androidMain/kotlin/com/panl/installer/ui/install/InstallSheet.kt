@@ -88,6 +88,11 @@ import com.panl.installer.i18n.tr
 @Composable
 fun InstallSheet(controller: InstallController, onClose: () -> Unit) {
     val context = LocalContext.current
+    // 错误页的「重新选择文件」：换一个文件重新读
+    val reselect = androidx.activity.compose.rememberLauncherForActivityResult(
+        androidx.activity.result.contract.ActivityResultContracts.OpenDocument()
+    ) { picked -> picked?.let { controller.openPicked(it) } }
+
     val settings = Settings.get(context)
     val density = LocalDensity.current.density
     val state = controller.state
@@ -210,8 +215,10 @@ fun InstallSheet(controller: InstallController, onClose: () -> Unit) {
                         danger = true,
                         onClose = onClose,
                         painter = painterResource(R.drawable.ic_danger),
-                        actionText = st.openUrl?.let { tr("用浏览器下载", "Open in browser") },
+                        actionText = st.openUrl?.let { tr("用浏览器下载", "Open in browser") }
+                            ?: tr("重新选择文件", "Pick another file"),
                         onAction = st.openUrl?.let { url -> { controller.openInBrowser(url) } }
+                            ?: { reselect.launch(arrayOf("*/*")) }
                     )
 
                     else -> MessageSheet(
