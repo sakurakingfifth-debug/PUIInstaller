@@ -125,22 +125,38 @@ fun InstallSheet(controller: InstallController, onClose: () -> Unit) {
     val expandSpan = 140.dp
     val expandSpanPx = with(LocalDensity.current) { expandSpan.toPx() }
 
+    // 目标机器的系统圆角（Android 12+ 的 system_app_widget_background_radius，一般 28dp）。
+    // 展开到铺满整屏时用它收角：写死 0 的话，展开过程中圆角一路缩到没有，成了一张直角矩形，
+    // 和设备本身的圆屏 / 系统面板对不上。
+    val deviceCorner = remember(context) {
+        runCatching {
+            val res = context.resources
+            val id = res.getIdentifier("system_app_widget_background_radius", "dimen", "android")
+            if (id == 0) 0f else res.getDimension(id)
+        }.getOrDefault(0f)
+    }
+    val deviceCornerDp = with(densityObj) {
+        if (deviceCorner > 0f) deviceCorner.toDp() else 28.dp
+    }.coerceIn(16.dp, 40.dp)
+
     BoxWithConstraints(Modifier.fillMaxSize()) {
         val screenW = maxWidth
         val screenH = maxHeight
         // 弹簧回弹会越过 1（过冲），直接拿去算 padding/圆角会变成负数 → 崩。
         // 这里统一夹紧；过冲的那点视觉损失可以忽略。
         val p = expandP.coerceIn(0f, 1f)
-        // 两套内容交叉淡入淡出：紧凑版先退，全屏版后半程再进，中途不会两块都糊着
-        val sheetAlpha = 1f - smoothStep(0.30f, 0.80f, p)
-        val pageAlpha = smoothStep(0.45f, 0.95f, p)
+        // 两套内容交叉淡入淡出：紧凑版先退干净，全屏版再进。
+        // 两段刻意不重叠 —— 重叠时两套排版会叠在一起（字重影、标签互压），看着像渲染坏了。
+        val sheetAlpha = 1f - smoothStep(0.45f, 0.70f, p)
+        val pageAlpha = smoothStep(0.70f, 0.92f, p)
 
         // 浮窗 → 全屏的几何插值
         val margin = if (atBottom) 0.dp else 14.dp
         val sheetW = minOf(sheetMaxWidth(), screenW - margin * 2)
         val cardW = androidx.compose.ui.unit.lerp(sheetW, screenW, p)
         val cardH = androidx.compose.ui.unit.lerp(naturalH, screenH, p)
-        val radius = androidx.compose.ui.unit.lerp(30.dp, 0.dp, p)
+        // 圆角：浮窗 30dp → 展开后收成目标机器的系统圆角（不再收到 0）
+        val radius = androidx.compose.ui.unit.lerp(30.dp, deviceCornerDp, p)
         val bottomPad = androidx.compose.ui.unit.lerp(22.dp, 0.dp, p)
         // 贴底模式让开系统栏的那点留白，展开时要收回去，否则全屏后底部会多出一条
         val navPad = with(densityObj) {
@@ -329,7 +345,7 @@ fun InstallSheet(controller: InstallController, onClose: () -> Unit) {
 
             // 全屏版：真正的 InstallScreen，直接按当前卡片尺寸去排（不是缩放），
             // 所以拖到底就是原本的全屏样式；展开过半才让它进场，中途不会两块内容互相干扰。
-            if (p > 0.44f) {
+            if (p > 0.69f) {
                 Box(Modifier.fillMaxSize().graphicsLayer { alpha = pageAlpha }) {
                     InstallScreen(controller = controller, onClose = onClose)
                 }
