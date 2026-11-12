@@ -25,6 +25,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -724,11 +725,13 @@ private fun SuccessBody(
             ) {
                 AppIconView(state.info.icon, 44.dp, corner = 13.dp)
                 Spacer(Modifier.width(12.dp))
-                Column {
+                // 同浮窗：小胶囊要整块居中，里面的 MarqueeText 不能撑满
+                Column(Modifier.widthIn(max = 260.dp)) {
                     MarqueeText(
                         text = state.info.label,
                         style = MaterialTheme.typography.titleMedium,
-                        color = MaterialTheme.colorScheme.onSurface
+                        color = MaterialTheme.colorScheme.onSurface,
+                        fillWidth = false
                     )
                     Spacer(Modifier.height(2.dp))
                     Text(

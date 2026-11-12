@@ -8,16 +8,19 @@ import androidx.compose.foundation.border
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
@@ -128,6 +131,11 @@ fun InstallSheet(controller: InstallController, onClose: () -> Unit) {
         Column(
             Modifier
                 .align(if (atBottom) Alignment.BottomCenter else Alignment.Center)
+                // 系统栏留白只加在**贴底**的时候：让卡片避开手势条 / 桌面模式的任务栏。
+                // 居中时千万别让 —— 一让整张卡就被顶上去，屏幕上下的留白不对称，看着就是「整体不居中」。
+                // 也不能加在卡片内部：那样按钮行会把底部 inset 当成自己的空白，按钮被顶上、
+                // 卡片下半截空一大块（3.7.53 及以前就是这么错的）。
+                .then(if (atBottom) Modifier.navigationBarsPadding() else Modifier)
                 .padding(horizontal = if (atBottom) 0.dp else 14.dp)
                 // 大屏（Tier 2）：模态卡不铺满整屏宽度，收窄居中
                 .sheetWidth()
@@ -143,9 +151,16 @@ fun InstallSheet(controller: InstallController, onClose: () -> Unit) {
         ) {
             DragHandle()
 
-            // 卡片内容区固定高度：安装过程中卡片不随状态缩放。
-            // 各状态内部是「头部固定 / 中段 weight 居中 / 按钮贴底」，所以切换时位置也不会跳。
-            Box(Modifier.fillMaxWidth().height(SHEET_CONTENT_H)) {
+            // 卡片高度**跟着内容走**：以前这里写死 470dp，平板横屏时卡片比内容高出一大截，
+            // 按钮下面空出一条（用户圈出来的那块）；各状态内容高度本来就不一样，写死没有意义。
+            // 只留一个上限：窗口太矮（手机横屏、桌面模式小窗）时别让卡片超出屏幕。
+            BoxWithConstraints(Modifier.fillMaxWidth()) {
+                val maxContentHeight =
+                    if (maxHeight.value.isFinite()) minOf(SHEET_MAX_CONTENT_H, maxHeight) else SHEET_MAX_CONTENT_H
+            Box(
+                Modifier.fillMaxWidth().heightIn(max = maxContentHeight),
+                contentAlignment = Alignment.Center
+            ) {
 
             // 和全屏版同一套思路：按状态类型去重（进度刷新不触发转场），
             // 额外用 SizeTransform 把卡片高度也一起补间，否则换页时卡片会瞬间弹一下
@@ -233,6 +248,7 @@ fun InstallSheet(controller: InstallController, onClose: () -> Unit) {
                 }
             }
             }
+            }
         }
     }
 
@@ -254,8 +270,8 @@ fun InstallSheet(controller: InstallController, onClose: () -> Unit) {
     }
 }
 
-/** 浮窗内容区高度（不含拖拽条）。够放下「图标 + 版本卡 + 按钮」的完整就绪态。 */
-private val SHEET_CONTENT_H = 470.dp
+/** 浮窗内容区的高度上限（不含拖拽条）：卡片平时贴合内容，只有窗口够高时才用得上这个值。 */
+private val SHEET_MAX_CONTENT_H = 470.dp
 
 /** 顶部拖拽条。纯装饰：这里不支持手势拖拽，只用来暗示「这是一张可下拉的卡片」。 */
 @Composable
@@ -291,12 +307,13 @@ private fun ReadySheet(
         VersionRelation.NEW -> tr("安装应用", "Install app")
     }
 
-    Column(Modifier.fillMaxSize().padding(horizontal = 20.dp)) {
+    // 高度跟着内容走：不再是 fillMaxSize 撑满整个内容区，
+    // 否则卡片比内容高的时候按钮下面会空出一条（用户圈出来的那块）。
+    Column(Modifier.fillMaxWidth().padding(horizontal = 20.dp)) {
 
         Column(
             Modifier
                 .fillMaxWidth()
-                .weight(1f)
                 .padding(top = 6.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Center
@@ -371,8 +388,7 @@ private fun ReadySheet(
 
         Row(
             Modifier
-                .fillMaxWidth()
-                .navigationBarsPadding(),
+                .fillMaxWidth(),
             horizontalArrangement = Arrangement.spacedBy(12.dp)
         ) {
             PuiButton(
@@ -432,11 +448,12 @@ private fun VersionLine(label: String, value: String, highlight: Boolean) {
 @Composable
 private fun InstallingSheet(state: InstallUiState.Installing, onClose: () -> Unit) {
     val scheme = MaterialTheme.colorScheme
-    Column(Modifier.fillMaxSize().padding(horizontal = 20.dp)) {
+    // 高度跟着内容走：不再是 fillMaxSize 撑满整个内容区，
+    // 否则卡片比内容高的时候按钮下面会空出一条（用户圈出来的那块）。
+    Column(Modifier.fillMaxWidth().padding(horizontal = 20.dp)) {
         Column(
             Modifier
                 .fillMaxWidth()
-                .weight(1f)
                 .padding(top = 12.dp, bottom = 18.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Center
@@ -521,11 +538,12 @@ private fun DownloadingSheet(
             label = "download-pulse-scale"
         )
 
-    Column(Modifier.fillMaxSize().padding(horizontal = 20.dp)) {
+    // 高度跟着内容走：不再是 fillMaxSize 撑满整个内容区，
+    // 否则卡片比内容高的时候按钮下面会空出一条（用户圈出来的那块）。
+    Column(Modifier.fillMaxWidth().padding(horizontal = 20.dp)) {
         Column(
             Modifier
                 .fillMaxWidth()
-                .weight(1f)
                 .padding(top = 8.dp, bottom = 10.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Center
@@ -602,8 +620,7 @@ private fun DownloadingSheet(
                 onClose()
             },
             modifier = Modifier
-                .fillMaxWidth()
-                .navigationBarsPadding(),
+                .fillMaxWidth(),
             style = PuiButtonStyle.Ghost
         )
         Spacer(Modifier.height(2.dp))
@@ -617,11 +634,12 @@ private fun SuccessSheet(
     onClose: () -> Unit
 ) {
     val scheme = MaterialTheme.colorScheme
-    Column(Modifier.fillMaxSize().padding(horizontal = 20.dp)) {
+    // 高度跟着内容走：不再是 fillMaxSize 撑满整个内容区，
+    // 否则卡片比内容高的时候按钮下面会空出一条（用户圈出来的那块）。
+    Column(Modifier.fillMaxWidth().padding(horizontal = 20.dp)) {
         Column(
             Modifier
                 .fillMaxWidth()
-                .weight(1f)
                 .padding(top = 10.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Center
@@ -648,11 +666,14 @@ private fun SuccessSheet(
             ) {
                 AppIconView(state.info.icon, 40.dp, corner = 12.dp)
                 Spacer(Modifier.width(10.dp))
-                Column {
+                // 宽度上限 + 不撑满：这颗「图标 + 名称」的小胶囊要整块居中，
+                // 里面的 MarqueeText 一旦 fillMaxWidth 就会把整行拉满、整块贴到左边（用户圈的就是这个）
+                Column(Modifier.widthIn(max = 240.dp)) {
                     MarqueeText(
                         text = state.info.label,
                         style = MaterialTheme.typography.titleMedium,
-                        color = scheme.onSurface
+                        color = scheme.onSurface,
+                        fillWidth = false
                     )
                     Text(
                         "${state.info.versionName} (${state.info.versionCode})",
@@ -694,8 +715,7 @@ private fun SuccessSheet(
         Spacer(Modifier.height(16.dp))
         Row(
             Modifier
-                .fillMaxWidth()
-                .navigationBarsPadding(),
+                .fillMaxWidth(),
             horizontalArrangement = Arrangement.spacedBy(12.dp)
         ) {
             PuiButton(
@@ -721,11 +741,12 @@ private fun FailedSheet(
     onClose: () -> Unit
 ) {
     val scheme = MaterialTheme.colorScheme
-    Column(Modifier.fillMaxSize().padding(horizontal = 20.dp)) {
+    // 高度跟着内容走：不再是 fillMaxSize 撑满整个内容区，
+    // 否则卡片比内容高的时候按钮下面会空出一条（用户圈出来的那块）。
+    Column(Modifier.fillMaxWidth().padding(horizontal = 20.dp)) {
         Column(
             Modifier
                 .fillMaxWidth()
-                .weight(1f)
                 .padding(top = 10.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Center
@@ -747,8 +768,7 @@ private fun FailedSheet(
         Spacer(Modifier.height(18.dp))
         Row(
             Modifier
-                .fillMaxWidth()
-                .navigationBarsPadding(),
+                .fillMaxWidth(),
             horizontalArrangement = Arrangement.spacedBy(12.dp)
         ) {
             PuiButton(
@@ -782,11 +802,10 @@ internal fun ModuleSheet(
     val scope = rememberCoroutineScope()
     val noRoot = st.rootMode == com.panl.installer.core.ModuleInstaller.RootMode.None
 
-    Column(Modifier.fillMaxSize().padding(horizontal = 24.dp)) {
+    Column(Modifier.fillMaxWidth().padding(horizontal = 24.dp)) {
         Column(
             Modifier
                 .fillMaxWidth()
-                .weight(1f)
                 .padding(top = 10.dp, bottom = 6.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Center
@@ -995,11 +1014,12 @@ private fun SessionSheet(
     onClose: () -> Unit
 ) {
     val scheme = MaterialTheme.colorScheme
-    Column(Modifier.fillMaxSize().padding(horizontal = 20.dp)) {
+    // 高度跟着内容走：不再是 fillMaxSize 撑满整个内容区，
+    // 否则卡片比内容高的时候按钮下面会空出一条（用户圈出来的那块）。
+    Column(Modifier.fillMaxWidth().padding(horizontal = 20.dp)) {
         Column(
             Modifier
                 .fillMaxWidth()
-                .weight(1f)
                 .padding(top = 12.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Center
@@ -1028,8 +1048,7 @@ private fun SessionSheet(
         Spacer(Modifier.height(18.dp))
         Row(
             Modifier
-                .fillMaxWidth()
-                .navigationBarsPadding(),
+                .fillMaxWidth(),
             horizontalArrangement = Arrangement.spacedBy(12.dp)
         ) {
             PuiButton(
@@ -1060,11 +1079,12 @@ private fun MessageSheet(
     onAction: (() -> Unit)? = null
 ) {
     val scheme = MaterialTheme.colorScheme
-    Column(Modifier.fillMaxSize().padding(horizontal = 20.dp)) {
+    // 高度跟着内容走：不再是 fillMaxSize 撑满整个内容区，
+    // 否则卡片比内容高的时候按钮下面会空出一条（用户圈出来的那块）。
+    Column(Modifier.fillMaxWidth().padding(horizontal = 20.dp)) {
         Column(
             Modifier
                 .fillMaxWidth()
-                .weight(1f)
                 .padding(top = 10.dp, bottom = 8.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Center
@@ -1089,8 +1109,7 @@ private fun MessageSheet(
                 text = actionText,
                 onClick = onAction,
                 modifier = Modifier
-                    .fillMaxWidth()
-                    .navigationBarsPadding(),
+                    .fillMaxWidth(),
                 style = PuiButtonStyle.Filled
             )
             Spacer(Modifier.height(8.dp))

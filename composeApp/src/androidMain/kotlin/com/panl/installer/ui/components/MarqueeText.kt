@@ -37,6 +37,9 @@ import androidx.compose.ui.unit.dp
  *
  * @param alignment 文本没溢出时的摆放位置（居中/靠右的标题、右对齐的版本号都要用）
  * @param fadeWidth 两端渐隐的宽度
+ * @param fillWidth 是否占满可用宽度。默认 true（标题、版本号这类要占满才好对齐）；
+ *   放在「图标 + 文字」这种要整块居中的小胶囊里必须传 false —— 否则包一层会撑满整行，
+ *   整块就被挤到左边去了（安装完成页那个应用行就是这么歪的）。
  */
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
@@ -46,11 +49,12 @@ fun MarqueeText(
     color: Color,
     modifier: Modifier = Modifier,
     alignment: Alignment = Alignment.CenterStart,
-    fadeWidth: Dp = 18.dp
+    fadeWidth: Dp = 18.dp,
+    fillWidth: Boolean = true
 ) {
     val measurer = rememberTextMeasurer()
     BoxWithConstraints(
-        modifier = modifier.fillMaxWidth(),
+        modifier = if (fillWidth) modifier.fillMaxWidth() else modifier,
         contentAlignment = alignment
     ) {
         val widthPx = constraints.maxWidth
@@ -72,6 +76,8 @@ fun MarqueeText(
             maxLines = 1,
             overflow = TextOverflow.Clip,
             modifier = Modifier
+                // 不占满宽度时，只有真溢出才撑开去轮播，短文本则保持自身宽度（父级才能把它居中）
+                .then(if (overflows && !fillWidth) Modifier.fillMaxWidth() else Modifier)
                 .then(
                     if (!overflows) {
                         Modifier
