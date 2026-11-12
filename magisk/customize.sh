@@ -10,7 +10,9 @@ check_support() {
             return 0
             ;;
     esac
-    [ "$android_ver" -ge 16 ] || abort "- Android $android_ver is not supported (need 16+)"
+    # LineageOS 22.0 = Android 15；APK 自己 minSdk 34，从 15 起都能跑，
+    # 所以门槛放到 15 —— LineageOS 23/24（Android 16/17）与 ColorOS 15~17 同样适用。
+    [ "$android_ver" -ge 15 ] || abort "- Android $android_ver is not supported (need 15+)"
 }
 
 # ---- 找到系统分区里那份安装器 ----
