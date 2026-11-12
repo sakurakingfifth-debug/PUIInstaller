@@ -17,6 +17,7 @@ import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.navigationBarsPadding
@@ -61,7 +62,9 @@ import com.panl.pui.puiEdgeHaptic
 import com.panl.pui.PuiTopFade
 import com.panl.pui.rememberPuiTopBlurHeight
 import com.panl.pui.puiProgressiveTopBlur
+import com.panl.installer.ui.components.InstallContentMaxWidth
 import com.panl.installer.ui.components.MarqueeText
+import com.panl.installer.ui.components.adaptiveWidth
 import com.panl.installer.ui.components.RelationBadge
 import com.panl.installer.ui.components.SignerCard
 import com.panl.installer.ui.components.InstallInfoChips
@@ -125,7 +128,10 @@ fun InstallScreen(controller: InstallController, onClose: () -> Unit) {
         ) {
             // contentKey 用状态类型：进度每涨 1% 都是新的 Installing 对象，
             // 不按类型去重的话整个转场会被进度刷新打断
+            // 大屏（Tier 2）：正文收窄到 640dp 居中 —— 单列信息拉满整块屏只会多出大片留白
+            Box(Modifier.fillMaxSize(), contentAlignment = Alignment.TopCenter) {
             androidx.compose.animation.AnimatedContent(
+                modifier = Modifier.adaptiveWidth(InstallContentMaxWidth).fillMaxHeight(),
                 targetState = state,
                 contentKey = { st ->
                     // 模块刷入的「确认 / 刷入中 / 成功 / 失败」是同一个类，
@@ -214,6 +220,7 @@ fun InstallScreen(controller: InstallController, onClose: () -> Unit) {
 
                     is InstallUiState.Batch -> BatchBody(st, controller, onClose, compact = false)
                 }
+            }
             }
         }
 

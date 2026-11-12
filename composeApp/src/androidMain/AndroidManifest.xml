@@ -64,6 +64,7 @@
             android:exported="true"
             android:launchMode="singleTop"
             android:theme="@style/Theme.PuiInstaller.Splash"
+            android:resizeableActivity="true"
             android:windowSoftInputMode="adjustResize" />
 
         <!-- 桌面图标本体：隐藏功能就是禁用这个别名，MainActivity 本身不受影响 -->
@@ -131,7 +132,9 @@
             android:theme="@style/Theme.PuiInstaller.Sheet"
             android:windowSoftInputMode="adjustResize"
             android:taskAffinity=""
-            android:excludeFromRecents="true">
+            android:excludeFromRecents="true"
+            android:resizeableActivity="true"
+            android:configChanges="orientation|screenSize|smallestScreenSize|screenLayout|keyboardHidden|density">
 
             <!-- 文件管理器 / 浏览器点开 apk -->
             <intent-filter>

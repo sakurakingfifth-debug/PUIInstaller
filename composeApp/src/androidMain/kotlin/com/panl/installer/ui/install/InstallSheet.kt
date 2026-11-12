@@ -60,6 +60,7 @@ import com.panl.installer.ui.components.BottomActionBar
 import com.panl.installer.ui.components.PuiIndeterminateBar
 import com.panl.installer.ui.components.MarqueeText
 import com.panl.installer.ui.components.RelationBadge
+import com.panl.installer.ui.components.sheetWidth
 import com.panl.installer.ui.components.StatusGlyph
 import com.panl.installer.ui.components.puiCardBackdropBlur
 import com.panl.pui.PuiButton
@@ -128,7 +129,8 @@ fun InstallSheet(controller: InstallController, onClose: () -> Unit) {
             Modifier
                 .align(if (atBottom) Alignment.BottomCenter else Alignment.Center)
                 .padding(horizontal = if (atBottom) 0.dp else 14.dp)
-                .fillMaxWidth()
+                // 大屏（Tier 2）：模态卡不铺满整屏宽度，收窄居中
+                .sheetWidth()
                 // 删除确认弹出来时，整张卡片先糊掉：不然白底弹窗叠在白底卡片上分不出层次，
                 // 看起来像「弹窗被塞进了卡片里」（用户报的就是这个）
                 .puiCardBackdropBlur(controller.deleteDialogVisible, (settings.sheetBlurPx / density).dp)
