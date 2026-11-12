@@ -177,8 +177,9 @@ fun InstallSheet(controller: InstallController, onClose: () -> Unit) {
                         initialValue = expandP,
                         targetValue = if (open) 1f else 0f,
                         animationSpec = androidx.compose.animation.core.spring(
-                            dampingRatio = 0.82f,
-                            stiffness = 380f
+                            // 软一点的弹簧：0→1 这样的大位移用硬弹簧会「啪」一下到顶
+                            dampingRatio = 0.88f,
+                            stiffness = 290f
                         )
                     ) { value, _ -> expandP = value }
                 }
@@ -203,8 +204,14 @@ fun InstallSheet(controller: InstallController, onClose: () -> Unit) {
         val p = expandP.coerceIn(0f, 1f)
         // 两套内容交叉淡入淡出：紧凑版先退干净，全屏版再进。
         // 两段刻意不重叠 —— 重叠时两套排版会叠在一起（字重影、标签互压），看着像渲染坏了。
-        val sheetAlpha = 1f - smoothStep(0.45f, 0.70f, p)
-        val pageAlpha = smoothStep(0.70f, 0.92f, p)
+        // 交接：紧凑版先退（0.15~0.40），全屏版紧跟着进来（0.35~0.85），
+        // 中间只重叠 0.05 —— 既不出现「空卡片」，也不会两套排版叠在一起重影。
+        val sheetAlpha = 1f - smoothStep(0.15f, 0.40f, p)
+        val pageAlpha = smoothStep(0.35f, 0.85f, p)
+        // 全屏版带一点点放大进场，看起来是「从卡片里长出来」而不是凭空出现
+        val pageScale = 0.95f + 0.05f * smoothStep(0.35f, 0.78f, p)
+        // 紧凑版退场时轻微缩一下，像是被全屏版「盖」下去，而不是原地变透明
+        val sheetScale = 1f - 0.03f * smoothStep(0f, 0.40f, p)
 
         // 浮窗 → 全屏的几何插值
         val margin = if (atBottom) 0.dp else 14.dp
@@ -316,7 +323,13 @@ fun InstallSheet(controller: InstallController, onClose: () -> Unit) {
             ) {
 
             // 紧凑版（浮窗原样）。展开时只淡出，不参与后面的布局计算
-            Box(Modifier.fillMaxWidth().graphicsLayer { alpha = sheetAlpha }) {
+            Box(
+                Modifier.fillMaxWidth().graphicsLayer {
+                    alpha = sheetAlpha
+                    scaleX = sheetScale
+                    scaleY = sheetScale
+                }
+            ) {
 
             // 和全屏版同一套思路，按状态类型去重（进度刷新不触发转场），
             // 额外用 SizeTransform 把卡片高度也一起补间，否则换页时卡片会瞬间弹一下
@@ -407,8 +420,14 @@ fun InstallSheet(controller: InstallController, onClose: () -> Unit) {
 
             // 全屏版：真正的 InstallScreen，直接按当前卡片尺寸去排（不是缩放），
             // 所以拖到底就是原本的全屏样式；展开过半才让它进场，中途不会两块内容互相干扰。
-            if (p > 0.69f) {
-                Box(Modifier.fillMaxSize().graphicsLayer { alpha = pageAlpha }) {
+            if (p > 0.34f) {
+                Box(
+                    Modifier.fillMaxSize().graphicsLayer {
+                        alpha = pageAlpha
+                        scaleX = pageScale
+                        scaleY = pageScale
+                    }
+                ) {
                     InstallScreen(controller = controller, onClose = onClose)
                 }
             }
