@@ -139,6 +139,57 @@ fun InstallSheet(controller: InstallController, onClose: () -> Unit) {
         if (deviceCorner > 0f) deviceCorner.toDp() else 28.dp
     }.coerceIn(16.dp, 40.dp)
 
+    /**
+     * 展开手势。direction = 1 表示「往上拖展开」（顶部拖拽条），-1 表示「往下拖展开」（卡片底部边缘）。
+     *
+     * 两边共用同一个 [expandP]，所以从哪边拉都行、中途换手也不会跳。
+     */
+    fun expandDrag(direction: Float): Modifier = Modifier.pointerInput(direction) {
+        val tracker = VelocityTracker()
+        detectVerticalDragGestures(
+            onDragStart = {
+                // 打断：正在跑的展开/回弹立刻停在当前进度，接下来的拖动从这里接着走
+                settleJob?.cancel()
+                tracker.resetTracking()
+            },
+            onVerticalDrag = { change, dy ->
+                change.consume()
+                tracker.addPosition(change.uptimeMillis, change.position)
+                // 跟手：同步改状态。这里**不要 launch 协程** ——
+                // 每个事件起一个协程，最后那个会晚一拍把松手后的动画取消掉（实测停在半路）
+                expandP = (expandP - dy * direction / expandSpanPx).coerceIn(0f, 1f)
+            },
+            onDragEnd = {
+                // 归一化成「展开方向」的速度：正的表示朝收回方向甩
+                val vy = tracker.calculateVelocity().y * direction
+                val open = when {
+                    vy < -900f -> true
+                    vy > 900f -> false
+                    else -> expandP >= 0.5f
+                }
+                settleJob = scope.launch {
+                    animate(
+                        initialValue = expandP,
+                        targetValue = if (open) 1f else 0f,
+                        animationSpec = androidx.compose.animation.core.spring(
+                            dampingRatio = 0.82f,
+                            stiffness = 380f
+                        )
+                    ) { value, _ -> expandP = value }
+                }
+            },
+            onDragCancel = {
+                settleJob = scope.launch {
+                    animate(
+                        initialValue = expandP,
+                        targetValue = if (expandP >= 0.5f) 1f else 0f,
+                        animationSpec = androidx.compose.animation.core.tween(durationMillis = 220)
+                    ) { value, _ -> expandP = value }
+                }
+            }
+        )
+    }
+
     BoxWithConstraints(Modifier.fillMaxSize()) {
         val screenW = maxWidth
         val screenH = maxHeight
@@ -358,54 +409,32 @@ fun InstallSheet(controller: InstallController, onClose: () -> Unit) {
                 modifier = Modifier
                     // 展开后把这根条压到状态栏下面：贴在最顶上的话，往下拖会被系统当成下拉通知栏
                     .padding(top = 40.dp * p)
-                    .pointerInput(Unit) {
-                    val tracker = VelocityTracker()
-                    detectVerticalDragGestures(
-                        onDragStart = {
-                            // 打断：正在跑的展开/回弹立刻停在当前进度，接下来的拖动从这里接着走
-                            settleJob?.cancel()
-                            tracker.resetTracking()
-                        },
-                        onVerticalDrag = { change, dy ->
-                            change.consume()
-                            tracker.addPosition(change.uptimeMillis, change.position)
-                            // 跟手：同步改状态。这里**不要 launch 协程** ——
-                            // 每个事件起一个协程，最后那个会晚一拍把松手后的动画取消掉（实测停在半路）
-                            expandP = (expandP - dy / expandSpanPx).coerceIn(0f, 1f)
-                        },
-                        onDragEnd = {
-                            val vy = tracker.calculateVelocity().y
-                            // 快速上滑 → 展开；快速下滑 → 收回；慢拖动看过没过一半
-                            val open = when {
-                                vy < -900f -> true
-                                vy > 900f -> false
-                                else -> expandP >= 0.5f
-                            }
-                            settleJob = scope.launch {
-                                animate(
-                                    initialValue = expandP,
-                                    targetValue = if (open) 1f else 0f,
-                                    animationSpec = androidx.compose.animation.core.spring(
-                                        dampingRatio = 0.82f,
-                                        stiffness = 380f
-                                    )
-                                ) { value, _ -> expandP = value }
-                            }
-                        },
-                        onDragCancel = {
-                            settleJob = scope.launch {
-                                animate(
-                                    initialValue = expandP,
-                                    targetValue = if (expandP >= 0.5f) 1f else 0f,
-                                    animationSpec = androidx.compose.animation.core.tween(durationMillis = 220)
-                                ) { value, _ -> expandP = value }
-                            }
-                        }
+                    .then(expandDrag(1f))
+            )
+
+            // 卡片底部边缘：往下拖也能展开（手机上一只手够不到顶部那根条）。
+            // 触摸区正好用卡片底部的内边距，不会盖住按钮；贴底模式禁用，免得和系统手势打架。
+            if (!atBottom && bottomPad > 0.dp) {
+                Box(
+                    Modifier
+                        .align(Alignment.BottomCenter)
+                        .fillMaxWidth()
+                        .height(bottomPad)
+                        .then(expandDrag(-1f)),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Box(
+                        Modifier
+                            .size(width = 26.dp, height = 3.dp)
+                            .clip(CircleShape)
+                            .background(
+                                MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.6f * (1f - p))
+                            )
                     )
                 }
-            )
+            }
+            }
         }
-    }
 
     // 删除确认：浮窗版以前**没有**渲染这个对话框，于是「删除前确认」永远等不到用户点确认，
     // 表现就是安装包既不删也不问（用户报的第二个问题）。和全屏版保持同一套文案。
