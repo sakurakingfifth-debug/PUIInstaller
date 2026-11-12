@@ -117,6 +117,9 @@ fun InstallSheet(controller: InstallController, onClose: () -> Unit) {
     // 用 Animatable + 每个拖动事件 launch 一个 snapTo 会互相踩，最后一步动画会被吃掉，停在半路。
     var expandP by remember { mutableFloatStateOf(0f) }
     var settleJob by remember { mutableStateOf<kotlinx.coroutines.Job?>(null) }
+    // 最近一次拖动用的是哪个方向：过渡途中改由整张卡接管时沿用它，
+    // 否则「从底部往下拉展开」拉到一半再往下拉，会被当成收缩
+    var activeDir by remember { mutableFloatStateOf(1f) }
     val scope = rememberCoroutineScope()
     // 浮窗贴住内容时的自然高度：展开动画拿它当起点（第一帧量到之前先不插手布局）
     var naturalH by remember { mutableStateOf(0.dp) }
@@ -150,6 +153,7 @@ fun InstallSheet(controller: InstallController, onClose: () -> Unit) {
             onDragStart = {
                 // 打断：正在跑的展开/回弹立刻停在当前进度，接下来的拖动从这里接着走
                 settleJob?.cancel()
+                activeDir = direction
                 tracker.resetTracking()
             },
             onVerticalDrag = { change, dy ->
@@ -274,6 +278,12 @@ fun InstallSheet(controller: InstallController, onClose: () -> Unit) {
                 )
                 // 吃掉卡片上的点击，避免穿透到遮罩
                 .pointerInput(Unit) { detectTapGestures { } }
+                // 过渡途中（进度既不在 0 也不在 1）整张卡都能接管手指：
+                // 松手后动画还没跑完也可以随时按下去拖回来，不用非得再够那两根小条。
+                .then(
+                    if (expandP > 0.001f && expandP < 0.999f) expandDrag(activeDir)
+                    else Modifier
+                )
         ) {
             // 内容层。展开时铺满整张卡，拖拽条浮在它上面（不占布局高度），
             // 否则整页内容会少掉 16dp，版本卡底部正好被卡片的圆角裁掉。
