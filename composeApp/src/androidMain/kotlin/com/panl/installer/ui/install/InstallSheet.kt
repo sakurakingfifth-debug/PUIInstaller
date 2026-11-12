@@ -150,11 +150,15 @@ fun InstallSheet(controller: InstallController, onClose: () -> Unit) {
      */
     fun expandDrag(direction: Float): Modifier = Modifier.pointerInput(direction) {
         val tracker = VelocityTracker()
+        // 这次拖动累计推动了多少进度（正=往展开方向），用来做「甩」的判定
+        var travelled = 0f
+        val flingDistancePx = with(densityObj) { 8.dp.toPx() }
         detectVerticalDragGestures(
             onDragStart = {
                 // 打断：正在跑的展开/回弹立刻停在当前进度，接下来的拖动从这里接着走
                 settleJob?.cancel()
                 activeDir = direction
+                travelled = 0f
                 tracker.resetTracking()
             },
             onVerticalDrag = { change, dy ->
@@ -165,15 +169,17 @@ fun InstallSheet(controller: InstallController, onClose: () -> Unit) {
                 // 朝「收回」方向拖时给 1.35 倍增益：拉回小窗本来就该比展开更省力
                 val collapsing = dy * direction > 0f
                 val gain = if (collapsing) 1.35f else 1f
+                travelled += -dy * direction
                 expandP = (expandP - dy * direction * gain / expandSpanPx).coerceIn(0f, 1f)
             },
             onDragEnd = {
                 // 归一化成「展开方向」的速度：正的表示朝收回方向甩
                 val vy = tracker.calculateVelocity().y * direction
                 val open = when {
-                    vy < -700f -> true
-                    vy > 700f -> false
-                    // 正在往回拖：过半就收（原来 0.5 太难成功，底部上滑经常白拉一次）
+                    // 「甩」：只要速度够快、方向明确（位移过 8dp 就算数），不看拖了多远
+                    vy < -300f && travelled > flingDistancePx -> true
+                    vy > 300f && travelled < -flingDistancePx -> false
+                    // 慢慢拖：按位置判，往回拖更容易收
                     vy > 0f -> expandP >= 0.62f
                     else -> expandP >= 0.45f
                 }
