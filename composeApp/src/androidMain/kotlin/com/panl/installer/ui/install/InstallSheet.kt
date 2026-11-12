@@ -53,6 +53,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
@@ -419,7 +420,9 @@ fun InstallSheet(controller: InstallController, onClose: () -> Unit) {
                 modifier = Modifier
                     // 展开后把这根条压到状态栏下面：贴在最顶上的话，往下拖会被系统当成下拉通知栏
                     .padding(top = 40.dp * p)
-                    .then(expandDrag(1f))
+                    .then(expandDrag(1f)),
+                // 全屏时往下拉回浮窗，触摸区一路加高到 ~100dp，不用精确戳那一根细条
+                touchExtra = 48.dp * p
             )
 
             // 卡片底部边缘：往下拖也能展开（手机上一只手够不到顶部那根条）。
@@ -472,12 +475,15 @@ private val SHEET_MAX_CONTENT_H = 470.dp
  * 拖回一半以下就缩回去（DragHandle 的 modifier 里挂着手势）。
  */
 @Composable
-private fun DragHandle(modifier: Modifier = Modifier) {
-    Box(
+private fun DragHandle(modifier: Modifier = Modifier, touchExtra: Dp = 0.dp) {
+    // 小横条固定在顶部，[touchExtra] 只往下加高**触摸区**：
+    // 全屏时那根条离内容太近，手指很难戳准，加高到 100dp 上下才好拉回来。
+    Column(
         modifier
             .fillMaxWidth()
-            .padding(top = 10.dp, bottom = 2.dp),
-        contentAlignment = Alignment.Center
+            .padding(top = 10.dp, bottom = 2.dp)
+            .height(4.dp + touchExtra),
+        horizontalAlignment = Alignment.CenterHorizontally
     ) {
         Box(
             Modifier
