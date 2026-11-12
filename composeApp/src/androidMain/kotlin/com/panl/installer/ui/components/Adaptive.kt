@@ -24,14 +24,20 @@ fun Modifier.adaptiveWidth(max: Dp = 640.dp): Modifier =
 val InstallContentMaxWidth: Dp = 640.dp
 
 /**
+ * 浮窗（确认卡）的最大宽度。
+ *
+ * < 840dp（手机竖屏、小折叠）：640dp；>= 840dp（平板、展开的大折叠、桌面窗口）：520dp。
+ * 拖动展开成整页时要用它当插值起点，所以单独抽出来。
+ */
+@Composable
+fun sheetMaxWidth(): Dp =
+    if (LocalConfiguration.current.screenWidthDp >= 840) 520.dp else 640.dp
+
+/**
  * 浮窗（确认卡）的宽度。
  *
  * < 840dp（手机竖屏、小折叠）：保持原来的通栏底卡，不改观感；
  * >= 840dp（平板、展开的大折叠、桌面窗口）：收到 520dp 居中，避免整张卡横贯全屏。
  */
 @Composable
-fun Modifier.sheetWidth(): Modifier {
-    val screenWidthDp = LocalConfiguration.current.screenWidthDp
-    val max = if (screenWidthDp >= 840) 520.dp else 640.dp
-    return this.widthIn(max = max).fillMaxWidth()
-}
+fun Modifier.sheetWidth(): Modifier = this.widthIn(max = sheetMaxWidth()).fillMaxWidth()

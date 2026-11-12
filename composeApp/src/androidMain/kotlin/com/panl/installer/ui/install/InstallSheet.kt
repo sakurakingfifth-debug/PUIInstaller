@@ -2,10 +2,12 @@ package com.panl.installer.ui.install
 
 import android.app.Activity
 import androidx.compose.foundation.background
+import androidx.compose.animation.core.animate
 import androidx.compose.animation.core.animateFloat
 import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.border
 import androidx.compose.foundation.gestures.detectTapGestures
+import androidx.compose.foundation.gestures.detectVerticalDragGestures
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
@@ -13,10 +15,12 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
-import androidx.compose.foundation.layout.navigationBarsPadding
+import androidx.compose.foundation.layout.navigationBars
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -29,6 +33,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.rememberCoroutineScope
 import kotlinx.coroutines.launch
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -38,6 +43,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.input.pointer.util.VelocityTracker
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
@@ -63,6 +69,7 @@ import com.panl.installer.ui.components.BottomActionBar
 import com.panl.installer.ui.components.PuiIndeterminateBar
 import com.panl.installer.ui.components.MarqueeText
 import com.panl.installer.ui.components.RelationBadge
+import com.panl.installer.ui.components.sheetMaxWidth
 import com.panl.installer.ui.components.sheetWidth
 import com.panl.installer.ui.components.StatusGlyph
 import com.panl.installer.ui.components.puiCardBackdropBlur
@@ -99,10 +106,47 @@ fun InstallSheet(controller: InstallController, onClose: () -> Unit) {
 
     val settings = Settings.get(context)
     val density = LocalDensity.current.density
+    val densityObj = LocalDensity.current
     val state = controller.state
     val atBottom = settings.sheetPosition != "Center"
 
-    Box(Modifier.fillMaxSize()) {
+    // ── 拖动展开 ────────────────────────────────────────────────────────────
+    // 0 = 浮窗，1 = 全屏样式。用 Animatable 而不是普通 state：
+    // 松手后的回弹/展开动画要能被下一次按下打断（stop()），拖到一半往回拖也能立刻改写进度。
+    // 进度用普通 state：拖动时同步写（每帧直接改），松手再用 animate() 补到 0/1。
+    // 用 Animatable + 每个拖动事件 launch 一个 snapTo 会互相踩，最后一步动画会被吃掉，停在半路。
+    var expandP by remember { mutableFloatStateOf(0f) }
+    var settleJob by remember { mutableStateOf<kotlinx.coroutines.Job?>(null) }
+    val scope = rememberCoroutineScope()
+    // 浮窗贴住内容时的自然高度：展开动画拿它当起点（第一帧量到之前先不插手布局）
+    var naturalH by remember { mutableStateOf(0.dp) }
+    // 拖满屏需要的距离。卡片本来就贴着屏幕中线，手指没多少向上的余量，
+    // 定得太大就会出现「怎么拖都展不开」；140dp ≈ 半个卡片高，提一下就到位。
+    val expandSpan = 140.dp
+    val expandSpanPx = with(LocalDensity.current) { expandSpan.toPx() }
+
+    BoxWithConstraints(Modifier.fillMaxSize()) {
+        val screenW = maxWidth
+        val screenH = maxHeight
+        // 弹簧回弹会越过 1（过冲），直接拿去算 padding/圆角会变成负数 → 崩。
+        // 这里统一夹紧；过冲的那点视觉损失可以忽略。
+        val p = expandP.coerceIn(0f, 1f)
+        // 两套内容交叉淡入淡出：紧凑版先退，全屏版后半程再进，中途不会两块都糊着
+        val sheetAlpha = 1f - smoothStep(0.30f, 0.80f, p)
+        val pageAlpha = smoothStep(0.45f, 0.95f, p)
+
+        // 浮窗 → 全屏的几何插值
+        val margin = if (atBottom) 0.dp else 14.dp
+        val sheetW = minOf(sheetMaxWidth(), screenW - margin * 2)
+        val cardW = androidx.compose.ui.unit.lerp(sheetW, screenW, p)
+        val cardH = androidx.compose.ui.unit.lerp(naturalH, screenH, p)
+        val radius = androidx.compose.ui.unit.lerp(30.dp, 0.dp, p)
+        val bottomPad = androidx.compose.ui.unit.lerp(22.dp, 0.dp, p)
+        // 贴底模式让开系统栏的那点留白，展开时要收回去，否则全屏后底部会多出一条
+        val navPad = with(densityObj) {
+            androidx.compose.foundation.layout.WindowInsets.navigationBars.getBottom(this).toDp()
+        } * (1f - p)
+
         // 遮罩：系统级模糊已经糊过一遍，这里只压一层很淡的黑。
         // 删除确认弹出来时压深一点 —— 弹窗窗口的 dim 只作用在浮窗自己这层上，
         // 身后的应用不会变暗，靠这层把整屏一起压下去才像真正的模态。
@@ -118,51 +162,85 @@ fun InstallSheet(controller: InstallController, onClose: () -> Unit) {
         Box(
             Modifier
                 .fillMaxSize()
-                .background(Color.Black.copy(alpha = dim))
+                .background(Color.Black.copy(alpha = dim * (1f - p)))
                 .pointerInput(Unit) { detectTapGestures { onClose() } }
         )
 
-        val shape = if (atBottom) {
-            RoundedCornerShape(topStart = 30.dp, topEnd = 30.dp)
-        } else {
-            RoundedCornerShape(30.dp)
-        }
+        val shape = RoundedCornerShape(
+            topStart = radius,
+            topEnd = radius,
+            bottomEnd = if (atBottom) 0.dp else radius,
+            bottomStart = if (atBottom) 0.dp else radius
+        )
 
-        Column(
+        Box(
             Modifier
                 .align(if (atBottom) Alignment.BottomCenter else Alignment.Center)
                 // 系统栏留白只加在**贴底**的时候：让卡片避开手势条 / 桌面模式的任务栏。
                 // 居中时千万别让 —— 一让整张卡就被顶上去，屏幕上下的留白不对称，看着就是「整体不居中」。
                 // 也不能加在卡片内部：那样按钮行会把底部 inset 当成自己的空白，按钮被顶上、
                 // 卡片下半截空一大块（3.7.53 及以前就是这么错的）。
-                .then(if (atBottom) Modifier.navigationBarsPadding() else Modifier)
-                .padding(horizontal = if (atBottom) 0.dp else 14.dp)
-                // 大屏（Tier 2）：模态卡不铺满整屏宽度，收窄居中
-                .sheetWidth()
+                .then(if (atBottom) Modifier.padding(bottom = navPad) else Modifier)
+                // 尺寸：p=0 时还是原来的「收窄 + 贴合内容」；一开始拖就切成显式宽高，
+                // 一路插值到铺满整屏（对齐方式不变，所以看起来是从中间长开的）
+                .then(
+                    if (p > 0f && naturalH > 0.dp) {
+                        Modifier.width(cardW).height(cardH)
+                    } else {
+                        Modifier.padding(horizontal = margin).sheetWidth()
+                    }
+                )
+                .onSizeChanged {
+                    // 只在收起状态量：展开时的尺寸是我们自己设的，记下来会把起点带偏
+                    if (expandP == 0f) naturalH = with(densityObj) { it.height.toDp() }
+                }
                 // 删除确认弹出来时，整张卡片先糊掉：不然白底弹窗叠在白底卡片上分不出层次，
                 // 看起来像「弹窗被塞进了卡片里」（用户报的就是这个）
                 .puiCardBackdropBlur(controller.deleteDialogVisible, (settings.sheetBlurPx / density).dp)
                 .clip(shape)
-                .background(MaterialTheme.colorScheme.surfaceContainerLowest)
+                .background(
+                    androidx.compose.ui.graphics.lerp(
+                        MaterialTheme.colorScheme.surfaceContainerLowest,
+                        MaterialTheme.colorScheme.background,
+                        smoothStep(0.5f, 1f, p)
+                    )
+                )
                 // 吃掉卡片上的点击，避免穿透到遮罩
                 .pointerInput(Unit) { detectTapGestures { } }
-                // 卡片内统一留底：居中时曾经是 0，按钮直接压在卡片下边缘上
-                .padding(bottom = 22.dp)
         ) {
-            DragHandle()
+            // 内容层。展开时铺满整张卡，拖拽条浮在它上面（不占布局高度），
+            // 否则整页内容会少掉 16dp，版本卡底部正好被卡片的圆角裁掉。
+            Column(
+                Modifier
+                    .fillMaxWidth()
+                    .then(if (p > 0f) Modifier.fillMaxHeight() else Modifier)
+                    // 卡片内统一留底：居中时曾经是 0，按钮直接压在卡片下边缘上
+                    .padding(bottom = bottomPad)
+            ) {
+                Spacer(Modifier.height(androidx.compose.ui.unit.lerp(16.dp, 0.dp, p)))
 
             // 卡片高度**跟着内容走**：以前这里写死 470dp，平板横屏时卡片比内容高出一大截，
             // 按钮下面空出一条（用户圈出来的那块）；各状态内容高度本来就不一样，写死没有意义。
             // 只留一个上限：窗口太矮（手机横屏、桌面模式小窗）时别让卡片超出屏幕。
-            BoxWithConstraints(Modifier.fillMaxWidth()) {
+            BoxWithConstraints(
+                Modifier.fillMaxWidth().then(if (p > 0f) Modifier.weight(1f) else Modifier)
+            ) {
                 val maxContentHeight =
                     if (maxHeight.value.isFinite()) minOf(SHEET_MAX_CONTENT_H, maxHeight) else SHEET_MAX_CONTENT_H
             Box(
-                Modifier.fillMaxWidth().heightIn(max = maxContentHeight),
+                Modifier
+                    .fillMaxWidth()
+                    .then(
+                        if (p > 0f) Modifier.fillMaxHeight()
+                        else Modifier.heightIn(max = maxContentHeight)
+                    ),
                 contentAlignment = Alignment.Center
             ) {
 
-            // 和全屏版同一套思路：按状态类型去重（进度刷新不触发转场），
+            // 紧凑版（浮窗原样）。展开时只淡出，不参与后面的布局计算
+            Box(Modifier.fillMaxWidth().graphicsLayer { alpha = sheetAlpha }) {
+
+            // 和全屏版同一套思路，按状态类型去重（进度刷新不触发转场），
             // 额外用 SizeTransform 把卡片高度也一起补间，否则换页时卡片会瞬间弹一下
             androidx.compose.animation.AnimatedContent(
                 targetState = state,
@@ -248,7 +326,68 @@ fun InstallSheet(controller: InstallController, onClose: () -> Unit) {
                 }
             }
             }
+
+            // 全屏版：真正的 InstallScreen，直接按当前卡片尺寸去排（不是缩放），
+            // 所以拖到底就是原本的全屏样式；展开过半才让它进场，中途不会两块内容互相干扰。
+            if (p > 0.44f) {
+                Box(Modifier.fillMaxSize().graphicsLayer { alpha = pageAlpha }) {
+                    InstallScreen(controller = controller, onClose = onClose)
+                }
             }
+            }
+            }
+            }
+
+            DragHandle(
+                modifier = Modifier
+                    // 展开后把这根条压到状态栏下面：贴在最顶上的话，往下拖会被系统当成下拉通知栏
+                    .padding(top = 40.dp * p)
+                    .pointerInput(Unit) {
+                    val tracker = VelocityTracker()
+                    detectVerticalDragGestures(
+                        onDragStart = {
+                            // 打断：正在跑的展开/回弹立刻停在当前进度，接下来的拖动从这里接着走
+                            settleJob?.cancel()
+                            tracker.resetTracking()
+                        },
+                        onVerticalDrag = { change, dy ->
+                            change.consume()
+                            tracker.addPosition(change.uptimeMillis, change.position)
+                            // 跟手：同步改状态。这里**不要 launch 协程** ——
+                            // 每个事件起一个协程，最后那个会晚一拍把松手后的动画取消掉（实测停在半路）
+                            expandP = (expandP - dy / expandSpanPx).coerceIn(0f, 1f)
+                        },
+                        onDragEnd = {
+                            val vy = tracker.calculateVelocity().y
+                            // 快速上滑 → 展开；快速下滑 → 收回；慢拖动看过没过一半
+                            val open = when {
+                                vy < -900f -> true
+                                vy > 900f -> false
+                                else -> expandP >= 0.5f
+                            }
+                            settleJob = scope.launch {
+                                animate(
+                                    initialValue = expandP,
+                                    targetValue = if (open) 1f else 0f,
+                                    animationSpec = androidx.compose.animation.core.spring(
+                                        dampingRatio = 0.82f,
+                                        stiffness = 380f
+                                    )
+                                ) { value, _ -> expandP = value }
+                            }
+                        },
+                        onDragCancel = {
+                            settleJob = scope.launch {
+                                animate(
+                                    initialValue = expandP,
+                                    targetValue = if (expandP >= 0.5f) 1f else 0f,
+                                    animationSpec = androidx.compose.animation.core.tween(durationMillis = 220)
+                                ) { value, _ -> expandP = value }
+                            }
+                        }
+                    )
+                }
+            )
         }
     }
 
@@ -273,11 +412,14 @@ fun InstallSheet(controller: InstallController, onClose: () -> Unit) {
 /** 浮窗内容区的高度上限（不含拖拽条）：卡片平时贴合内容，只有窗口够高时才用得上这个值。 */
 private val SHEET_MAX_CONTENT_H = 470.dp
 
-/** 顶部拖拽条。纯装饰：这里不支持手势拖拽，只用来暗示「这是一张可下拉的卡片」。 */
+/**
+ * 顶部拖拽条。现在不只是装饰：按住往上拖可以把浮窗拉成全屏样式，
+ * 拖回一半以下就缩回去（DragHandle 的 modifier 里挂着手势）。
+ */
 @Composable
-private fun DragHandle() {
+private fun DragHandle(modifier: Modifier = Modifier) {
     Box(
-        Modifier
+        modifier
             .fillMaxWidth()
             .padding(top = 10.dp, bottom = 2.dp),
         contentAlignment = Alignment.Center
@@ -289,6 +431,12 @@ private fun DragHandle() {
                 .background(MaterialTheme.colorScheme.outlineVariant)
         )
     }
+}
+
+/** 平滑插值：两端导数为 0，淡入淡出不会在起止点「顿」一下。 */
+private fun smoothStep(edge0: Float, edge1: Float, x: Float): Float {
+    val t = ((x - edge0) / (edge1 - edge0)).coerceIn(0f, 1f)
+    return t * t * (3f - 2f * t)
 }
 
 
