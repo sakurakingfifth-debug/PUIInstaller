@@ -162,15 +162,20 @@ fun InstallSheet(controller: InstallController, onClose: () -> Unit) {
                 tracker.addPosition(change.uptimeMillis, change.position)
                 // 跟手：同步改状态。这里**不要 launch 协程** ——
                 // 每个事件起一个协程，最后那个会晚一拍把松手后的动画取消掉（实测停在半路）
-                expandP = (expandP - dy * direction / expandSpanPx).coerceIn(0f, 1f)
+                // 朝「收回」方向拖时给 1.35 倍增益：拉回小窗本来就该比展开更省力
+                val collapsing = dy * direction > 0f
+                val gain = if (collapsing) 1.35f else 1f
+                expandP = (expandP - dy * direction * gain / expandSpanPx).coerceIn(0f, 1f)
             },
             onDragEnd = {
                 // 归一化成「展开方向」的速度：正的表示朝收回方向甩
                 val vy = tracker.calculateVelocity().y * direction
                 val open = when {
-                    vy < -900f -> true
-                    vy > 900f -> false
-                    else -> expandP >= 0.5f
+                    vy < -700f -> true
+                    vy > 700f -> false
+                    // 正在往回拖：过半就收（原来 0.5 太难成功，底部上滑经常白拉一次）
+                    vy > 0f -> expandP >= 0.62f
+                    else -> expandP >= 0.45f
                 }
                 settleJob = scope.launch {
                     animate(
@@ -222,9 +227,10 @@ fun InstallSheet(controller: InstallController, onClose: () -> Unit) {
         val radius = androidx.compose.ui.unit.lerp(30.dp, deviceCornerDp, p)
         val bottomPad = androidx.compose.ui.unit.lerp(22.dp, 0.dp, p)
         // 贴底模式让开系统栏的那点留白，展开时要收回去，否则全屏后底部会多出一条
-        val navPad = with(densityObj) {
+        val navInset = with(densityObj) {
             androidx.compose.foundation.layout.WindowInsets.navigationBars.getBottom(this).toDp()
-        } * (1f - p)
+        }
+        val navPad = navInset * (1f - p)
 
         // 遮罩：系统级模糊已经糊过一遍，这里只压一层很淡的黑。
         // 删除确认弹出来时压深一点 —— 弹窗窗口的 dim 只作用在浮窗自己这层上，
@@ -447,12 +453,14 @@ fun InstallSheet(controller: InstallController, onClose: () -> Unit) {
             // 卡片底部边缘：往下拖展开、展开后往上拖收回（和顶部那根条对称）。
             // 收起时触摸区正好是卡片底部那点内边距，不会盖住按钮；
             // 全屏时给自己留 40dp —— 那一带没有按钮，正好当「上滑变回小窗」的手势区。
-            val bottomStripH = if (atBottom) 0.dp else maxOf(bottomPad, 40.dp * p)
+            val bottomStripH = if (atBottom) 0.dp else maxOf(bottomPad, 44.dp * p)
             if (bottomStripH > 0.dp) {
                 Box(
                     Modifier
                         .align(Alignment.BottomCenter)
                         .fillMaxWidth()
+                        // 往手势条上面挪一截：贴在屏幕最底边时，上滑会被系统当成「回桌面」抢走
+                        .padding(bottom = navInset * p)
                         .height(bottomStripH)
                         .then(expandDrag(-1f)),
                     contentAlignment = Alignment.Center
