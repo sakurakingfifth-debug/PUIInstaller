@@ -31,8 +31,28 @@ object InstallEngine {
 
     private const val TAG = "InstallEngine"
 
-    /** 本安装器安装时登记给系统的「安装途径」。 */
+    /** 兜底的「安装途径」：来源预设为空、或列表里第一项没装时用它。 */
     const val INSTALLER_PACKAGE = "com.android.shell"
+
+    /**
+     * 这次安装登记给系统的「安装途径」：来源预设的第一项。
+     *
+     * 以前写死 shell，设置里把来源改成只剩 com.android.vending 也没用 ——
+     * 应用详情页的「安装途径」永远还是 com.android.shell。
+     */
+    private fun resolveInstallerPackage(context: Context): String {
+        val preferred = runCatching { Settings.get(context).preferredInstallerPackage }
+            .getOrNull()
+            ?.trim()
+            .orEmpty()
+        if (preferred.isEmpty()) return INSTALLER_PACKAGE
+        // 没安装的包名登记上去只会被系统判成非法来源，直接退回 shell
+        val installed = runCatching {
+            context.packageManager.getPackageInfo(preferred, 0)
+            true
+        }.getOrDefault(false)
+        return if (installed) preferred else INSTALLER_PACKAGE
+    }
 
     /** 一次安装的结果，接收器写入、界面读取。 */
     data class Outcome(
@@ -67,6 +87,7 @@ object InstallEngine {
         onProgress: (Float) -> Unit
     ): Int = withContext(Dispatchers.IO) {
         val installer = context.packageManager.packageInstaller
+        val installerPkg = resolveInstallerPackage(context)
         var sessionId = -1
         try {
             val params = PackageInstaller.SessionParams(
@@ -99,12 +120,12 @@ object InstallEngine {
                 // 安装途径统一记成 shell（不是我们自己的包名）：应用详情页的「安装途径」
                 // 那一行读的就是这个值，记成 com.android.packageinstaller 会显得很怪。
                 if (safeMode) {
-                    runCatching { setInstallerPackageName(INSTALLER_PACKAGE) }
+                    runCatching { setInstallerPackageName(installerPkg) }
                     if (Build.VERSION.SDK_INT >= 33) {
                         runCatching { setPackageSource(PackageInstaller.PACKAGE_SOURCE_LOCAL_FILE) }
                     }
                 } else {
-                    runCatching { setInstallerPackageName(INSTALLER_PACKAGE) }
+                    runCatching { setInstallerPackageName(installerPkg) }
                     if (Build.VERSION.SDK_INT >= 33) {
                         runCatching { setPackageSource(PackageInstaller.PACKAGE_SOURCE_STORE) }
                     }

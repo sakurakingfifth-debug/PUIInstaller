@@ -159,6 +159,18 @@ class Settings private constructor(private val sp: SharedPreferences) {
             .toSet()
 
     /**
+     * 安装时登记给系统的「安装途径」（应用详情页那一行读的就是它）。
+     *
+     * 取来源预设里的**第一项** —— 顺序就是优先级，排第一的那个包名就是这次安装的来源；
+     * 列表为空（或整行都空）时退回 com.android.shell。
+     */
+    val preferredInstallerPackage: String
+        get() = managedInstallerPackagesRaw.lineSequence()
+            .map { it.trim().substringBefore(' ').trim() }
+            .firstOrNull { it.isNotBlank() }
+            ?: "com.android.shell"
+
+    /**
      * 允许卸载系统应用（含预装）。
      *
      * 系统应用的 APK 在 /system 里，普通卸载接口只能摘掉更新；开了这个开关就走

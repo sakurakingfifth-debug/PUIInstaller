@@ -30,8 +30,10 @@ import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.foundation.gestures.awaitEachGesture
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -60,6 +62,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.annotation.DrawableRes
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
@@ -271,6 +274,17 @@ private fun GlobalPage(page: Int, topPad: Dp, navBarH: Dp) {
     ) {
         item {
             PuiPageTitle(title)
+            if (kind == ListKind.Sources) {
+                Spacer(Modifier.height(6.dp))
+                Text(
+                    tr(
+                        "排第一的就是安装后显示的「安装途径」，用右侧箭头调顺序",
+                        "The first entry is the install source recorded for installs — reorder with the arrows"
+                    ),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
             Spacer(Modifier.height(14.dp))
         }
 
@@ -325,7 +339,7 @@ private fun GlobalPage(page: Int, topPad: Dp, navBarH: Dp) {
             }
         }
 
-        items(entries, key = { it }) { entry ->
+        itemsIndexed(entries, key = { _, entry -> entry }) { index, entry ->
             // 来源 / 黑名单存的是包名，能查到就显示应用名，查不到才退回包名
             val pkg = entry.substringBefore(' ').trim()
             val label = if (kind == ListKind.SharedUids) null else rememberAppLabel(pkg)
@@ -342,7 +356,14 @@ private fun GlobalPage(page: Int, topPad: Dp, navBarH: Dp) {
                 onRemoved = {
                     write(entries.filter { it != entry }.joinToString("\n"))
                     removing = null
-                }
+                },
+                // 顺序只对来源预设有意义：第一项 = 安装途径（页头那行说明里写了）
+                onMoveUp = if (kind == ListKind.Sources && index > 0) {
+                    { write(entries.moved(index, index - 1).joinToString("\n")) }
+                } else null,
+                onMoveDown = if (kind == ListKind.Sources && index < entries.lastIndex) {
+                    { write(entries.moved(index, index + 1).joinToString("\n")) }
+                } else null
             )
         }
 
@@ -411,7 +432,9 @@ private fun EntryCard(
     subtitle: String,
     removing: Boolean,
     onRequestDelete: () -> Unit,
-    onRemoved: () -> Unit
+    onRemoved: () -> Unit,
+    onMoveUp: (() -> Unit)? = null,
+    onMoveDown: (() -> Unit)? = null
 ) {
     val scheme = MaterialTheme.colorScheme
     SwipeToDelete(
@@ -461,9 +484,44 @@ private fun EntryCard(
                     overflow = TextOverflow.Ellipsis
                 )
             }
+            // 顺序调整：只在来源预设出现，上下各一个圆钮，到头就置灰
+            if (onMoveUp != null || onMoveDown != null) {
+                Spacer(Modifier.width(10.dp))
+                MoveButton(R.drawable.ic_chevron_up, onMoveUp != null) { onMoveUp?.invoke() }
+                Spacer(Modifier.width(6.dp))
+                MoveButton(R.drawable.ic_chevron_down, onMoveDown != null) { onMoveDown?.invoke() }
+            }
         }
     }
 }
+
+/** 顺序调整的小圆钮。到头（第一项的上移 / 最后一项的下移）时置灰不可点。 */
+@Composable
+private fun MoveButton(@DrawableRes iconRes: Int, enabled: Boolean, onClick: () -> Unit) {
+    val scheme = MaterialTheme.colorScheme
+    Box(
+        Modifier
+            .size(34.dp)
+            .clip(CircleShape)
+            .background(scheme.surfaceContainerHigh)
+            .then(if (enabled) Modifier.clickable { onClick() } else Modifier),
+        contentAlignment = Alignment.Center
+    ) {
+        Image(
+            painter = painterResource(iconRes),
+            contentDescription = null,
+            modifier = Modifier.size(18.dp),
+            colorFilter = ColorFilter.tint(
+                if (enabled) scheme.onSurface
+                else scheme.onSurfaceVariant.copy(alpha = 0.35f)
+            )
+        )
+    }
+}
+
+/** 把第 [from] 项挪到第 [to] 项的位置。 */
+private fun List<String>.moved(from: Int, to: Int): List<String> =
+    toMutableList().apply { add(to, removeAt(from)) }
 
 /**
  * 左滑删除：卡片跟手左移，松手超过阈值就弹确认；确认后整张卡滑出 + 淡出，再从列表里移除。
