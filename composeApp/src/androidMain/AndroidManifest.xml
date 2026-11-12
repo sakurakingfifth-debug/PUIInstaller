@@ -46,6 +46,18 @@
         android:theme="@style/Theme.PuiInstaller"
         android:usesCleartextTraffic="true">
 
+        <!-- 内存预算（Android 17 QPR2 / API 37.2 起生效）：
+             数字来自实机 dumpsys meminfo —— 前台 PSS ≈ 89MB（其中 Compose 原生堆 63MB），
+             前台按 2 倍余量给、后台只留必要的那点。
+             当前 build-tools 36 的 aapt2 还不认识这个元素，会直接报
+             `unexpected element <memory-budget>`，所以先留着不启用：
+             等工具链升到 37.2 再放开这三行即可（旧系统会忽略未知元素，不影响兼容）。
+
+        <memory-budget android:maxMb="192" />
+        <memory-budget android:maxMb="128" android:state="perceptible" />
+        <memory-budget android:maxMb="96" android:state="background" />
+        -->
+
         <!-- 功能面板。桌面入口挂在下面的 activity-alias 上，这样能单独把图标藏起来 -->
         <activity
             android:name=".ui.MainActivity"
