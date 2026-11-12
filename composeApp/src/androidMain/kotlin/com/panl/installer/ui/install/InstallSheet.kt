@@ -425,14 +425,16 @@ fun InstallSheet(controller: InstallController, onClose: () -> Unit) {
                 touchExtra = 48.dp * p
             )
 
-            // 卡片底部边缘：往下拖也能展开（手机上一只手够不到顶部那根条）。
-            // 触摸区正好用卡片底部的内边距，不会盖住按钮；贴底模式禁用，免得和系统手势打架。
-            if (!atBottom && bottomPad > 0.dp) {
+            // 卡片底部边缘：往下拖展开、展开后往上拖收回（和顶部那根条对称）。
+            // 收起时触摸区正好是卡片底部那点内边距，不会盖住按钮；
+            // 全屏时给自己留 40dp —— 那一带没有按钮，正好当「上滑变回小窗」的手势区。
+            val bottomStripH = if (atBottom) 0.dp else maxOf(bottomPad, 40.dp * p)
+            if (bottomStripH > 0.dp) {
                 Box(
                     Modifier
                         .align(Alignment.BottomCenter)
                         .fillMaxWidth()
-                        .height(bottomPad)
+                        .height(bottomStripH)
                         .then(expandDrag(-1f)),
                     contentAlignment = Alignment.Center
                 ) {
