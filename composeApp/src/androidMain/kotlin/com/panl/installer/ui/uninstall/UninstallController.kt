@@ -97,6 +97,11 @@ class UninstallController(private val activity: ComponentActivity) {
             noUpdatesVisible = true
             return
         }
+        // 自动卸载：设置里明确开了「无需二次确认」，就直接卸
+        if (settings.autoUninstall) {
+            uninstall()
+            return
+        }
         confirmVisible = true
     }
 

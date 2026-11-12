@@ -21,6 +21,13 @@ class Settings private constructor(private val sp: SharedPreferences) {
     /** 删除前弹一次确认（防止误删用户唯一的安装包）。 */
     var confirmBeforeDelete: Boolean by bool("confirm_before_delete", true)
 
+    /**
+     * 自动卸载：不再弹「卸载应用？」二次确认，点了就卸。
+     *
+     * 卸载会连应用数据一起删，所以默认关。
+     */
+    var autoUninstall: Boolean by bool("auto_uninstall", false)
+
     /** 检测到 AOSP 公开测试密钥时在安装页给出警告。 */
     var warnAospSignature: Boolean by bool("warn_aosp_signature", true)
 

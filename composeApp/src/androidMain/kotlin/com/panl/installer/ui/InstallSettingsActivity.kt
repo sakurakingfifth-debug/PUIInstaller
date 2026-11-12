@@ -83,6 +83,7 @@ private fun InstallSettingsScreen() {
     val blurH = rememberPuiTopBlurHeight()
     // 打开「安装后删除安装包」时先说明一次限制（别的应用私有目录里的文件删不掉）
     var showDeleteNotice by remember { mutableStateOf(false) }
+    var showAutoUninstallWarning by remember { mutableStateOf(false) }
 
     Box(
         Modifier
@@ -149,6 +150,26 @@ private fun InstallSettingsScreen() {
                         subtitle = tr("检查 zip 结构与 AndroidManifest", "Check the zip structure and AndroidManifest"),
                         checked = settings.verifyBeforeInstall,
                         onChange = { settings.verifyBeforeInstall = it },
+                        showDivider = false
+                    )
+                }
+                Spacer(Modifier.height(18.dp))
+            }
+
+            item {
+                PuiGroup(title = tr("卸载", "Uninstall")) {
+                    PuiSwitchRow(
+                        icon = PuiIcon.Trash,
+                        title = tr("自动卸载", "Uninstall without asking"),
+                        subtitle = tr(
+                            "点「卸载」直接卸载，不再二次确认（应用数据一并删除）",
+                            "Uninstall right away without a second confirmation (app data is deleted)"
+                        ),
+                        checked = settings.autoUninstall,
+                        onChange = {
+                            // 危险开关：打开前先说明一次，确认了才真的开
+                            if (it) showAutoUninstallWarning = true else settings.autoUninstall = false
+                        },
                         showDivider = false
                     )
                 }
@@ -299,6 +320,25 @@ private fun InstallSettingsScreen() {
     }
 
     // 首次打开这个开关时提示一次：MANAGE_EXTERNAL_STORAGE 管不到别的应用的私有目录
+    if (showAutoUninstallWarning) {
+        PuiDialog(
+            scrim = !settings.noScrim,
+            title = tr("自动卸载", "Uninstall without asking"),
+            text = tr(
+                "开启后，卸载页点「卸载」会立刻卸载并删除应用数据，不再弹确认框。适合在批量清理时使用，误点就没有后悔的机会了。",
+                "Once on, tapping “Uninstall” removes the app and its data immediately, with no confirmation. Handy for batch clean-ups — but there's no undo."
+            ),
+            confirmText = tr("开启", "Enable"),
+            dismissText = tr("取消", "Cancel"),
+            danger = true,
+            onDismiss = { showAutoUninstallWarning = false },
+            onConfirm = {
+                settings.autoUninstall = true
+                showAutoUninstallWarning = false
+            }
+        )
+    }
+
     if (showDeleteNotice) {
         PuiDialog(
             title = tr("注意", "Note"),
