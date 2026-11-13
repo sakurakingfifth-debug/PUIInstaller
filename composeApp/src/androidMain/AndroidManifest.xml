@@ -369,6 +369,63 @@
             </intent-filter>
         </activity>
 
+        <!-- ── AOSP 安装器组件名兼容 ────────────────────────────────────────
+             我们把自己的 APK 顶到 com.android.packageinstaller 之后，原厂安装器那套
+             Activity 名字（InstallStart / install.PackageInstallerActivity / UninstallerActivity…）
+             就都不存在了。ColorOS 文件管理器、部分浏览器、酷安这类 App 会**硬编码**这些组件名
+             直接 startActivity，找不到 Activity 时异常被它们自己吞掉，表现就是
+             「点开安装包 → 页面停在那里，点安装没反应」。
+             这里用 activity-alias 把这些名字统统转发到我们自己的页面。
+             刻意不挂 intent-filter：只影响显式调用，不参与隐式解析，不会抢默认打开方式。 -->
+        <activity-alias
+            android:name="com.android.packageinstaller.InstallStart"
+            android:targetActivity=".ui.InstallActivity"
+            android:exported="true" />
+        <activity-alias
+            android:name="com.android.packageinstaller.PackageInstallerActivity"
+            android:targetActivity=".ui.InstallActivity"
+            android:exported="true" />
+        <activity-alias
+            android:name="com.android.packageinstaller.install.InstallStart"
+            android:targetActivity=".ui.InstallActivity"
+            android:exported="true" />
+        <activity-alias
+            android:name="com.android.packageinstaller.install.PackageInstallerActivity"
+            android:targetActivity=".ui.InstallActivity"
+            android:exported="true" />
+        <activity-alias
+            android:name="com.android.packageinstaller.install.InstallStaging"
+            android:targetActivity=".ui.InstallActivity"
+            android:exported="true" />
+        <activity-alias
+            android:name="com.android.packageinstaller.install.InstallInstalling"
+            android:targetActivity=".ui.InstallActivity"
+            android:exported="true" />
+        <activity-alias
+            android:name="com.android.packageinstaller.InstallAppProgress"
+            android:targetActivity=".ui.InstallActivity"
+            android:exported="true" />
+        <activity-alias
+            android:name="com.android.packageinstaller.UninstallerActivity"
+            android:targetActivity=".ui.UninstallActivity"
+            android:exported="true" />
+        <activity-alias
+            android:name="com.android.packageinstaller.uninstaller.UninstallerActivity"
+            android:targetActivity=".ui.UninstallActivity"
+            android:exported="true" />
+        <activity-alias
+            android:name="com.android.packageinstaller.uninstaller.UninstallUninstalling"
+            android:targetActivity=".ui.UninstallActivity"
+            android:exported="true" />
+        <activity-alias
+            android:name="com.android.packageinstaller.uninstaller.UninstallAppProgress"
+            android:targetActivity=".ui.UninstallActivity"
+            android:exported="true" />
+        <activity-alias
+            android:name="com.android.packageinstaller.uninstaller.UninstallFinished"
+            android:targetActivity=".ui.UninstallActivity"
+            android:exported="true" />
+
         <activity
             android:name=".ui.AppStoreActivity"
             android:exported="false"
