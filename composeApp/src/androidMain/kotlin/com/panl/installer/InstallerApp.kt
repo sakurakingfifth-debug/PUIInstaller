@@ -3,7 +3,9 @@ package com.panl.installer
 import android.app.ActivityManager
 import android.app.Application
 import android.app.ApplicationExitInfo
+import android.content.ComponentName
 import android.content.Context
+import android.content.pm.PackageManager
 import android.os.Build
 import com.panl.installer.core.FairMemoryReceiver
 import com.panl.installer.core.InstallerLog
@@ -43,6 +45,45 @@ class InstallerApp : Application() {
         runCatching { FairMemoryReceiver.register(this) }
         // Android 17 内存限制器：把上次是不是被它带走的记下来，方便自查
         runCatching { logLastExit() }
+        // 组件自愈：被「工具箱」禁用过也能自己爬回来
+        runCatching { healEntryComponents() }
+    }
+
+    /**
+     * 自愈：把一个被外部禁用的入口组件恢复成默认（跟随清单）。
+     *
+     * 现场（用户 bugreport）：选择器能列出「安装器」，点下去却是
+     * `Unable to find explicit activity class {…ui.InstallActivity}` —— 组件被禁用了。
+     * 爱玩机工具箱这类「接管安装 / 静默安装」的工具、以及某些 LSPosed 模块都会这么干；
+     * 组件一旦被禁用，点 apk 只会看到选择器一闪而过，什么都弹不出来，
+     * 而且卸载重装安装器、重刷模块都不会把它恢复（禁用状态是按组件名记在 user state 里的）。
+     *
+     * 用字符串而不是 KClass：不想在启动时把 Compose 那套类都加载进来。
+     */
+    private fun healEntryComponents() {
+        listOf(
+            "com.panl.installer.ui.InstallActivity",
+            "com.panl.installer.ui.UninstallActivity"
+        ).forEach { name ->
+            runCatching {
+                val component = ComponentName(this, name)
+                val state = packageManager.getComponentEnabledSetting(component)
+                val disabled = state == PackageManager.COMPONENT_ENABLED_STATE_DISABLED ||
+                    state == PackageManager.COMPONENT_ENABLED_STATE_DISABLED_USER ||
+                    state == PackageManager.COMPONENT_ENABLED_STATE_DISABLED_UNTIL_USED
+                if (disabled) {
+                    packageManager.setComponentEnabledSetting(
+                        component,
+                        PackageManager.COMPONENT_ENABLED_STATE_DEFAULT,
+                        PackageManager.DONT_KILL_APP
+                    )
+                    InstallerLog.record(
+                        this, "SELF-HEAL",
+                        "入口组件被禁用，已恢复：$name (state=$state)"
+                    )
+                }
+            }
+        }
     }
 
     /**
