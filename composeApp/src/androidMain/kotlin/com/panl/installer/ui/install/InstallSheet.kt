@@ -1129,27 +1129,20 @@ internal fun ModuleSheet(
                         Text(
                             st.module.description,
                             style = MaterialTheme.typography.bodyMedium,
-                            color = scheme.onSurfaceVariant
+                            color = scheme.onSurfaceVariant,
+                            maxLines = 3,
+                            overflow = TextOverflow.Ellipsis
                         )
                     }
                     if (st.module.needsKeyInput) {
-                        Spacer(Modifier.height(10.dp))
+                        Spacer(Modifier.height(8.dp))
                         Text(
                             tr(
-                                "这个模块刷入时需要按音量键 / 电源键选择，安装器这边没有按键来源，脚本会一直等着。",
-                                "This module wants volume / power key presses while flashing — nothing can press them here, so the script just waits."
-                            ),
-                            style = MaterialTheme.typography.bodyMedium,
-                            color = scheme.error
-                        )
-                        Spacer(Modifier.height(4.dp))
-                        Text(
-                            tr(
-                                "建议改在 KernelSU / Magisk 管理器里刷入；坚持在这里刷会在 5 分钟后自动中止。",
-                                "Flash it in your KernelSU / Magisk manager instead. Flashing here aborts after 5 minutes."
+                                "需要音量键/电源键确认，这里刷会卡住，建议用 KernelSU/Magisk 管理器（5 分钟后自动中止）",
+                                "Needs volume/power key input — flash it in your root manager instead (aborts after 5 min)"
                             ),
                             style = MaterialTheme.typography.bodySmall,
-                            color = scheme.onSurfaceVariant
+                            color = scheme.error
                         )
                     }
                     if (noRoot) {
@@ -1198,11 +1191,19 @@ internal fun ModuleSheet(
                             color = if (st.failed) scheme.error else scheme.primary
                         )
                         Spacer(Modifier.height(4.dp))
-                        Text(
-                            out.take(600),
-                            style = MaterialTheme.typography.bodySmall,
-                            color = scheme.onSurfaceVariant
-                        )
+                        // 安装器输出里常带内核/KS 的 ASCII banner，不限高会把整张卡撑出屏幕
+                        Box(
+                            Modifier
+                                .fillMaxWidth()
+                                .heightIn(max = 120.dp)
+                                .verticalScroll(rememberScrollState())
+                        ) {
+                            Text(
+                                out.take(600),
+                                style = MaterialTheme.typography.bodySmall,
+                                color = scheme.onSurfaceVariant
+                            )
+                        }
                     }
                 }
             }
