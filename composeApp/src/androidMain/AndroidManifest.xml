@@ -2,6 +2,21 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools">
 
+    <!--
+        移除 AGP 自动注入的 ${applicationId}.DYNAMIC_RECEIVER_NOT_EXPORTED_PERMISSION。
+        部分机型（带「Google 版安装器」的 ROM）里 com.google.android.packageinstaller 也声明了
+        同名权限 —— 它其实是从 AOSP 安装器改包名来的，权限名还留着 com.android.packageinstaller，
+        于是我们一装就 INSTALL_FAILED_DUPLICATE_PERMISSION：Package com.android.packageinstaller
+        attempting to redeclare permission …, already owned by com.google.android.packageinstaller。
+        这个权限只在 ContextCompat 的 API<33 兼容路径里用到，我们 minSdk 34，跑不到，删掉没影响。
+    -->
+    <permission
+        android:name="${applicationId}.DYNAMIC_RECEIVER_NOT_EXPORTED_PERMISSION"
+        tools:node="remove" />
+    <uses-permission
+        android:name="${applicationId}.DYNAMIC_RECEIVER_NOT_EXPORTED_PERMISSION"
+        tools:node="remove" />
+
     <!-- 系统安装器能力：替换 /system_ext/priv-app/PackageInstaller 后由 privapp 白名单授予 -->
     <uses-permission android:name="android.permission.INSTALL_PACKAGES" />
     <uses-permission android:name="android.permission.DELETE_PACKAGES" />
