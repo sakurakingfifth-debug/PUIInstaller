@@ -798,7 +798,7 @@ private fun SuccessBody(
                         if (!Lsposed.openModuleScope(context, pkg)) {
                             Toast.makeText(
                                 context,
-                                tr("没有找到 LSPosed 管理器", "LSPosed manager not found"),
+                                tr("打不开 LSPosed 管理器，寄生模式需要 ROOT", "Couldn't open LSPosed — root is required when it runs inside shell"),
                                 Toast.LENGTH_SHORT
                             ).show()
                         }
