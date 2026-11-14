@@ -11,6 +11,7 @@ import androidx.compose.foundation.gestures.detectVerticalDragGestures
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
+import androidx.compose.foundation.layout.displayCutout
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -61,6 +62,7 @@ import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import com.panl.installer.R
 import com.panl.installer.core.ApkInfo
+import com.panl.installer.ui.theme.puiCutoutPadding
 import com.panl.installer.core.Lsposed
 import com.panl.installer.core.ApkDownloader
 import com.panl.installer.ui.components.InstallInfoChips
@@ -231,6 +233,14 @@ fun InstallSheet(controller: InstallController, onClose: () -> Unit) {
         val margin = if (atBottom) 0.dp else 14.dp
         val sheetW = minOf(sheetMaxWidth(), screenW - margin * 2)
         val cardW = androidx.compose.ui.unit.lerp(sheetW, screenW, p)
+        // 卡片会不会压到挖孔：收起时卡片通常比「屏幕 - 孔宽」窄，这时不该加 padding，
+        // 否则卡片会被推到偏右（居中才是对的）；展开成整页时才需要让开。
+        val cutoutWidth = with(densityObj) {
+            val insets = androidx.compose.foundation.layout.WindowInsets.displayCutout
+            val direction = androidx.compose.ui.platform.LocalLayoutDirection.current
+            (insets.getLeft(densityObj, direction) + insets.getRight(densityObj, direction)).toDp()
+        }
+        val cardOverlapsCutout = cardW + cutoutWidth > screenW
         val cardH = androidx.compose.ui.unit.lerp(naturalH, screenH, p)
         // 圆角：浮窗 30dp → 展开后收成目标机器的系统圆角（不再收到 0）
         val radius = androidx.compose.ui.unit.lerp(30.dp, deviceCornerDp, p)
@@ -253,10 +263,20 @@ fun InstallSheet(controller: InstallController, onClose: () -> Unit) {
             animationSpec = androidx.compose.animation.core.tween(durationMillis = 220),
             label = "sheet-scrim"
         )
+        // 遮罩铺满整个窗口：挖孔那条缝也要压到同样暗度，否则和旁边一比就是一条色差带。
+        // 内容（卡片）自己再按 puiCutoutPadding 让开孔。
         Box(
             Modifier
                 .fillMaxSize()
-                .background(Color.Black.copy(alpha = dim * (1f - p)))
+                // 收起时是压暗层；展开成整页时收成页面底色 ——
+                // 这样卡片让开挖孔后，那条缝的颜色也跟页面一致，不会在边缘露出一条亮带
+                .background(
+                    androidx.compose.ui.graphics.lerp(
+                        Color.Black.copy(alpha = dim * (1f - p)),
+                        MaterialTheme.colorScheme.background,
+                        smoothStep(0.85f, 1f, p)
+                    )
+                )
                 .pointerInput(Unit) { detectTapGestures { onClose() } }
         )
 
@@ -291,6 +311,8 @@ fun InstallSheet(controller: InstallController, onClose: () -> Unit) {
                 // 删除确认弹出来时，整张卡片先糊掉：不然白底弹窗叠在白底卡片上分不出层次，
                 // 看起来像「弹窗被塞进了卡片里」（用户报的就是这个）
                 .puiCardBackdropBlur(controller.deleteDialogVisible, (settings.sheetBlurPx / density).dp)
+                // 挖孔避让：只有卡片真的压到孔时才让开（遮罩在外层已铺满整窗，不会有色差）
+                .then(if (cardOverlapsCutout) Modifier.puiCutoutPadding() else Modifier)
                 .clip(shape)
                 .background(
                     androidx.compose.ui.graphics.lerp(

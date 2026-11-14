@@ -174,7 +174,9 @@ class InstallActivity : ComponentActivity() {
 
         controller = InstallController(this, handOffToLive = handOffStyle)
         setContent {
-            InstallerTheme {
+            // 这个页面有半透明遮罩，挖孔避让要按「遮罩铺满、内容让开」分开做，
+            // 不能交给主题统一加 padding（否则那条缝没压暗，会出现色差带）
+            InstallerTheme(applyCutoutShift = false) {
                 // 用 sheet（含 forceSheet）而不是 sheetStyle：
                 // 实时通知模式下刷模块会强制转成浮窗，只看设置会把内容渲染成全屏
                 if (sheet) {

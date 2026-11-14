@@ -43,7 +43,17 @@ import com.panl.pui.PuiTheme
  * 换色时对 accent 做 320ms 补间，整套配色是渐变过去的，不是「啪」地换掉。
  */
 @Composable
-fun InstallerTheme(content: @Composable () -> Unit) {
+fun InstallerTheme(
+    /**
+     * 是否由主题统一给内容加挖孔避让。
+     *
+     * 浮窗（InstallActivity）要关掉它：那里内容外面还有一层**半透明遮罩**，
+     * 遮罩必须铺满整个窗口（包括挖孔那条缝），否则那条缝没被压暗，
+     * 和旁边的背景一比就是一条色差带。这种页面自己给卡片/页面加 [puiCutoutPadding]。
+     */
+    applyCutoutShift: Boolean = true,
+    content: @Composable () -> Unit
+) {
     val context = LocalContext.current
     val settings = Settings.get(context)
     val dark = when (settings.themeMode) {
@@ -83,7 +93,7 @@ fun InstallerTheme(content: @Composable () -> Unit) {
         dynamicAccent = false,
         // Default 必须传 null：PUI 原生色板里的容器色是手调的，用算法重算会跑偏
         accent = if (mode == "Default") null else animatedAccent,
-        content = { PuiCutoutShift(content) }
+        content = { if (applyCutoutShift) PuiCutoutShift(content) else content() }
     )
 }
 
@@ -97,6 +107,19 @@ fun InstallerTheme(content: @Composable () -> Unit) {
  * 这里再让一次会和各页面的 `statusBarsPadding` 叠加，白白多出一条空白。
  * 没有挖孔 / 挖孔不在左右边时两个值都是 0，这层就等于不存在。
  */
+@Composable
+fun Modifier.puiCutoutPadding(): Modifier {
+    val cutout = WindowInsets.displayCutout
+    val density = LocalDensity.current
+    val layoutDirection = LocalLayoutDirection.current
+    val left = with(density) { cutout.getLeft(density, layoutDirection).toDp() }
+    val right = with(density) { cutout.getRight(density, layoutDirection).toDp() }
+    return this.padding(
+        start = if (left > 0.dp) left else 0.dp,
+        end = if (right > 0.dp) right else 0.dp
+    )
+}
+
 @Composable
 private fun PuiCutoutShift(content: @Composable () -> Unit) {
     val cutout = WindowInsets.displayCutout

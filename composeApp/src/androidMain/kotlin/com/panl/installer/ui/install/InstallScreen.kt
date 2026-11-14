@@ -74,6 +74,7 @@ import com.panl.installer.ui.components.adaptiveWidth
 import com.panl.installer.ui.components.RelationBadge
 import com.panl.installer.ui.components.SignerCard
 import com.panl.installer.ui.components.InstallInfoChips
+import com.panl.installer.ui.theme.puiCutoutPadding
 import com.panl.installer.ui.components.PuiBottomFade
 import com.panl.installer.ui.components.StatusGlyph
 import androidx.compose.ui.res.painterResource
@@ -117,6 +118,8 @@ fun InstallScreen(controller: InstallController, onClose: () -> Unit) {
             .background(MaterialTheme.colorScheme.background)
             // 删除安装包对话框弹出时，背后整页按「浮窗背景模糊」糊掉
             .puiCardBackdropBlur(controller.deleteDialogVisible, (settings.sheetBlurPx / density).dp)
+            // 挖孔避让：这个 Activity 关掉了主题里的统一避让（遮罩要铺满），整页这里自己让
+            .then(Modifier.puiCutoutPadding())
     ) {
         Column(
             Modifier
