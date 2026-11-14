@@ -110,19 +110,31 @@ object Lsposed {
     private fun start(context: Context, intent: Intent): Boolean =
         runCatching { context.startActivity(intent); true }.getOrDefault(false)
 
+    /**
+     * 用 `am start` 拉起跳板。
+     *
+     * **必须切到 shell（uid 2000）身份**：LSPosed 的钩子注入在 com.android.shell 进程里，
+     * 只有以 shell 身份发起的启动才会被它改写到管理器；用 root 身份发，钩子不生效，
+     * 会直接落到 AOSP 那个「错误报告」页面（用户实测）。
+     * KernelSU / Magisk 的 su 都支持 `su <uid> -c`，老实现不支持时再退回 root。
+     */
     private suspend fun amStart(context: Context, component: ComponentName, link: Uri?): Boolean =
         withContext(Dispatchers.IO) {
-            val data = link?.let { " -d '$it'" }.orEmpty()
-            val (ok, out) = RootShell.run(
-                "am start -p $SHELL -a android.intent.action.MAIN " +
-                    "-c $CATEGORY_LAUNCH_MANAGER -f 0x10000000$data " +
-                    "-n ${component.packageName}/${component.className}"
-            )
-            val started = ok && out.contains("Starting") && !out.contains("Error")
+            // URI 里没有空格，不加引号，省掉一层转义
+            val data = link?.let { " -d $it" }.orEmpty()
+            val cmd = "am start -p $SHELL -a android.intent.action.MAIN " +
+                "-c $CATEGORY_LAUNCH_MANAGER -f 0x10000000$data " +
+                "-n ${component.packageName}/${component.className}"
+
+            val asShell = RootShell.run("su 2000 -c '$cmd'")
+            if (asShell.first && asShell.second.contains("Starting")) return@withContext true
+
+            val asRoot = RootShell.run(cmd)
+            val started = asRoot.first && asRoot.second.contains("Starting")
             if (!started) {
                 InstallerLog.record(
                     context, "LSP",
-                    "am start ${component.className} 失败：${out.take(160)}"
+                    "am start ${component.className} 失败：shell=${asShell.second.take(80)} root=${asRoot.second.take(80)}"
                 )
             }
             started
