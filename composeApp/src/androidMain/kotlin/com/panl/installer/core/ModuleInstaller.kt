@@ -68,8 +68,18 @@ object ModuleInstaller {
     }
 
 
-    /** 刷入；返回 (是否成功, 命令输出)。 */
-    suspend fun install(file: File, mode: RootMode, moduleId: String? = null): Result {
+    /**
+     * 刷入；返回 (是否成功, 命令输出)。
+     *
+     * 默认 5 分钟超时：需要按音量键/电源键的模块会在脚本里无限等待，
+     * 没有超时的话界面就永远停在「正在刷入」。
+     */
+    suspend fun install(
+        file: File,
+        mode: RootMode,
+        moduleId: String? = null,
+        timeoutSec: Long = 300
+    ): Result {
         // 路径里可能有空格，单引号包起来，内部的单引号按 shell 规则转义
         val path = file.absolutePath.replace("'", "'\\''")
         val bin = binary(mode) ?: return Result(false, "no supported root found")
@@ -79,7 +89,7 @@ object ModuleInstaller {
             RootMode.APatch -> "'$bin' module install '$path'"
             RootMode.None -> return Result(false, "no supported root found")
         }
-        val (ok, out) = RootShell.run(cmd)
+        val (ok, out) = RootShell.run(cmd, timeoutSec)
         Log.i(TAG, "install(${label(mode)}) -> $ok ${out.take(200)}")
         if (!ok || moduleId.isNullOrBlank()) return Result(ok, out)
         // 关键一步：把模块文件的 SELinux 标签归位

@@ -17,19 +17,49 @@ object RootShell {
 
     private const val TAG = "RootShell"
 
-    /** 跑一条命令，返回 (是否成功, 输出)。 */
-    suspend fun run(command: String): Pair<Boolean, String> = withContext(Dispatchers.IO) {
-        runCatching {
-            val p = ProcessBuilder("su", "-c", command).redirectErrorStream(true).start()
-            val out = p.inputStream.bufferedReader().readText().trim()
-            val code = p.waitFor()
-            Log.i(TAG, "su -c $command -> $code ${out.take(160)}")
-            (code == 0) to out
-        }.getOrElse {
-            Log.w(TAG, "su failed: $command", it)
-            false to (it.message ?: it.javaClass.simpleName)
+    /**
+     * 跑一条命令，返回 (是否成功, 输出)。
+     *
+     * [timeoutSec] > 0 时最多等这么久，超时就 kill 掉并把已收到的输出带回去 ——
+     * 有些模块的脚本会一直等音量键/电源键，没超时就会永远卡住。
+     */
+    suspend fun run(command: String, timeoutSec: Long = 0): Pair<Boolean, String> =
+        withContext(Dispatchers.IO) {
+            runCatching {
+                val p = ProcessBuilder("su", "-c", command).redirectErrorStream(true).start()
+                val out = StringBuilder()
+                // 单独线程读，主线程才能带超时地 waitFor
+                val reader = Thread {
+                    runCatching {
+                        p.inputStream.bufferedReader().forEachLine { line ->
+                            synchronized(out) { out.appendLine(line) }
+                        }
+                    }
+                }.apply { isDaemon = true; start() }
+
+                val finished = if (timeoutSec > 0) {
+                    p.waitFor(timeoutSec, java.util.concurrent.TimeUnit.SECONDS)
+                } else {
+                    p.waitFor()
+                    true
+                }
+                if (!finished) {
+                    runCatching { p.destroyForcibly() }
+                    reader.join(1000)
+                    val text = synchronized(out) { out.toString() }.trim()
+                    Log.w(TAG, "su -c $command 超时 ${timeoutSec}s，已中止")
+                    return@withContext false to
+                        ("[超时 ${timeoutSec}s，已中止]\n" + text).trim()
+                }
+                reader.join(1500)
+                val text = synchronized(out) { out.toString() }.trim()
+                Log.i(TAG, "su -c $command -> ${p.exitValue()} ${text.take(160)}")
+                (p.exitValue() == 0) to text
+            }.getOrElse {
+                Log.w(TAG, "su failed: $command", it)
+                false to (it.message ?: it.javaClass.simpleName)
+            }
         }
-    }
 
     /**
      * 更新副本所在的目录，例如 `/data/app/~~xxx==/com.foo-yyy==`。

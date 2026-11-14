@@ -1132,6 +1132,26 @@ internal fun ModuleSheet(
                             color = scheme.onSurfaceVariant
                         )
                     }
+                    if (st.module.needsKeyInput) {
+                        Spacer(Modifier.height(10.dp))
+                        Text(
+                            tr(
+                                "这个模块刷入时需要按音量键 / 电源键选择，安装器这边没有按键来源，脚本会一直等着。",
+                                "This module wants volume / power key presses while flashing — nothing can press them here, so the script just waits."
+                            ),
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = scheme.error
+                        )
+                        Spacer(Modifier.height(4.dp))
+                        Text(
+                            tr(
+                                "建议改在 KernelSU / Magisk 管理器里刷入；坚持在这里刷会在 5 分钟后自动中止。",
+                                "Flash it in your KernelSU / Magisk manager instead. Flashing here aborts after 5 minutes."
+                            ),
+                            style = MaterialTheme.typography.bodySmall,
+                            color = scheme.onSurfaceVariant
+                        )
+                    }
                     if (noRoot) {
                         Spacer(Modifier.height(8.dp))
                         Text(
@@ -1236,7 +1256,8 @@ internal fun ModuleSheet(
                         style = PuiButtonStyle.Ghost
                     )
                     PuiButton(
-                        text = tr("刷入", "Flash"),
+                        text = if (st.module.needsKeyInput) tr("仍然刷入", "Flash anyway")
+                        else tr("刷入", "Flash"),
                         onClick = { controller.flashModule() },
                         enabled = !noRoot,
                         modifier = Modifier.weight(1.2f)
