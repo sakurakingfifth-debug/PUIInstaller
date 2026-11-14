@@ -14,15 +14,9 @@ import androidx.compose.foundation.layout.statusBars
 import androidx.compose.material3.dynamicDarkColorScheme
 import androidx.compose.material3.dynamicLightColorScheme
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.SideEffect
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
-import androidx.compose.runtime.withFrameNanos
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.CompositingStrategy
 import androidx.compose.ui.graphics.asComposeRenderEffect
@@ -30,7 +24,6 @@ import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.unit.Dp
-import androidx.compose.ui.unit.IntSize
 import androidx.core.view.WindowCompat
 
 // ---------------- 壁纸取色 ----------------
@@ -176,24 +169,7 @@ actual fun Modifier.puiProgressiveTopBlur(
 ): Modifier {
     if (Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU) return this
     val shader = remember { RuntimeShader(PROGRESSIVE_BLUR_AGSL) }
-    // 窗口尺寸一变（进分屏、拖拽窗口），RenderNode 里还留着**旧尺寸**的那帧画面，
-    // 立刻拿它做采样就会出现「旧内容错位重影」——用户截图里那道竖切面就是这么来的。
-    // 处理办法：尺寸变化后先摘掉效果两帧，等新画面录进图层再挂回去。
-    var layerSize by remember { mutableStateOf(IntSize.Zero) }
-    var effectReady by remember { mutableStateOf(true) }
-    LaunchedEffect(layerSize) {
-        if (layerSize == IntSize.Zero) return@LaunchedEffect
-        effectReady = false
-        withFrameNanos { }
-        withFrameNanos { }
-        effectReady = true
-    }
-    val effect = remember(shader) {
-        RenderEffect.createRuntimeShaderEffect(shader, "content").asComposeRenderEffect()
-    }
-    return this
-        .onSizeChanged { layerSize = it }
-        .graphicsLayer {
+    return this.graphicsLayer {
         shader.setFloatUniform("size", size.width, size.height)
         shader.setFloatUniform("blurH", height.toPx())
         shader.setFloatUniform("maxR", maxRadius.toPx())
@@ -220,8 +196,10 @@ actual fun Modifier.puiProgressiveTopBlur(
         }
         shader.setFloatUniform("barOn", barOn)
 
-        compositingStrategy = if (effectReady) CompositingStrategy.Offscreen else CompositingStrategy.Auto
-        renderEffect = if (effectReady) effect else null
+        compositingStrategy = CompositingStrategy.Offscreen
+        renderEffect = RenderEffect
+            .createRuntimeShaderEffect(shader, "content")
+            .asComposeRenderEffect()
     }
 }
 
@@ -236,25 +214,13 @@ actual fun Modifier.puiRealtimeBlur(progress: () -> Float, maxRadius: Dp): Modif
     val cache = remember { BlurEffectCache() }
     // createBlurEffect 是 API 31 才有的；低版本直接不加效果，动画本身照常
     if (Build.VERSION.SDK_INT < Build.VERSION_CODES.S) return this
-    // 同 puiProgressiveTopBlur：窗口尺寸刚变时先别采样，否则会糊到旧画面上
-    var layerSize by remember { mutableStateOf(IntSize.Zero) }
-    var effectReady by remember { mutableStateOf(true) }
-    LaunchedEffect(layerSize) {
-        if (layerSize == IntSize.Zero) return@LaunchedEffect
-        effectReady = false
-        withFrameNanos { }
-        withFrameNanos { }
-        effectReady = true
-    }
-    return this
-        .onSizeChanged { layerSize = it }
-        .graphicsLayer {
+    return this.graphicsLayer {
         val p = progress().coerceIn(0f, 1f)
         // 只在「完全不用糊」时摘掉效果。这里**不判断上界**：
         // 调用方传进来的进度通常已经被压过曲线（比如 ×2.2），很快就是 1.0，
         // 要是拿 1.0 当「已经盖住」的信号，模糊会在动画刚过一半时整段消失 —— 背景就漏出来了。
         // 「什么时候可以省掉」由调用方决定（传 0 表示不用糊）。
-        val on = p > 0.002f && effectReady
+        val on = p > 0.002f
         compositingStrategy = if (on) CompositingStrategy.Offscreen else CompositingStrategy.Auto
         renderEffect = if (on) cache.get(maxRadius.toPx() * p).asComposeRenderEffect() else null
     }
