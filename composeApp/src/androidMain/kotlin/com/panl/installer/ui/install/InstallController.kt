@@ -476,7 +476,7 @@ class InstallController(
             }
             com.panl.installer.core.InstallerLog.record(
                 activity, "MODULE",
-                "刷入 ${st.module.id} -> ${if (result.ok) "成功" else "失败"}"
+                "刷入 ${st.module.id.ifBlank { st.module.name }} -> ${if (result.ok) "成功" else "失败"}"
             )
             state = st.copy(flashing = false, output = result.output, failed = !result.ok)
         }

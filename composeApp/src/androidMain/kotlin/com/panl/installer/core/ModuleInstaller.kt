@@ -91,9 +91,13 @@ object ModuleInstaller {
         }
         val (ok, out) = RootShell.run(cmd, timeoutSec)
         Log.i(TAG, "install(${label(mode)}) -> $ok ${out.take(200)}")
-        if (!ok || moduleId.isNullOrBlank()) return Result(ok, out)
+        if (!ok) return Result(false, out)
+        // module.prop 是 zstd 压缩的包（新版 LSPosed/Vector）读不到 id，
+        // 刷完从 /data/adb/modules 里挑最新建的那个目录当 id
+        val resolvedId = moduleId?.takeIf { it.isNotBlank() } ?: newestModuleId()
+        if (resolvedId == null) return Result(true, out)
         // 关键一步：把模块文件的 SELinux 标签归位
-        return Result(true, out + "\n" + fixLabels(moduleId))
+        return Result(true, out + "\n" + fixLabels(resolvedId))
     }
 
     /**
@@ -108,6 +112,13 @@ object ModuleInstaller {
      * 所以刷完立刻把整个模块目录 chcon 回 `u:object_r:system_file:s0`（restorecon 兜底）。
      * 标签只在开机挂载时生效，仍需要重启。
      */
+    /** /data/adb/modules 下最新的那个目录名（按修改时间）。 */
+    private suspend fun newestModuleId(): String? {
+        val (ok, out) = RootShell.run("ls -dt /data/adb/modules/*/ 2>/dev/null | head -1")
+        if (!ok || out.isBlank()) return null
+        return out.trim().trimEnd('/').substringAfterLast('/').takeIf { it.isNotBlank() }
+    }
+
     private suspend fun fixLabels(moduleId: String): String {
         val dir = "/data/adb/modules/$moduleId"
         val cmd = "chcon -R u:object_r:system_file:s0 '$dir' 2>/dev/null || restorecon -R '$dir'"

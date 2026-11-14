@@ -1086,14 +1086,16 @@ internal fun ModuleSheet(
                 color = scheme.onSurface,
                 alignment = Alignment.Center
             )
-            Spacer(Modifier.height(3.dp))
-            Text(
-                st.module.id,
-                style = MaterialTheme.typography.bodySmall,
-                color = scheme.onSurfaceVariant,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis
-            )
+            if (st.module.id.isNotBlank()) {
+                Spacer(Modifier.height(3.dp))
+                Text(
+                    st.module.id,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = scheme.onSurfaceVariant,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
+                )
+            }
             Spacer(Modifier.height(8.dp))
             androidx.compose.foundation.layout.FlowRow(
                 horizontalArrangement = Arrangement.spacedBy(
@@ -1132,6 +1134,17 @@ internal fun ModuleSheet(
                             color = scheme.onSurfaceVariant,
                             maxLines = 3,
                             overflow = TextOverflow.Ellipsis
+                        )
+                    }
+                    if (st.module.metaUnreadable) {
+                        Spacer(Modifier.height(6.dp))
+                        Text(
+                            tr(
+                                "这个模块包用了 zstd 压缩，安装器读不到 module.prop；信息以刷入后模块列表里的为准。",
+                                "This package uses zstd compression, so its module.prop can't be read here — check the module list after flashing."
+                            ),
+                            style = MaterialTheme.typography.bodySmall,
+                            color = scheme.onSurfaceVariant
                         )
                     }
                     if (st.module.needsKeyInput) {
