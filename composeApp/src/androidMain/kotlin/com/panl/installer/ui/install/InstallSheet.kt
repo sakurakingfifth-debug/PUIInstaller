@@ -974,15 +974,18 @@ private fun SuccessSheet(
             // LSP / Xposed 模块：中间给一个直达作用域页的入口
             if (state.info.isXposedModule) {
                 val context = LocalContext.current
+                val scope = rememberCoroutineScope()
                 PuiButton(
                     text = tr("模块作用域", "Module scope"),
                     onClick = {
-                        if (!Lsposed.openModuleScope(context, state.info.packageName)) {
-                            Toast.makeText(
-                                context,
-                                tr("没有找到 LSPosed 管理器", "LSPosed manager not found"),
-                                Toast.LENGTH_SHORT
-                            ).show()
+                        scope.launch {
+                            if (!Lsposed.openModuleScope(context, state.info.packageName)) {
+                                Toast.makeText(
+                                    context,
+                                    tr("没有找到 LSPosed 管理器", "LSPosed manager not found"),
+                                    Toast.LENGTH_SHORT
+                                ).show()
+                            }
                         }
                     },
                     modifier = Modifier.weight(1.3f),

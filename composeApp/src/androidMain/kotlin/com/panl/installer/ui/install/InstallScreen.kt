@@ -31,6 +31,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.produceState
 import androidx.compose.runtime.remember
@@ -45,6 +46,7 @@ import androidx.compose.ui.graphics.graphicsLayer
 import android.widget.Toast
 
 import androidx.compose.ui.platform.LocalContext
+import kotlinx.coroutines.launch
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
@@ -783,6 +785,7 @@ private fun SuccessBody(
         // LSP / Xposed 模块：装完还要去管理器里勾作用域才生效，中间多给一个直达入口
         val scopePackage = state.info.packageName.takeIf { state.info.isXposedModule }
         val context = LocalContext.current
+        val scope = rememberCoroutineScope()
         BottomActionBar(
             primaryText = tr("打开", "Open"),
             onPrimary = { controller.openApp(); onClose() },
@@ -791,12 +794,14 @@ private fun SuccessBody(
             middleText = scopePackage?.let { tr("模块作用域", "Module scope") },
             onMiddle = scopePackage?.let { pkg ->
                 {
-                    if (!Lsposed.openModuleScope(context, pkg)) {
-                        Toast.makeText(
-                            context,
-                            tr("没有找到 LSPosed 管理器", "LSPosed manager not found"),
-                            Toast.LENGTH_SHORT
-                        ).show()
+                    scope.launch {
+                        if (!Lsposed.openModuleScope(context, pkg)) {
+                            Toast.makeText(
+                                context,
+                                tr("没有找到 LSPosed 管理器", "LSPosed manager not found"),
+                                Toast.LENGTH_SHORT
+                            ).show()
+                        }
                     }
                 }
             },
