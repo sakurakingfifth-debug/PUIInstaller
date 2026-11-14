@@ -47,8 +47,8 @@ android {
         // versionCode 每次迭代 **+1000000**（37000001 → 38000001 → …），
         // 且必须 ≥ 系统预装的 17700004，否则 PMS 会拒绝覆盖安装
         // （System app cannot be downgraded to older than its preloaded version）。
-        versionCode = 106000001
-        versionName = "3.7.69"
+        versionCode = 107000001
+        versionName = "3.7.70"
     }
 
     compileOptions {
@@ -58,7 +58,14 @@ android {
 
     buildTypes {
         getByName("release") {
-            isMinifyEnabled = false
+            // R8 tree-shaking：dex 占了 APK 的 90%+，只保留真正用到的库代码。
+            // 规则见 proguard-rules.pro —— 关键是不混淆、不优化，只做裁剪。
+            isMinifyEnabled = true
+            isShrinkResources = true
+            proguardFiles(
+                getDefaultProguardFile("proguard-android-optimize.txt"),
+                "proguard-rules.pro"
+            )
             // 构建产物随后用 AOSP testkey 重新签名（见 tools/sign.sh）
             signingConfig = signingConfigs.getByName("debug")
         }
