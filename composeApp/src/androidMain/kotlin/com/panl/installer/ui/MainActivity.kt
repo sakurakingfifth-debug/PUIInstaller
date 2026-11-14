@@ -71,7 +71,7 @@ class MainActivity : ComponentActivity() {
         val coldStart = savedInstanceState == null
 
         setContent {
-            InstallerTheme {
+            InstallerTheme(applyCutoutShift = false) {
                 // 品牌页至少停留 480ms（含图标入场动画），再 260ms 交叉淡入主界面
                 var ready by remember { mutableStateOf(!coldStart) }
                 LaunchedEffect(Unit) {

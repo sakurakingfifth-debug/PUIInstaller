@@ -2,6 +2,8 @@ package com.panl.installer.ui.main
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.BoxWithConstraints
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.displayCutout
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.pager.HorizontalPager
@@ -55,6 +57,16 @@ fun MainShell() {
     // 在组合期读一次，值变了会触发重组 → SideEffect 重跑 → 毛玻璃半径跟着滑块走
     val navBlurPx = settings.navBlurPx.toFloat()
     val blurOn = settings.blurEnabled
+    // 挖孔避让：只让内容让开，**模糊层保持通栏**。
+    // 之前是整窗加 padding，模糊图层跟着一起缩，边缘会出现一条「模糊被切断」的硬边（用户报的异常）。
+    val cutoutStart = with(LocalDensity.current) {
+        val insets = androidx.compose.foundation.layout.WindowInsets.displayCutout
+        insets.getLeft(this, androidx.compose.ui.platform.LocalLayoutDirection.current).toDp()
+    }
+    val cutoutEnd = with(LocalDensity.current) {
+        val insets = androidx.compose.foundation.layout.WindowInsets.displayCutout
+        insets.getRight(this, androidx.compose.ui.platform.LocalLayoutDirection.current).toDp()
+    }
     val topBlurPx = settings.topBlurPx
     SideEffect { backdrop.blurPx = navBlurPx }
 
@@ -85,15 +97,22 @@ fun MainShell() {
                 Modifier.fillMaxSize()
             }
         ) { page ->
-            when (page) {
-                0 -> HomeScreen(
-                    topPad = blurH,
-                    onOpenSettings = { scope.launch { pagerState.animateScrollToPage(3) } }
-                )
+            Box(
+                Modifier
+                    .fillMaxSize()
+                    // 内容让开挖孔；pager（也就是模糊图层）本身仍是通栏
+                    .padding(start = cutoutStart, end = cutoutEnd)
+            ) {
+                when (page) {
+                    0 -> HomeScreen(
+                        topPad = blurH,
+                        onOpenSettings = { scope.launch { pagerState.animateScrollToPage(3) } }
+                    )
 
-                1 -> AppsScreen(topPad = blurH)
-                2 -> HistoryScreen(topPad = blurH)
-                else -> SettingsScreen(topPad = blurH)
+                    1 -> AppsScreen(topPad = blurH)
+                    2 -> HistoryScreen(topPad = blurH)
+                    else -> SettingsScreen(topPad = blurH)
+                }
             }
         }
 
