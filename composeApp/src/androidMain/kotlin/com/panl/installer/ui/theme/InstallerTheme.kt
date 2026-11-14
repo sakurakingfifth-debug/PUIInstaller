@@ -1,6 +1,8 @@
 package com.panl.installer.ui.theme
 
 import androidx.compose.animation.animateColorAsState
+import androidx.compose.animation.core.FastOutSlowInEasing
+import androidx.compose.animation.core.animate
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Box
@@ -11,12 +13,18 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.dynamicDarkColorScheme
 import androidx.compose.material3.dynamicLightColorScheme
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalLayoutDirection
+import androidx.compose.ui.platform.LocalWindowInfo
+import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import com.panl.installer.core.Settings
@@ -96,10 +104,29 @@ private fun PuiCutoutShift(content: @Composable () -> Unit) {
     val layoutDirection = LocalLayoutDirection.current
     val left = with(density) { cutout.getLeft(density, layoutDirection).toDp() }
     val right = with(density) { cutout.getRight(density, layoutDirection).toDp() }
+    // 窗口尺寸变化（进/出分屏、拖拽改窗口大小）时做一次轻微淡入：
+    // 系统那边是硬切，重排那一瞬会看到内容跳位、旧画面残影；压暗一点再淡回来就顺了，
+    // 顺便把「尺寸刚变、模糊图层还采样着旧画面」的那一两帧盖过去。
+    val windowSize = LocalWindowInfo.current.containerSize
+    var alpha by remember { mutableStateOf(1f) }
+    var lastSize by remember { mutableStateOf(IntSize.Zero) }
+    LaunchedEffect(windowSize) {
+        if (lastSize != IntSize.Zero && windowSize != lastSize && windowSize.width > 0) {
+            alpha = 0.45f
+            animate(
+                initialValue = alpha,
+                targetValue = 1f,
+                animationSpec = tween(durationMillis = 260, easing = FastOutSlowInEasing)
+            ) { value, _ -> alpha = value }
+        }
+        lastSize = windowSize
+    }
+
     Box(
         Modifier
             .fillMaxSize()
             .padding(start = if (left > 0.dp) left else 0.dp, end = if (right > 0.dp) right else 0.dp)
+            .graphicsLayer { this.alpha = alpha }
     ) {
         content()
     }
