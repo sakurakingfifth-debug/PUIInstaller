@@ -114,6 +114,16 @@ fun Modifier.puiCutoutPadding(): Modifier {
     val layoutDirection = LocalLayoutDirection.current
     val left = with(density) { cutout.getLeft(density, layoutDirection).toDp() }
     val right = with(density) { cutout.getRight(density, layoutDirection).toDp() }
+    if (left <= 0.dp && right <= 0.dp) return this
+
+    // 内容最宽就 640dp（见 adaptiveWidth），窗口够宽时本来就居中排、离孔还远，
+    // 这时候再按孔宽缩一下，整块内容就会**看起来往旁边偏**（用户报的就是这个）。
+    // 所以只在「窗口窄到可能真的压到孔」时才让。
+    val windowWidth = with(density) {
+        LocalWindowInfo.current.containerSize.width.toDp()
+    }
+    if (windowWidth - left - right >= 720.dp) return this
+
     return this.padding(
         start = if (left > 0.dp) left else 0.dp,
         end = if (right > 0.dp) right else 0.dp
@@ -145,10 +155,18 @@ private fun PuiCutoutShift(content: @Composable () -> Unit) {
         lastSize = windowSize
     }
 
+    // 和 puiCutoutPadding 用同一套判断：窗口够宽时内容本来就居中排在安全区里，
+    // 再缩一下只会让它看起来往一边偏。只有窄到可能压到孔时才让。
+    val windowWidth = with(density) { LocalWindowInfo.current.containerSize.width.toDp() }
+    val needShift = (left > 0.dp || right > 0.dp) && windowWidth - left - right < 720.dp
+
     Box(
         Modifier
             .fillMaxSize()
-            .padding(start = if (left > 0.dp) left else 0.dp, end = if (right > 0.dp) right else 0.dp)
+            .padding(
+                start = if (needShift && left > 0.dp) left else 0.dp,
+                end = if (needShift && right > 0.dp) right else 0.dp
+            )
             .graphicsLayer { this.alpha = alpha }
     ) {
         content()

@@ -25,6 +25,7 @@ import com.panl.installer.R
 import androidx.compose.foundation.layout.size
 import androidx.compose.ui.res.painterResource
 import androidx.compose.foundation.Image
+import com.panl.installer.ui.theme.puiCutoutPadding
 import com.panl.pui.PuiFloatingNavBar
 import com.panl.pui.PuiIcon
 import com.panl.pui.PuiTopFade
@@ -57,16 +58,6 @@ fun MainShell() {
     // 在组合期读一次，值变了会触发重组 → SideEffect 重跑 → 毛玻璃半径跟着滑块走
     val navBlurPx = settings.navBlurPx.toFloat()
     val blurOn = settings.blurEnabled
-    // 挖孔避让：只让内容让开，**模糊层保持通栏**。
-    // 之前是整窗加 padding，模糊图层跟着一起缩，边缘会出现一条「模糊被切断」的硬边（用户报的异常）。
-    val cutoutStart = with(LocalDensity.current) {
-        val insets = androidx.compose.foundation.layout.WindowInsets.displayCutout
-        insets.getLeft(this, androidx.compose.ui.platform.LocalLayoutDirection.current).toDp()
-    }
-    val cutoutEnd = with(LocalDensity.current) {
-        val insets = androidx.compose.foundation.layout.WindowInsets.displayCutout
-        insets.getRight(this, androidx.compose.ui.platform.LocalLayoutDirection.current).toDp()
-    }
     val topBlurPx = settings.topBlurPx
     SideEffect { backdrop.blurPx = navBlurPx }
 
@@ -101,7 +92,8 @@ fun MainShell() {
                 Modifier
                     .fillMaxSize()
                     // 内容让开挖孔；pager（也就是模糊图层）本身仍是通栏
-                    .padding(start = cutoutStart, end = cutoutEnd)
+                    // 只有窗口窄到可能压到孔时才让；宽屏上让了反而整页偏一边
+                    .puiCutoutPadding()
             ) {
                 when (page) {
                     0 -> HomeScreen(
