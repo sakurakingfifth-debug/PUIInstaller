@@ -45,6 +45,8 @@ import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.input.pointer.util.VelocityTracker
 import androidx.compose.ui.layout.onSizeChanged
+import android.widget.Toast
+
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.painterResource
@@ -59,6 +61,7 @@ import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import com.panl.installer.R
 import com.panl.installer.core.ApkInfo
+import com.panl.installer.core.Lsposed
 import com.panl.installer.core.ApkDownloader
 import com.panl.installer.ui.components.InstallInfoChips
 import com.panl.installer.core.Formatters
@@ -968,6 +971,24 @@ private fun SuccessSheet(
                 modifier = Modifier.weight(1f),
                 style = PuiButtonStyle.Ghost
             )
+            // LSP / Xposed 模块：中间给一个直达作用域页的入口
+            if (state.info.isXposedModule) {
+                val context = LocalContext.current
+                PuiButton(
+                    text = tr("模块作用域", "Module scope"),
+                    onClick = {
+                        if (!Lsposed.openModuleScope(context, state.info.packageName)) {
+                            Toast.makeText(
+                                context,
+                                tr("没有找到 LSPosed 管理器", "LSPosed manager not found"),
+                                Toast.LENGTH_SHORT
+                            ).show()
+                        }
+                    },
+                    modifier = Modifier.weight(1.3f),
+                    style = PuiButtonStyle.Ghost
+                )
+            }
             PuiButton(
                 text = tr("打开", "Open"),
                 onClick = { controller.openApp(); onClose() },

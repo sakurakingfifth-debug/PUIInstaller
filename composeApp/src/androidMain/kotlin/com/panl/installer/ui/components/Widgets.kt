@@ -356,6 +356,9 @@ fun BottomActionBar(
     onPrimary: () -> Unit,
     secondaryText: String? = null,
     onSecondary: (() -> Unit)? = null,
+    /** 次要按钮和主按钮之间的第三个按钮（目前只有「LSP 模块作用域」用到）。 */
+    middleText: String? = null,
+    onMiddle: (() -> Unit)? = null,
     primaryEnabled: Boolean = true,
     danger: Boolean = false,
     navPadding: Dp = 0.dp,
@@ -376,6 +379,15 @@ fun BottomActionBar(
                 text = secondaryText,
                 onClick = onSecondary,
                 modifier = Modifier.weight(1f),
+                style = com.panl.pui.PuiButtonStyle.Ghost
+            )
+        }
+        if (middleText != null && onMiddle != null) {
+            com.panl.pui.PuiButton(
+                text = middleText,
+                onClick = onMiddle,
+                // 比两边宽一点：中文「模块作用域」五个字，等宽会换行
+                modifier = Modifier.weight(1.3f),
                 style = com.panl.pui.PuiButtonStyle.Ghost
             )
         }
@@ -611,6 +623,10 @@ fun InstallInfoChips(
         }
         if (info.signers.any { it.aospKey != null }) {
             add(tr("AOSP 密钥", "AOSP key") to InfoChipTone.Danger)
+        }
+        // LSPosed / Xposed 模块：装完还得去管理器里给它勾作用域，这里先标出来
+        if (info.isXposedModule) {
+            add(tr("LSP 模块", "LSP module") to InfoChipTone.Neutral)
         }
         // 安装来源：显示发起安装的应用包名（如 com.android.vending），开关在「来源预设」页
         if (showSource) {

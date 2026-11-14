@@ -51,6 +51,8 @@ data class ApkInfo(
     /** 欧加系（OPPO/一加/realme）OSDK 目标区间，来自 AndroidManifest 的 meta-data。 */
     val minOsdk: String? = null,
     val maxOsdk: String? = null,
+    /** 是不是 LSPosed / Xposed 模块（清单里声明了 meta-data xposedmodule=true）。 */
+    val isXposedModule: Boolean = false,
     /** 这次安装是谁发起的（发起应用的名字），拿不到就是 null。 */
     val sourceLabel: String? = null,
     /** 发起这次安装的应用包名（launchedFromPackage），拿不到就是 null。 */
@@ -138,6 +140,10 @@ object ApkInspector {
             isDebuggable = (ai.flags and ApplicationInfo.FLAG_DEBUGGABLE) != 0,
             isSystemApp = (ai.flags and ApplicationInfo.FLAG_SYSTEM) != 0,
             installLocation = pi.installLocation,
+            isXposedModule = ai.metaData
+                ?.get("xposedmodule")
+                ?.toString()
+                ?.equals("true", ignoreCase = true) == true,
             minOsdk = ai.metaData.metaString("minOsdkVersion"),
             maxOsdk = ai.metaData.metaString("maxOsdkVersion"),
             supports16K = PageSizeCheck.detect(file),

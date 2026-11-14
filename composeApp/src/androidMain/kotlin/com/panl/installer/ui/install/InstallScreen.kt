@@ -42,6 +42,8 @@ import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.graphics.graphicsLayer
+import android.widget.Toast
+
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalHapticFeedback
@@ -53,6 +55,7 @@ import androidx.compose.ui.unit.dp
 import com.panl.installer.R
 import com.panl.installer.core.ApkDownloader
 import com.panl.installer.core.ApkInfo
+import com.panl.installer.core.Lsposed
 import com.panl.installer.core.Formatters
 import com.panl.installer.core.Settings
 import com.panl.installer.core.VersionRelation
@@ -777,11 +780,26 @@ private fun SuccessBody(
                 )
             }
         }
+        // LSP / Xposed 模块：装完还要去管理器里勾作用域才生效，中间多给一个直达入口
+        val scopePackage = state.info.packageName.takeIf { state.info.isXposedModule }
+        val context = LocalContext.current
         BottomActionBar(
             primaryText = tr("打开", "Open"),
             onPrimary = { controller.openApp(); onClose() },
             secondaryText = tr("完成", "Done"),
             onSecondary = onClose,
+            middleText = scopePackage?.let { tr("模块作用域", "Module scope") },
+            onMiddle = scopePackage?.let { pkg ->
+                {
+                    if (!Lsposed.openModuleScope(context, pkg)) {
+                        Toast.makeText(
+                            context,
+                            tr("没有找到 LSPosed 管理器", "LSPosed manager not found"),
+                            Toast.LENGTH_SHORT
+                        ).show()
+                    }
+                }
+            },
             modifier = Modifier.navigationBarsPadding()
         )
     }
