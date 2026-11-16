@@ -513,6 +513,9 @@ class InstallController(
             stage = 0,
             log = listOf("- 开始刷写：${st.module.name.ifBlank { st.module.id }}")
         )
+        // 所有模块刷写都开（有些模块的按键检测不一定能识别出来，比如 zstd 压缩的包；
+        // 只在刷写的这几秒里关系统弹窗，代价可以接受）
+        startKeyGuard()
         activity.lifecycleScope.launch {
             val result = withContext(Dispatchers.IO) {
                 com.panl.installer.core.ModuleInstaller.install(
@@ -533,6 +536,7 @@ class InstallController(
                     }
                 )
             }
+            stopKeyGuard()
             com.panl.installer.core.InstallerLog.record(
                 activity, "MODULE",
                 "刷入 ${st.module.id.ifBlank { st.module.name }} -> ${if (result.ok) "成功" else "失败"}"
@@ -546,6 +550,36 @@ class InstallController(
                         if (result.ok) "- Done" else "- 失败：${result.output.lineSequence().firstOrNull { l -> l.contains("错误", true) || l.contains("Error", true) || l.contains("失败") }?.take(160) ?: "见上方输出"}"
                     )
                 )
+            }
+        }
+    }
+
+    /** 需要按键的模块：刷写期间持续关闭系统音量条 / 电源菜单。 */
+    private fun startKeyGuard() {
+        if (keyGuard != null) return
+        runCatching {
+            keyGuard = ProcessBuilder(
+                "su", "-c",
+                "rm -f /data/local/tmp/pui_keyguard_stop; " +
+                    "while [ ! -f /data/local/tmp/pui_keyguard_stop ]; do " +
+                    "am broadcast -a android.intent.action.CLOSE_SYSTEM_DIALOGS >/dev/null 2>&1; " +
+                    "sleep 0.5; done"
+            ).redirectErrorStream(true).start()
+            com.panl.installer.core.InstallerLog.record(activity, "MODULE", "已启动按键守护（屏蔽音量条/电源菜单）")
+        }.onFailure {
+            android.util.Log.w("ModuleFlash", "key guard failed", it)
+        }
+    }
+
+    /** 刷写结束：停掉守护，音量条和电源菜单立刻恢复正常。 */
+    private fun stopKeyGuard() {
+        val p = keyGuard ?: return
+        keyGuard = null
+        activity.lifecycleScope.launch {
+            withContext(Dispatchers.IO) {
+                // 先落标记文件让循环自己退出，再 destroy，避免残留 su 进程一直广播
+                com.panl.installer.core.RootShell.run("touch /data/local/tmp/pui_keyguard_stop")
+                runCatching { p.destroy() }
             }
         }
     }
@@ -1129,6 +1163,15 @@ class InstallController(
     var hybridPickerOpen by mutableStateOf(false)
         private set
 
+    /**
+     * 需要音量键选择的模块，刷写期间起的「按键守护」进程。
+     *
+     * 它只做一件事：每 0.5 秒发一次 `CLOSE_SYSTEM_DIALOGS`，
+     * 把系统音量条 / 电源菜单按掉 —— 音量键是给安装脚本用的，
+     * 弹出来的音量面板会挡住日志，而且是系统级窗口，应用层没法隐藏，只能这样压掉。
+     */
+    private var keyGuard: Process? = null
+
     fun closeHybridPicker() {
         hybridPickerOpen = false
     }
@@ -1262,6 +1305,8 @@ class InstallController(
     }
 
     fun cleanupOnExit() {
+        // 页面没了：按键守护要先停，不然那个 su 循环会一直广播下去
+        stopKeyGuard()
         // 交给服务之后这份缓存还有用，删了服务就读不到了
         if (handedOff) return
         // 页面被关掉时别再继续下（下载循环会自己删掉半截文件）

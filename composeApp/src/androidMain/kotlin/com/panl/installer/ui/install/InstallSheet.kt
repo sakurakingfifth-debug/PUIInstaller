@@ -1309,6 +1309,18 @@ internal fun ModuleSheet(
                             color = scheme.onSurfaceVariant
                         )
                     }
+                    if (st.flashing) {
+                        Spacer(Modifier.height(8.dp))
+                        Text(
+                            tr(
+                                "刷写期间系统音量条与电源菜单会被自动收起，完成后恢复",
+                                "The system volume panel and power menu are auto-dismissed while flashing"
+                            ),
+                            style = MaterialTheme.typography.labelSmall,
+                            color = scheme.onSurfaceVariant
+                        )
+                    }
+
                     // 刷入日志：就在卡片里实时滚动，不跳独立页面。
                     // weight(fill=false) + heightIn：空间够按内容，不够就压缩（内部滚动），
                     // 这样整页不需要滚动，模块描述也不会被裁掉
