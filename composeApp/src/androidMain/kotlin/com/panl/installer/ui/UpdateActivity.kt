@@ -153,11 +153,14 @@ private fun UpdateScreen(onClose: () -> Unit) {
             )
         }
 
+        // 滚动区 + 底部渐隐：内容不会在按钮上方被「一刀切」，
+        // 而是逐渐淡出，暗示还能继续往下滑
+        Box(Modifier.weight(1f)) {
         Column(
             Modifier
-                .weight(1f)
+                .fillMaxSize()
                 .verticalScroll(rememberScrollState())
-                .padding(horizontal = 16.dp)
+                .padding(start = 16.dp, end = 16.dp, bottom = 84.dp)
         ) {
             // ── 顶部大图：直接用壁纸，标题压在左下角 ────────────────────
             // 2:1 长矩形：宽高比固定，图用 Crop 裁（源图是正方形，上下会被切掉，
@@ -262,6 +265,20 @@ private fun UpdateScreen(onClose: () -> Unit) {
             }
 
             Spacer(Modifier.height(20.dp))
+        }
+
+            // 渐隐层：只画不挡点击（没有 clickable），盖住滚动区最后 84dp
+            Box(
+                Modifier
+                    .align(Alignment.BottomCenter)
+                    .fillMaxWidth()
+                    .height(84.dp)
+                    .background(
+                        Brush.verticalGradient(
+                            listOf(Color.Transparent, scheme.background)
+                        )
+                    )
+            )
         }
 
         // ── 底部两个圆形按钮 ────────────────────────────────────────────
