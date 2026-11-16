@@ -112,7 +112,12 @@ private fun SplitPickerDialog(
 
     Dialog(
         onDismissRequest = onDismiss,
-        properties = DialogProperties(usePlatformDefaultWidth = false)
+        properties = DialogProperties(
+            usePlatformDefaultWidth = false,
+            // 让弹窗窗口铺到状态栏/导航条底下：否则压暗层只盖住内容区，
+            // 顶部状态栏和底部导航条还是亮的（用户截图里圈出来的两处）
+            decorFitsSystemWindows = false
+        )
     ) {
         // 压暗层和卡片放同一个 Box 里居中：Dialog 关掉平台默认宽度后内容是从左上角开始排的，
         // 之前直接平铺就会贴到屏幕顶部（用户看到的「位置不对」）
