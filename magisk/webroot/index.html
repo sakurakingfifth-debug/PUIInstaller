@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>PUI 安装器</title>
+<style>
+  :root {
+    --bg: #f4f4f6;
+    --card: #ffffff;
+    --text: #17171a;
+    --sub: #6c6c73;
+    --line: rgba(0,0,0,.08);
+    --accent: #be3455;
+    --accent-text: #ffffff;
+    --ok: #2e9e63;
+    --warn: #c8801f;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #101013;
+      --card: #1b1b1f;
+      --text: #f2f2f4;
+      --sub: #9a9aa3;
+      --line: rgba(255,255,255,.09);
+      --accent: #e8567a;
+      --accent-text: #1b1b1f;
+      --ok: #59d18c;
+      --warn: #e0a34a;
+    }
+  }
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  body {
+    margin: 0;
+    padding: 24px 20px calc(28px + env(safe-area-inset-bottom));
+    background: var(--bg);
+    color: var(--text);
+    font: 15px/1.5 system-ui, -apple-system, "Segoe UI", Roboto, "PingFang SC", "Microsoft YaHei", sans-serif;
+  }
+  header { display: flex; align-items: center; gap: 12px; margin-bottom: 20px; }
+  .logo {
+    width: 46px; height: 46px; border-radius: 14px;
+    background: linear-gradient(135deg, #d94b6b, #be3455 60%, #8d1f38);
+    display: grid; place-items: center; color: #fff; font-weight: 700; font-size: 20px;
+    box-shadow: 0 6px 18px rgba(190,52,85,.35);
+  }
+  h1 { font-size: 19px; margin: 0; font-weight: 650; letter-spacing: .2px; }
+  .sub { color: var(--sub); font-size: 13px; margin-top: 2px; }
+  .card {
+    background: var(--card); border-radius: 20px; padding: 4px 16px;
+    border: 1px solid var(--line); margin-bottom: 14px;
+  }
+  .row { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 14px 0; }
+  .row + .row { border-top: 1px solid var(--line); }
+  .row .k { color: var(--sub); font-size: 13px; }
+  .row .v { font-size: 14px; text-align: right; word-break: break-all; }
+  .ok { color: var(--ok); }
+  .warn { color: var(--warn); }
+  button {
+    width: 100%; border: 0; border-radius: 16px; padding: 16px;
+    font-size: 16px; font-weight: 600; font-family: inherit;
+    background: var(--accent); color: var(--accent-text);
+    margin-top: 4px;
+  }
+  button.ghost { background: transparent; color: var(--text); border: 1px solid var(--line); margin-top: 12px; font-weight: 500; }
+  button:active { transform: scale(.985); }
+  .hint { color: var(--sub); font-size: 12px; margin-top: 18px; text-align: center; line-height: 1.6; }
+  pre {
+    margin: 12px 0 0; padding: 12px; border-radius: 14px; background: rgba(127,127,127,.12);
+    color: var(--sub); font-size: 12px; white-space: pre-wrap; word-break: break-all;
+    max-height: 160px; overflow: auto;
+  }
+</style>
+</head>
+<body>
+<header>
+  <div class="logo">P</div>
+  <div>
+    <h1>PUI 安装器</h1>
+    <div class="sub" id="modVersion">读取模块信息…</div>
+  </div>
+</header>
+
+<div class="card">
+  <div class="row"><span class="k">安装器本体</span><span class="v" id="appState">检查中…</span></div>
+  <div class="row"><span class="k">安装器版本</span><span class="v" id="appVersion">—</span></div>
+  <div class="row"><span class="k">当前系统安装器</span><span class="v" id="isDefault">—</span></div>
+</div>
+
+<button id="openApp">打开安装器</button>
+<button class="ghost" id="refresh">刷新状态</button>
+
+<div class="hint">
+  模块卡片上的 ▶ 也会直接打开安装器<br>
+  页面由 KernelSU WebUI 提供，需要管理器支持
+</div>
+<pre id="log" hidden></pre>
+
+<script>
+(function () {
+  const PKG = 'com.android.packageinstaller';
+  const MAIN = PKG + '/com.panl.installer.ui.MainActivity';
+  const MOD_ID = 'PUIAOSPPackageInstall';
+
+  const $ = (id) => document.getElementById(id);
+  const logEl = $('log');
+
+  function log(msg) {
+    logEl.hidden = false;
+    logEl.textContent = msg;
+  }
+
+  // KernelSU 在 WebView 里注入 window.ksu；老版本是 ksu.exec(cmd, opts, cb)，新版本返回 Promise
+  function exec(cmd) {
+    return new Promise((resolve, reject) => {
+      const k = window.ksu;
+      if (!k || typeof k.exec !== 'function') {
+        reject(new Error('当前环境没有 ksu.exec（请从 KernelSU 管理器的模块页打开）'));
+        return;
+      }
+      let settled = false;
+      const done = (r) => { if (!settled) { settled = true; resolve(r || {}); } };
+      try {
+        const ret = k.exec(cmd, {}, (errno, stdout, stderr) => done({ errno, stdout, stderr }));
+        if (ret && typeof ret.then === 'function') ret.then(done).catch(reject);
+      } catch (e) {
+        reject(e);
+      }
+    });
+  }
+
+  async function refresh() {
+    // 模块自己的版本
+    try {
+      const r = await exec(`grep '^version=' /data/adb/modules/${MOD_ID}/module.prop`);
+      const v = (r.stdout || '').trim().replace(/^version=/, '');
+      $('modVersion').textContent = v ? '模块 ' + v : '模块已安装';
+    } catch (e) {
+      $('modVersion').textContent = '模块信息不可读';
+    }
+
+    // 安装器本体是否装了
+    try {
+      const r = await exec(`pm path ${PKG}`);
+      const installed = (r.stdout || '').includes('package:');
+      $('appState').textContent = installed ? '已安装' : '未安装';
+      $('appState').className = 'v ' + (installed ? 'ok' : 'warn');
+      if (!installed) {
+        $('appVersion').textContent = '—';
+        $('isDefault').textContent = '—';
+        return;
+      }
+    } catch (e) {
+      log(String(e.message || e));
+      return;
+    }
+
+    // 版本号
+    try {
+      const r = await exec(`dumpsys package ${PKG} | grep -m1 versionName`);
+      const m = (r.stdout || '').match(/versionName=(\S+)/);
+      $('appVersion').textContent = m ? m[1] : '未知';
+    } catch (e) { /* 忽略 */ }
+
+    // 是否就是系统安装器（模块生效后会变成自己）
+    try {
+      const r = await exec(`cmd package resolve-activity --brief -a android.intent.action.VIEW -d file:///sdcard/x.apk -t application/vnd.android.package-archive`);
+      const out = (r.stdout || '').trim();
+      const isSelf = out.includes(PKG);
+      $('isDefault').textContent = isSelf ? '是（本应用）' : '否';
+      $('isDefault').className = 'v ' + (isSelf ? 'ok' : 'warn');
+    } catch (e) { /* 忽略 */ }
+  }
+
+  $('openApp').addEventListener('click', async () => {
+    try {
+      const r = await exec(`am start -n ${MAIN}`);
+      if ((r.errno || 0) !== 0) {
+        await exec(`am start -a android.intent.action.MAIN -c android.intent.category.LAUNCHER -n ${PKG}/com.panl.installer.ui.LauncherAlias`);
+      }
+      if (window.ksu && typeof window.ksu.toast === 'function') window.ksu.toast('已打开 PUI 安装器');
+    } catch (e) {
+      log('打开失败：' + (e.message || e));
+    }
+  });
+
+  $('refresh').addEventListener('click', refresh);
+  refresh();
+})();
+</script>
+</body>
+</html>
