@@ -1,7 +1,10 @@
 package com.panl.installer.ui.install
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -70,19 +73,24 @@ fun HybridInstallHost(controller: InstallController) {
                     .padding(horizontal = 24.dp)
                     .clip(RoundedCornerShape(28.dp))
                     .background(scheme.surfaceContainerHigh)
-                    .padding(20.dp)
+                    .padding(20.dp),
+                horizontalAlignment = Alignment.CenterHorizontally
             ) {
                 Text(
                     tr("发现目标为双模块", "Dual-mode package detected"),
                     style = MaterialTheme.typography.titleLarge,
                     fontWeight = FontWeight.SemiBold,
-                    color = scheme.onSurface
+                    color = scheme.onSurface,
+                    textAlign = TextAlign.Center,
+                    modifier = Modifier.fillMaxWidth()
                 )
                 Spacer(Modifier.height(4.dp))
                 Text(
                     tr("请选择安装类型", "Pick how this package should be installed"),
                     style = MaterialTheme.typography.bodySmall,
-                    color = scheme.onSurfaceVariant
+                    color = scheme.onSurfaceVariant,
+                    textAlign = TextAlign.Center,
+                    modifier = Modifier.fillMaxWidth()
                 )
                 Spacer(Modifier.height(16.dp))
 
@@ -105,11 +113,17 @@ fun HybridInstallHost(controller: InstallController) {
                 )
 
                 Spacer(Modifier.height(16.dp))
-                PuiButton(
-                    text = tr("取消", "Cancel"),
-                    onClick = { controller.closeHybridPicker() },
-                    style = PuiButtonStyle.Ghost
-                )
+                Row(
+                    Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.Center
+                ) {
+                    PuiButton(
+                        text = tr("取消", "Cancel"),
+                        onClick = { controller.closeHybridPicker() },
+                        modifier = Modifier.widthIn(min = 132.dp),
+                        style = PuiButtonStyle.Ghost
+                    )
+                }
             }
         }
     }
@@ -124,30 +138,43 @@ private fun HybridOption(
     onClick: () -> Unit
 ) {
     val scheme = MaterialTheme.colorScheme
+    // 居中版：图标在上、文字横排居中，不再放右侧箭头（箭头是右对齐布局的语言）
     Column(
         Modifier
             .fillMaxWidth()
             .clip(RoundedCornerShape(16.dp))
             .background(scheme.surfaceContainerLowest)
+            // 浅色主题下卡片和白底几乎同色，加一道细边让「可点」这件事看得出来
+            .border(1.dp, scheme.outlineVariant.copy(alpha = 0.5f), RoundedCornerShape(16.dp))
             .clickable(onClick = onClick)
-            .padding(horizontal = 14.dp, vertical = 12.dp)
+            .padding(horizontal = 16.dp, vertical = 14.dp),
+        horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            PuiIconView(icon, Modifier.size(18.dp), tint = scheme.primary)
-            Spacer(Modifier.size(8.dp))
-            Text(
-                title,
-                style = MaterialTheme.typography.titleMedium,
-                color = scheme.onSurface,
-                fontWeight = FontWeight.Medium
-            )
-            Spacer(Modifier.size(6.dp))
-            Spacer(Modifier.weight(1f))
-            PuiIconView(PuiIcon.ChevronRight, Modifier.size(18.dp), tint = scheme.onSurfaceVariant)
-        }
-        Spacer(Modifier.height(4.dp))
-        Text(subtitle, style = MaterialTheme.typography.bodySmall, color = scheme.onSurfaceVariant)
-        Spacer(Modifier.height(2.dp))
-        Text(hint, style = MaterialTheme.typography.labelSmall, color = scheme.primary)
+        PuiIconView(icon, Modifier.size(22.dp), tint = scheme.primary)
+        Spacer(Modifier.height(8.dp))
+        Text(
+            title,
+            style = MaterialTheme.typography.titleMedium,
+            color = scheme.onSurface,
+            fontWeight = FontWeight.Medium,
+            textAlign = TextAlign.Center,
+            modifier = Modifier.fillMaxWidth()
+        )
+        Spacer(Modifier.height(3.dp))
+        Text(
+            subtitle,
+            style = MaterialTheme.typography.bodySmall,
+            color = scheme.onSurfaceVariant,
+            textAlign = TextAlign.Center,
+            modifier = Modifier.fillMaxWidth()
+        )
+        Spacer(Modifier.height(3.dp))
+        Text(
+            hint,
+            style = MaterialTheme.typography.labelSmall,
+            color = scheme.primary,
+            textAlign = TextAlign.Center,
+            modifier = Modifier.fillMaxWidth()
+        )
     }
 }
