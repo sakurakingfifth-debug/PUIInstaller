@@ -651,6 +651,32 @@ private fun ReadySheet(
             }
         }
 
+        // 签名一致性：只在这个包已经装过的时候才有意义（没装过没有可比对象）
+        info.signatureMatchesInstalled?.let { same ->
+            Spacer(Modifier.height(8.dp))
+            Row(
+                Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.Center,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                PuiIconView(
+                    if (same) PuiIcon.Check else PuiIcon.Warning,
+                    Modifier.size(16.dp),
+                    // 主题里没有「成功」色；一致用固定的绿（明暗主题上都读得出来），
+                    // 不一致用 error —— 别再拿 primary，这个主题的 primary 本身就是洋红，看着像警告
+                    tint = if (same) androidx.compose.ui.graphics.Color(0xFF2E9E63) else scheme.error
+                )
+                Spacer(Modifier.width(6.dp))
+                Text(
+                    if (same) tr("签名一致", "Signature matches")
+                    else tr("签名不一致", "Signature mismatch"),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = if (same) androidx.compose.ui.graphics.Color(0xFF2E9E63) else scheme.error,
+                    fontWeight = androidx.compose.ui.text.font.FontWeight.Medium
+                )
+            }
+        }
+
         Spacer(Modifier.height(18.dp))
 
         Row(
