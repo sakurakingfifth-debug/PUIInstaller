@@ -349,8 +349,14 @@ fun InstallSheet(controller: InstallController, onClose: () -> Unit) {
             BoxWithConstraints(
                 Modifier.fillMaxWidth().then(if (p > 0f) Modifier.weight(1f) else Modifier)
             ) {
+                // 模块刷入要放实时日志，卡片得比常规状态高一截；其他状态维持原样，
+                // 免得「准备安装」那种内容少的卡片被拉出一大片空白
+                val cap = when (controller.state) {
+                    is InstallUiState.ModuleConfirm -> SHEET_MAX_CONTENT_H_MODULE
+                    else -> SHEET_MAX_CONTENT_H
+                }
                 val maxContentHeight =
-                    if (maxHeight.value.isFinite()) minOf(SHEET_MAX_CONTENT_H, maxHeight) else SHEET_MAX_CONTENT_H
+                    if (maxHeight.value.isFinite()) minOf(cap, maxHeight) else cap
             Box(
                 Modifier
                     .fillMaxWidth()
@@ -532,6 +538,9 @@ fun InstallSheet(controller: InstallController, onClose: () -> Unit) {
 
 /** 浮窗内容区的高度上限（不含拖拽条）：卡片平时贴合内容，只有窗口够高时才用得上这个值。 */
 private val SHEET_MAX_CONTENT_H = 470.dp
+
+/** 模块刷入页：日志要铺得开，卡片上限放宽到 520dp（比常规 470 略高一点就够）。 */
+private val SHEET_MAX_CONTENT_H_MODULE = 520.dp
 
 /**
  * 顶部拖拽条。现在不只是装饰：按住往上拖可以把浮窗拉成全屏样式，
@@ -1128,9 +1137,10 @@ private fun ModuleFlashLog(st: InstallUiState.ModuleConfirm) {
     Box(
         Modifier
             .fillMaxWidth()
-            .height(200.dp)
+            .height(230.dp)
             .clip(androidx.compose.foundation.shape.RoundedCornerShape(16.dp))
-            .background(Color(0xFF0E0E11))
+            // 不再用黑底：跟随主题的浅容器色，和卡片其它部分是一套视觉
+            .background(MaterialTheme.colorScheme.surfaceContainerHighest)
     ) {
         Column(
             Modifier
@@ -1147,9 +1157,15 @@ private fun ModuleFlashLog(st: InstallUiState.ModuleConfirm) {
                         lineHeight = 15.sp
                     ),
                     color = when {
-                        line.endsWith("Done") || line.contains("successfully") -> Color(0xFF7BD88F)
-                        line.contains("失败") || line.contains("Error") || line.contains("error") -> Color(0xFFFF7A7A)
-                        else -> Color(0xFFD8D8DE)
+                        // 安装脚本自己的成功收尾
+                        line.endsWith("Done") || line.contains("successfully") || line.contains("complete") ->
+                            Color(0xFF1B7F4B)
+                        // 安装器追加的两行进度：不抢戏，跟着普通文本走
+                        // （用 primary 会和这套主题的洋红混在一起，看着像报错）
+                        line.startsWith("- [PUI]") -> MaterialTheme.colorScheme.onSurfaceVariant
+                        line.contains("失败") || line.contains("Error") || line.contains("error") ->
+                            MaterialTheme.colorScheme.error
+                        else -> MaterialTheme.colorScheme.onSurfaceVariant
                     }
                 )
             }
@@ -1174,7 +1190,7 @@ internal fun ModuleSheet(
     Column(
         Modifier
             .fillMaxWidth()
-            .heightIn(min = if (horizontalPadding > 20.dp) 430.dp else 380.dp)
+            .heightIn(min = if (horizontalPadding > 20.dp) 380.dp else 340.dp)
             .padding(horizontal = horizontalPadding)
     ) {
         Column(
@@ -1288,28 +1304,23 @@ internal fun ModuleSheet(
                     if (st.flashing || st.log.isNotEmpty()) {
                         ModuleFlashLog(st)
                     }
-                    st.output?.takeIf { it.isNotBlank() }?.let { out ->
-                        Spacer(Modifier.height(10.dp))
-                        Text(
-                            if (st.failed) tr("刷入失败", "Flash failed")
-                            else tr("刷入成功，重启后生效", "Flashed — takes effect after a reboot"),
-                            style = MaterialTheme.typography.bodyMedium,
-                            fontWeight = FontWeight.SemiBold,
-                            color = if (st.failed) scheme.error else scheme.primary
-                        )
-                        Spacer(Modifier.height(4.dp))
-                        // 安装器输出里常带内核/KS 的 ASCII banner，不限高会把整张卡撑出屏幕
-                        Box(
-                            Modifier
-                                .fillMaxWidth()
-                                .heightIn(max = 120.dp)
-                                .verticalScroll(rememberScrollState())
-                        ) {
-                            Text(
-                                out.take(600),
-                                style = MaterialTheme.typography.bodySmall,
-                                color = scheme.onSurfaceVariant
-                            )
+                    // 原始输出不再重复贴一遍：上面的控制台已经完整显示，
+                    // 再贴一次会把内核/KS 的 ASCII banner 打两遍
+                    if (st.log.isEmpty()) {
+                        st.output?.takeIf { it.isNotBlank() }?.let { out ->
+                            Spacer(Modifier.height(10.dp))
+                            Box(
+                                Modifier
+                                    .fillMaxWidth()
+                                    .heightIn(max = 120.dp)
+                                    .verticalScroll(rememberScrollState())
+                            ) {
+                                Text(
+                                    out.take(600),
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = scheme.onSurfaceVariant
+                                )
+                            }
                         }
                     }
                 }
