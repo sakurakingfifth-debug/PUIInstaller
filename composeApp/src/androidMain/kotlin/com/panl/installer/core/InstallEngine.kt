@@ -508,19 +508,31 @@ object SourceCleaner {
         val fileName = name?.takeIf { isDeletableName(it) } ?: return false
 
         for (pkg in pkgCandidates) {
-            val dataDir = runCatching {
-                context.packageManager.getApplicationInfo(pkg, 0).dataDir
-            }.getOrNull() ?: continue
-            val q = "'" + fileName.replace("'", "'\\''") + "'"
-            val sizeArg = if (size > 0) "-size ${size}c " else ""
-            val cmd = "find '$dataDir' -type f -name $q ${sizeArg}2>/dev/null | head -3"
-            val (_, out) = kotlinx.coroutines.withTimeoutOrNull(15_000) {
-                RootShell.run(cmd)
-            } ?: (false to "")
-            val hit = out.lineSequence().map { it.trim() }
-                .firstOrNull { it.startsWith("/") && isDeletableName(it) } ?: continue
-            Log.i(TAG, "root find hit: $hit")
-            if (deleteViaRoot(hit)) return true
+            // 内部私有目录 + 外部私有目录都要搜：Telegram 这类常把下载缓存放到
+            // /sdcard/Android/data/<pkg>/... 下，只搜 /data/data 会漏
+            val dirs = buildList {
+                runCatching { context.packageManager.getApplicationInfo(pkg, 0).dataDir }
+                    .getOrNull()?.let { add(it) }
+                add("/storage/emulated/0/Android/data/$pkg")
+                add("/sdcard/Android/data/$pkg")
+            }.distinct()
+
+            for (dir in dirs) {
+                // 先用「同名 + 同大小」，找不到再只按名字（有的 provider 不给 SIZE）
+                val hits = mutableListOf<String>()
+                val q = "'" + fileName.replace("'", "'\\''") + "'"
+                if (size > 0) {
+                    val cmd = "find '$dir' -type f -name $q -size ${size}c 2>/dev/null | head -3"
+                    val (_, out) = kotlinx.coroutines.withTimeoutOrNull(15_000) {
+                        RootShell.run(cmd)
+                    } ?: (false to "")
+                    hits += out.lineSequence().map { it.trim() }.filter { it.startsWith("/") && isDeletableName(it) }
+                }
+                for (hit in hits) {
+                    Log.i(TAG, "root find hit: $hit")
+                    if (deleteViaRoot(hit)) return true
+                }
+            }
         }
         return false
     }
