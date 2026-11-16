@@ -44,7 +44,16 @@ object UpdateChecker {
             }
             try {
                 val code = conn.responseCode
-                if (code !in 200..299) error("HTTP $code")
+                if (code !in 200..299) {
+                    // 403 基本都是「被代理拦了」或「同一 IP 请求过多」，别让用户对着数字发愣
+                    error(
+                        when (code) {
+                            403 -> "被拒绝（403）：可能是代理拦了 api.github.com，或请求过于频繁"
+                            404 -> "仓库不可访问（404）"
+                            else -> "HTTP $code"
+                        }
+                    )
+                }
                 val text = conn.inputStream.bufferedReader().use { it.readText() }
                 val json = JSONObject(text)
                 val tag = json.optString("tag_name").ifBlank { error("没有 tag_name") }
