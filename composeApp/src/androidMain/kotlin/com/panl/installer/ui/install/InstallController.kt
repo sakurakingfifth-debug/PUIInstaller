@@ -57,7 +57,15 @@ sealed interface InstallUiState {
         /** 链接外面有 JS 验证，正在用内置浏览器过一遍（蓝奏云 / 阿里云 ESA 这类）。 */
         val verifying: Boolean = false
     ) : InstallUiState
-    data class Ready(val info: ApkInfo) : InstallUiState
+    data class Ready(
+        val info: ApkInfo,
+        /**
+         * 这个 APK 自己也是一个 Zygisk 模块（根目录带 module.prop + zygisk/<abi>.so，
+         * 比如 TCQT / WeKit 这类「APK 即模块」的包）。
+         * 有值时确认页会让用户选：装成普通应用，还是当模块交给 root 刷。
+         */
+        val embeddedModule: com.panl.installer.core.ModuleInfo? = null
+    ) : InstallUiState
     data class Error(
         val title: String,
         val message: String,
@@ -388,8 +396,11 @@ class InstallController(
             }
             val file = result.file
             safeRetryDone = false
-            // 模块 zip：里面是 module.prop 而不是 APK，走模块刷入这条状态
-            if (settings.moduleFlashEnabled) {
+            // 模块 zip：里面是 module.prop 而不是 APK，走模块刷入这条状态。
+            // 注意要排除 .apk —— 「APK 即模块」的包根目录也有 module.prop，
+            // 直接当模块处理就跳过了「装应用 / 当模块」的选择（3.7.97 第一版就是这么错的）
+            val isApkFile = file.name.endsWith(".apk", true) || file.name.endsWith(".apk.1", true)
+            if (settings.moduleFlashEnabled && !isApkFile) {
                 val module = withContext(Dispatchers.IO) { com.panl.installer.core.ModuleInspector.inspect(file) }
                 if (module != null) {
                     val mode = withContext(Dispatchers.IO) { com.panl.installer.core.ModuleInstaller.detect() }
@@ -420,7 +431,15 @@ class InstallController(
             }
             installedInfo = info
             sourceExists = withContext(Dispatchers.IO) { SourceCleaner.exists(activity, uri) }
-            state = InstallUiState.Ready(info)
+            // 「APK 即模块」：根目录有 module.prop + zygisk/ 的包（TCQT / WeKit 这类），
+            // 让用户在「装应用」和「当 Zygisk 模块刷」之间选一个
+            val embedded =
+                if (bundle == null && settings.moduleFlashEnabled) {
+                    withContext(Dispatchers.IO) { com.panl.installer.core.ModuleInspector.inspect(file) }
+                } else null
+            state = InstallUiState.Ready(info, embedded)
+            // 「APK 即模块」直接弹出安装方式选择，别让用户以为只有装应用一条路
+            if (embedded != null) hybridPickerOpen = true
             // 拆分包直接弹出组件选择：这类包默认全装往往不是用户想要的（多语言/多架构全塞进去）
             if (info.splits.isNotEmpty()) openSplitPicker()
         }
@@ -1040,6 +1059,27 @@ class InstallController(
             val done = items.count { it.status == BatchStatus.Done }
             InstallerLog.record(activity, "BATCH", "批量安装结束：成功 $done / 共 ${items.size}")
             state = InstallUiState.Batch(items.toList(), BatchPhase.Done)
+        }
+    }
+
+    // ── 「APK 即模块」的安装方式选择 ───────────────────────────────────────
+    var hybridPickerOpen by mutableStateOf(false)
+        private set
+
+    fun closeHybridPicker() {
+        hybridPickerOpen = false
+    }
+
+    /** 选「作为 Zygisk 模块」：不装应用本体，直接进模块确认页交给 root 刷。 */
+    fun installEmbeddedAsModule() {
+        val st = state as? InstallUiState.Ready ?: return
+        val module = st.embeddedModule ?: return
+        hybridPickerOpen = false
+        activity.lifecycleScope.launch {
+            val mode = withContext(Dispatchers.IO) {
+                com.panl.installer.core.ModuleInstaller.detect()
+            }
+            state = InstallUiState.ModuleConfirm(module, mode)
         }
     }
 

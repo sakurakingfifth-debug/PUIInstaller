@@ -103,6 +103,8 @@ import com.panl.installer.i18n.tr
 fun InstallScreen(controller: InstallController, onClose: () -> Unit) {
     // 拆分包组件选择弹窗
     SplitPickerHost(controller)
+    // 「APK 即模块」的安装方式选择
+    HybridInstallHost(controller)
     val state = controller.state
     // 错误页的「重新选择文件」：换一个文件重新读
     val reselect = androidx.activity.compose.rememberLauncherForActivityResult(

@@ -41,7 +41,11 @@ data class ModuleInfo(
 object ModuleInspector {
 
     fun inspect(file: File): ModuleInfo? {
-        if (!file.isFile || !file.name.endsWith(".zip", ignoreCase = true)) return null
+        // .apk 也要认：有些模块把自己打包成 APK（ZygoteLoader 那种「APK 即模块」），
+        // 根目录同样放 module.prop + zygisk/<abi>.so
+        if (!file.isFile) return null
+        val n = file.name.lowercase()
+        if (!n.endsWith(".zip") && !n.endsWith(".apk") && !n.endsWith(".apk.1")) return null
         // 不能用 ZipFile：zstd 压缩的条目会让它连档案都打不开（见 ZipLite 注释）
         val entries = ZipLite.entries(file) ?: return null
         val propEntry = entries.firstOrNull { it.name == "module.prop" } ?: return null
