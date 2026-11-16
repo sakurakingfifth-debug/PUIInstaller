@@ -236,12 +236,15 @@ fun InstallSheet(controller: InstallController, onClose: () -> Unit) {
         val cardH = androidx.compose.ui.unit.lerp(naturalH, screenH, p)
         // 圆角：浮窗 30dp → 展开后收成目标机器的系统圆角（不再收到 0）
         val radius = androidx.compose.ui.unit.lerp(30.dp, deviceCornerDp, p)
-        val bottomPad = androidx.compose.ui.unit.lerp(22.dp, 0.dp, p)
         // 贴底模式让开系统栏的那点留白，展开时要收回去，否则全屏后底部会多出一条
         val navInset = with(densityObj) {
             androidx.compose.foundation.layout.WindowInsets.navigationBars.getBottom(this).toDp()
         }
         val navPad = navInset * (1f - p)
+        // 注意：导航栏留白加在**卡片内部**的 padding 里，卡片本身一直铺到屏幕最底边。
+        // 之前是把整张卡往上抬 (padding = navPad)，卡片下沿和屏幕底之间留下一条缝，
+        // 正好落进系统的导航栏区 —— 浅色模式下系统会往那一条压对比遮罩，看着就是「灰带」。
+        val bottomPad = androidx.compose.ui.unit.lerp(22.dp, 0.dp, p) + navPad
 
         // 遮罩：系统级模糊已经糊过一遍，这里只压一层很淡的黑。
         // 删除确认弹出来时压深一点 —— 弹窗窗口的 dim 只作用在浮窗自己这层上，
@@ -286,7 +289,6 @@ fun InstallSheet(controller: InstallController, onClose: () -> Unit) {
                 // 居中时千万别让 —— 一让整张卡就被顶上去，屏幕上下的留白不对称，看着就是「整体不居中」。
                 // 也不能加在卡片内部：那样按钮行会把底部 inset 当成自己的空白，按钮被顶上、
                 // 卡片下半截空一大块（3.7.53 及以前就是这么错的）。
-                .then(if (atBottom) Modifier.padding(bottom = navPad) else Modifier)
                 // 尺寸：p=0 时还是原来的「收窄 + 贴合内容」；一开始拖就切成显式宽高，
                 // 一路插值到铺满整屏（对齐方式不变，所以看起来是从中间长开的）
                 .then(
