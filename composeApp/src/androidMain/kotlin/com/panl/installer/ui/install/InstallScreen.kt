@@ -185,10 +185,12 @@ fun InstallScreen(controller: InstallController, onClose: () -> Unit) {
                     is InstallUiState.ModuleConfirm -> Column(
                         Modifier
                             .fillMaxSize()
-                            .padding(horizontal = 20.dp, vertical = 24.dp),
+                            .padding(horizontal = 8.dp, vertical = 24.dp),
                         verticalArrangement = Arrangement.Center
                     ) {
-                        ModuleSheet(st, controller, onClose)
+                        // 全屏页里左右只留 10dp：之前 20+24 两层内边距叠起来，
+                        // 大屏/窄屏上都显得内容挤在中间一小块
+                        ModuleSheet(st, controller, onClose, horizontalPadding = 10.dp)
                     }
 
                     is InstallUiState.Loading -> SimpleStateBody(

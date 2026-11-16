@@ -21,7 +21,7 @@ fun Modifier.adaptiveWidth(max: Dp = 640.dp): Modifier =
     this.widthIn(max = max).fillMaxWidth()
 
 /** 安装页正文的推荐上限：单列信息超过 ~640dp 之后每行都是大片留白，反而更难读。 */
-val InstallContentMaxWidth: Dp = 640.dp
+val InstallContentMaxWidth: Dp = 720.dp
 
 /**
  * 浮窗（确认卡）的最大宽度。

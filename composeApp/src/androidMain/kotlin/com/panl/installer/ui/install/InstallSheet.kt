@@ -1082,13 +1082,15 @@ private fun FailedSheet(
 internal fun ModuleSheet(
     st: InstallUiState.ModuleConfirm,
     controller: InstallController,
-    onClose: () -> Unit
+    onClose: () -> Unit,
+    /** 左右内边距：浮窗里留 24dp 好出圆角感，全屏页要窄一点才不显得挤在中间。 */
+    horizontalPadding: androidx.compose.ui.unit.Dp = 24.dp
 ) {
     val scheme = MaterialTheme.colorScheme
     val scope = rememberCoroutineScope()
     val noRoot = st.rootMode == com.panl.installer.core.ModuleInstaller.RootMode.None
 
-    Column(Modifier.fillMaxWidth().padding(horizontal = 24.dp)) {
+    Column(Modifier.fillMaxWidth().padding(horizontal = horizontalPadding)) {
         Column(
             Modifier
                 .fillMaxWidth()
