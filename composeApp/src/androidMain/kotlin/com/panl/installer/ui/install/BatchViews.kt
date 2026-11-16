@@ -48,7 +48,13 @@ fun BatchBody(
     Column(
         Modifier
             .fillMaxSize()
-            .padding(horizontal = if (compact) 18.dp else 30.dp)
+            // 浮窗里卡片顶边就在屏幕上方，标题直接贴着上沿会和拖拽条挤在一起（用户截图就是这样）；
+            // 全屏模式上面有系统栏留白，不需要额外顶距
+            .padding(
+                start = if (compact) 18.dp else 30.dp,
+                end = if (compact) 18.dp else 30.dp,
+                top = if (compact) 18.dp else 0.dp
+            )
     ) {
         Text(
             tr("批量安装", "Batch install"),
