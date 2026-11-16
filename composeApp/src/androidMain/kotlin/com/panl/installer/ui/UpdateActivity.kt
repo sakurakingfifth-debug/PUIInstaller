@@ -137,6 +137,9 @@ private fun UpdateScreen(onClose: () -> Unit) {
         Box(Modifier.weight(1f)) {
         val statusTop = androidx.compose.foundation.layout.WindowInsets.statusBars
             .asPaddingValues().calculateTopPadding()
+        // 模糊区就是标题栏本身的高度：再高就会把首屏的卡片也糊掉，
+        // 同时内容顶距也用这个值 —— 卡片正好从标题下方开始
+        val topBarH = statusTop + 52.dp
         Column(
             Modifier
                 .fillMaxSize()
@@ -144,14 +147,14 @@ private fun UpdateScreen(onClose: () -> Unit) {
                     // 顶部渐进模糊：滑上来的内容被逐层虚化，半径跟设置里的「顶部模糊」走
                     if (settings.blurEnabled) {
                         Modifier.puiProgressiveTopBlur(
-                            height = blurH,
+                            height = topBarH,
                             maxRadius = (settings.topBlurPx / density).dp
                         )
                     } else Modifier
                 )
                 .verticalScroll(rememberScrollState())
                 .padding(start = 16.dp, end = 16.dp, bottom = 84.dp)
-                .padding(top = statusTop + blurH)
+                .padding(top = topBarH + 4.dp)
         ) {
             // ── 顶部大图：直接用壁纸，标题压在左下角 ────────────────────
             // 2:1 长矩形：宽高比固定，图用 Crop 裁（源图是正方形，上下会被切掉，
