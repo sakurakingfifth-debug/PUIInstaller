@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 控制中心磁贴图标：一个立体的包，系统会按磁贴语义自动染色，这里只用单色 -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="24dp"
+    android:height="24dp"
+    android:viewportWidth="24"
+    android:viewportHeight="24">
+    <path
+        android:fillColor="#FFFFFFFF"
+        android:pathData="M12,2.2L3.2,6.6v10.8L12,21.8l8.8,-4.4V6.6L12,2.2zM12,4.3l6.6,3.3L12,10.9 5.4,7.6 12,4.3zM4.7,9.1l6,3v7.2l-6,-3V9.1zM13.3,19.3v-7.2l6,-3v7.2l-6,3z" />
+</vector>

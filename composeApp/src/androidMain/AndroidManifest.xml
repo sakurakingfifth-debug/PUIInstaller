@@ -101,6 +101,18 @@
         <!-- 默认挂浮窗主题：ActivityManager 在启动时就用清单主题判断任务是否 translucent，
              代码里再 setTheme 已经来不及（会变成黑底、后面界面被隐藏） -->
 
+        <!-- 控制中心磁贴：点一下打开安装器主页面 -->
+        <service
+            android:name=".ui.tile.InstallerTileService"
+            android:exported="true"
+            android:icon="@drawable/ic_tile_installer"
+            android:label="@string/tile_label"
+            android:permission="android.permission.BIND_QUICK_SETTINGS_TILE">
+            <intent-filter>
+                <action android:name="android.service.quicksettings.action.QS_TILE" />
+            </intent-filter>
+        </service>
+
         <service
             android:name=".core.LiveInstallService"
             android:exported="false"
