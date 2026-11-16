@@ -469,6 +469,12 @@
             android:exported="false"
             android:theme="@style/Theme.PuiInstaller" />
 
+        <!-- 系统更新页（OTA） -->
+        <activity
+            android:name=".ui.UpdateActivity"
+            android:exported="false"
+            android:theme="@style/Theme.PuiInstaller.Transparent" />
+
         <activity
             android:name=".ui.LogActivity"
             android:exported="false"

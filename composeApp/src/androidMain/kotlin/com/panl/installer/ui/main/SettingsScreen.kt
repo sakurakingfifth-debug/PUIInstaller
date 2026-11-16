@@ -102,27 +102,6 @@ fun SettingsScreen(topPad: Dp) {
     val privileged = remember { PackageUtils.hasInstallPermission(context) }
     var isDefault by remember { mutableStateOf(PackageUtils.isDefaultInstaller(context)) }
     var showInstallerHelp by remember { mutableStateOf(false) }
-    // 检查更新：Idle / Checking / Latest / HasUpdate / Failed
-    var updateState by remember { mutableStateOf("Idle") }
-    var latestRelease by remember { mutableStateOf<com.panl.installer.core.UpdateChecker.Release?>(null) }
-    var updateError by remember { mutableStateOf("") }
-    // 下载进度 0f~1f，-1f 表示还没开始
-    var updateProgress by remember { mutableFloatStateOf(-1f) }
-    // 进页面自动查一次：用户打开设置就能看到有没有新版，不用先点一下
-    androidx.compose.runtime.LaunchedEffect(Unit) {
-        updateState = "Checking"
-        com.panl.installer.core.UpdateChecker.fetchLatest()
-            .onSuccess { r ->
-                latestRelease = r
-                val local = appVersion(context)
-                updateState =
-                    if (com.panl.installer.core.UpdateChecker.isNewer(r.version, local)) "HasUpdate" else "Latest"
-            }
-            .onFailure { e ->
-                updateError = e.message?.take(40) ?: "网络错误"
-                updateState = "Failed"
-            }
-    }
     val scope = rememberCoroutineScope()
     var showAbout by remember { mutableStateOf(false) }
 
@@ -347,106 +326,17 @@ fun SettingsScreen(topPad: Dp) {
                         runCatching { uriHandler.openUri("https://github.com/sakurakingfifth-debug/PUIInstaller") }
                     }
                 )
-                // 检查更新：拉 GitHub Release 的最新 tag，和本地 versionName 比
-                val localVersion = appVersion(context)
+                // 检查更新：跳独立 OTA 页面（渐进式检查、更新日志都在那边）
                 PuiListRow(
                     icon = null,
                     iconPainter = painterResource(R.drawable.ic_document_download),
                     title = tr("检查更新", "Check for updates"),
-                    subtitle = when (updateState) {
-                        "Checking" -> tr("正在检查…", "Checking…")
-                        "Latest" -> tr("已是最新版本 $localVersion", "Up to date · $localVersion")
-                        "HasUpdate" -> tr(
-                            "发现新版本 ${latestRelease?.version}，点此更新",
-                            "New version ${latestRelease?.version} available"
-                        )
-                        "Downloading" -> tr(
-                            "正在下载 ${if (updateProgress >= 0f) "${(updateProgress * 100).toInt()}%" else "…"}",
-                            "Downloading ${if (updateProgress >= 0f) "${(updateProgress * 100).toInt()}%" else "…"}"
-                        )
-                        "Failed" -> tr("检查失败：$updateError", "Failed: $updateError")
-                        else -> tr("当前版本 $localVersion", "Current version $localVersion")
-                    },
-                    trailingText = when (updateState) {
-                        "HasUpdate" -> tr("有新版", "New")
-                        "Latest" -> tr("最新", "Latest")
-                        "Checking" -> null
-                        else -> null
-                    },
+                    subtitle = tr("查看版本、更新日志与下载", "Version, release notes and download"),
                     showDivider = true,
-                    showChevron = updateState != "HasUpdate",
+                    showChevron = true,
                     onClick = {
                         tick()
-                        if (updateState == "Checking") return@PuiListRow
-                        val pending = latestRelease
-                        if (updateState == "HasUpdate" && pending != null) {
-                            // 已经查到新版了：自己下回来，再交给安装器（不走浏览器）
-                            val url = pending.apkUrl
-                            if (url == null) {
-                                // 没挂 APK 资产才退回浏览器
-                                updateState = "Idle"
-                                runCatching { uriHandler.openUri(pending.pageUrl) }
-                            } else if (updateState != "Downloading") {
-                                updateState = "Downloading"
-                                updateProgress = -1f
-                                scope.launch {
-                                    val result = kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) {
-                                        com.panl.installer.core.ApkDownloader(context)
-                                            .download(url) { received, total, _ ->
-                                                if (total > 0) updateProgress = received.toFloat() / total
-                                            }
-                                    }
-                                    when (result) {
-                                        is com.panl.installer.core.ApkDownloader.Result.Success -> {
-                                            // 交给 InstallActivity：content:// + 临时读权限，
-                                            // 直接 file:// 会触发 FileUriExposedException
-                                            val uri = runCatching {
-                                                androidx.core.content.FileProvider.getUriForFile(
-                                                    context,
-                                                    "${context.packageName}.files",
-                                                    result.file
-                                                )
-                                            }.getOrNull()
-                                            if (uri == null) {
-                                                updateError = tr("无法共享下载的文件", "Can't share the file")
-                                                updateState = "Failed"
-                                            } else {
-                                                val intent = Intent(context, com.panl.installer.ui.InstallActivity::class.java).apply {
-                                                    action = Intent.ACTION_VIEW
-                                                    setDataAndType(uri, "application/vnd.android.package-archive")
-                                                    addFlags(
-                                                        Intent.FLAG_GRANT_READ_URI_PERMISSION or
-                                                            Intent.FLAG_ACTIVITY_NEW_TASK
-                                                    )
-                                                }
-                                                runCatching { context.startActivity(intent) }
-                                                updateState = "HasUpdate"
-                                            }
-                                        }
-                                        is com.panl.installer.core.ApkDownloader.Result.Failure -> {
-                                            updateError = result.message.take(40)
-                                            updateState = "Failed"
-                                        }
-                                        else -> updateState = "HasUpdate"
-                                    }
-                                }
-                            }
-                        } else {
-                            updateState = "Checking"
-                            scope.launch {
-                                com.panl.installer.core.UpdateChecker.fetchLatest()
-                                    .onSuccess { r ->
-                                        latestRelease = r
-                                        updateState =
-                                            if (com.panl.installer.core.UpdateChecker.isNewer(r.version, localVersion)) "HasUpdate"
-                                            else "Latest"
-                                    }
-                                    .onFailure { e ->
-                                        updateError = e.message?.take(40) ?: "网络错误"
-                                        updateState = "Failed"
-                                    }
-                            }
-                        }
+                        com.panl.installer.ui.UpdateActivity.start(context)
                     }
                 )
                 // 默认安装器：系统设置里**没有**「安装应用」这一项（ColorOS 的「默认应用」页只有
