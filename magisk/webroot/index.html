@@ -110,13 +110,13 @@
     logEl.textContent = msg;
   }
 
-  // KernelSU 在 WebView 里注入 window.ksu，但各家/各版本签名不一样：
-  //   新版  exec(cmd, opts)        -> Promise<{errno, stdout, stderr}>
-  //   老版  exec(cmd, opts, cb)    ← 把 JS 函数交给 Java 桥会报
-  //        "Error invoking exec: Java exception was raised during method invocation"
-  // 所以先用一条无害命令探一下是哪一种，之后统一按那个形态调用 ——
-  // 不能每条命令都「先试 promise 再试回调」，那样回调式的实现会被执行两次。
-  let execStyle = null;
+  // ── 和 KernelSU 的桥对接 ─────────────────────────────────────────────
+  // 真实签名（见 kernelsu npm 包的实现）：
+  //     ksu.exec(command, JSON.stringify(options), callbackFuncName)
+  //   第 2 个参数必须是 **JSON 字符串**（传对象会被 Java 桥拒掉，报
+  //   "Error invoking exec: Java exception was raised during method invocation"）；
+  //   第 3 个参数是**回调函数名**，native 侧完成后调 window[callbackFuncName](errno, stdout, stderr)。
+  let cbSeq = 0;
 
   function norm(r) {
     r = r || {};
@@ -130,40 +130,39 @@
     };
   }
 
-  async function detectStyle() {
-    const k = window.ksu;
-    if (!k || typeof k.exec !== 'function') execStyle = 'none';
-    try {
-      const ret = k.exec('true', {});
-      if (ret && typeof ret.then === 'function') { await ret; execStyle = 'promise'; return; }
-      if (ret && typeof ret === 'object') { execStyle = 'promise'; return; }
-    } catch (e) { /* 不认这种签名 */ }
-    if (execStyle !== 'none') execStyle = 'callback';
-  }
-
-  async function exec(cmd) {
-    if (window.ksu && typeof window.ksu.exec !== 'function') {
-      throw new Error('当前环境没有 ksu.exec（请从 KernelSU 管理器的模块页打开）');
-    }
-    if (execStyle === null) await detectStyle();
-    const k = window.ksu;
-
-    if (execStyle === 'promise') {
-      try {
-        return norm(await k.exec(cmd, {}));
-      } catch (e) {
-        // 运行时才发现不对：退一次回调形态
-        execStyle = 'callback';
-      }
-    }
+  function exec(command, options) {
     return new Promise((resolve, reject) => {
-      try {
-        const ret = k.exec(cmd, {}, (errno, stdout, stderr) => resolve(norm({ errno, stdout, stderr })));
-        // 有的实现嘴上说回调，实际还是返回 Promise（参数校验宽松）
-        if (ret && typeof ret.then === 'function') ret.then((r) => resolve(norm(r))).catch(reject);
-      } catch (e) {
-        reject(e);
+      const k = window.ksu;
+      if (!k || typeof k.exec !== 'function') {
+        reject(new Error('当前环境没有 ksu.exec（请从 KernelSU 管理器的模块页打开）'));
+        return;
       }
+      const name = '__pui_exec_' + Date.now() + '_' + (cbSeq++);
+      let done = false;
+      const finish = (fn, arg) => {
+        if (done) return;
+        done = true;
+        try { delete window[name]; } catch (e) { /* 忽略 */ }
+        fn(arg);
+      };
+
+      window[name] = (errno, stdout, stderr) => finish(resolve, norm({ errno, stdout, stderr }));
+
+      let ret;
+      try {
+        ret = k.exec(command, JSON.stringify(options || {}), name);
+      } catch (e) {
+        finish(reject, e);
+        return;
+      }
+      // 有的实现（新版）会顺手返回 Promise 或结果对象，也认
+      if (ret && typeof ret.then === 'function') {
+        ret.then((r) => finish(resolve, norm(r))).catch((e) => finish(reject, e));
+      } else if (ret && typeof ret === 'object') {
+        finish(resolve, norm(ret));
+      }
+      // 兜底：回调一直不来就把 Promise 结束掉，别让界面永远停在「检查中」
+      setTimeout(() => finish(reject, new Error('exec 超时：' + command.slice(0, 32))), 15000);
     });
   }
 
