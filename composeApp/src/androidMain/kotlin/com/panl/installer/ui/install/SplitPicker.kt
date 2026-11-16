@@ -119,6 +119,21 @@ private fun SplitPickerDialog(
             decorFitsSystemWindows = false
         )
     ) {
+        // 弹窗是**独立窗口**，页面那层 puiCardBackdropBlur 只能糊它自己的内容，
+        // 糊不到弹窗背后（批量安装时看得很明显）。这里给弹窗窗口自己开系统模糊。
+        val dialogView = androidx.compose.ui.platform.LocalView.current
+        androidx.compose.runtime.SideEffect {
+            runCatching {
+                val window = (dialogView.parent as? androidx.compose.ui.window.DialogWindowProvider)?.window
+                    ?: return@runCatching
+                if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.S) {
+                    window.addFlags(android.view.WindowManager.LayoutParams.FLAG_BLUR_BEHIND)
+                    val lp = window.attributes
+                    lp.blurBehindRadius = (36 * dialogView.resources.displayMetrics.density).toInt()
+                    window.attributes = lp
+                }
+            }
+        }
         // 压暗层和卡片放同一个 Box 里居中：Dialog 关掉平台默认宽度后内容是从左上角开始排的，
         // 之前直接平铺就会贴到屏幕顶部（用户看到的「位置不对」）
         Box(

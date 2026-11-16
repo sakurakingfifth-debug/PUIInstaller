@@ -89,6 +89,10 @@ class InstallActivity : ComponentActivity() {
         )
         enableEdgeToEdge()
         super.onCreate(savedInstanceState)
+        // 半透明窗口时系统会给导航栏加一层对比遮罩，贴底布局下就是底部那条灰带
+        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.Q) {
+            window.isNavigationBarContrastEnforced = false
+        }
         if (sheet) applyBlurBehind()
 
         // 实时通知：界面完全不出现，把 uri 丢给服务就撤
