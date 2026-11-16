@@ -21,6 +21,8 @@ import com.panl.installer.R
 import androidx.compose.ui.res.painterResource
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.rememberCoroutineScope
+import kotlinx.coroutines.launch
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -97,7 +99,9 @@ fun SettingsScreen(topPad: Dp) {
     val settings = Settings.get(context)
     val density = LocalDensity.current.density
     val privileged = remember { PackageUtils.hasInstallPermission(context) }
-    val isDefault = remember { PackageUtils.isDefaultInstaller(context) }
+    var isDefault by remember { mutableStateOf(PackageUtils.isDefaultInstaller(context)) }
+    var showInstallerHelp by remember { mutableStateOf(false) }
+    val scope = rememberCoroutineScope()
     var showAbout by remember { mutableStateOf(false) }
 
     // 从系统「所有文件访问」页返回后要刷新状态，靠生命周期事件触发一次重组
@@ -303,8 +307,9 @@ fun SettingsScreen(topPad: Dp) {
                         showAbout = true
                     }
                 )
-                // 默认安装器：系统没有「设为默认」的 API，只能把用户送到系统设置里手动选
-                val isDefaultInstaller = PackageUtils.isDefaultInstaller(context)
+                // 默认安装器：系统设置里**没有**「安装应用」这一项（ColorOS 的「默认应用」页只有
+                // 桌面/短信/电话/浏览器…），所以不能直接跳过去。改成弹窗：ROOT 一键处理 + 手动兜底。
+                val isDefaultInstaller = isDefault
                 PuiListRow(
                     icon = null,
                     iconPainter = painterResource(R.drawable.ic_3d_cube_scan),
@@ -323,7 +328,10 @@ fun SettingsScreen(topPad: Dp) {
                     trailingText = if (isDefaultInstaller) tr("已设置", "Set") else tr("去设置", "Set up"),
                     showDivider = false,
                     showChevron = !isDefaultInstaller,
-                    onClick = { openDefaultAppsSettings(context) }
+                    onClick = {
+                        tick()
+                        showInstallerHelp = true
+                    }
                 )
             }
         }
@@ -339,6 +347,60 @@ fun SettingsScreen(topPad: Dp) {
                     .padding(start = 4.dp)
             )
         }
+    }
+
+    if (showInstallerHelp) {
+        PuiDialog(
+            scrim = !settings.noScrim,
+            title = tr("设为默认安装器", "Set as default installer"),
+            text = if (privileged) {
+                tr(
+                    "当前已经是系统安装器（模块替换），点 APK 会直接进本安装器，不需要额外设置。",
+                    "This app already replaces the system installer, so APKs open here directly — nothing to set."
+                )
+            } else {
+                tr(
+                    "系统的「默认应用」页里没有「安装应用」这一项，所以没法跳过去设。\n\n" +
+                        "用 ROOT 可以一键允许「安装未知应用」并清掉旧的默认打开方式；之后点任意 APK，" +
+                        "在「打开方式」里选本安装器并点「始终」，就固定下来了。",
+                    "Android's Default apps page has no \"Install apps\" entry, so there's nothing to jump to.\n\n" +
+                        "With root this can allow \"Install unknown apps\" and clear the old default in one tap; " +
+                        "then pick this installer in the \"Open with\" sheet and tap \"Always\"."
+                )
+            },
+            confirmText = if (privileged) tr("知道了", "Got it") else tr("ROOT 一键设置", "Fix with root"),
+            dismissText = if (privileged) tr("关闭", "Close") else tr("去系统设置", "System settings"),
+            onDismiss = {
+                showInstallerHelp = false
+                if (!privileged) openDefaultAppsSettings(context)
+            },
+            onConfirm = {
+                showInstallerHelp = false
+                if (!privileged) {
+                    scope.launch {
+                        val allowed = com.panl.installer.core.RootShell.run(
+                            "appops set ${context.packageName} REQUEST_INSTALL_PACKAGES allow"
+                        )
+                        // 清掉旧的「默认打开」映射，下次选「始终」才会生效到本安装器
+                        com.panl.installer.core.RootShell.run(
+                            "cmd package clear-package-preferred-activities ${context.packageName}"
+                        )
+                        isDefault = PackageUtils.isDefaultInstaller(context)
+                        android.widget.Toast.makeText(
+                            context,
+                            if (allowed.first) tr(
+                                "已允许「安装未知应用」，点任意 APK 选「安装器 → 始终」即可固定",
+                                "Unknown apps allowed — open any APK and pick this installer with \"Always\""
+                            ) else tr(
+                                "没有拿到 ROOT，请用系统设置里的「安装未知应用」",
+                                "No root — use \"Install unknown apps\" in system settings instead"
+                            ),
+                            android.widget.Toast.LENGTH_LONG
+                        ).show()
+                    }
+                }
+            }
+        )
     }
 
     if (showAbout) {
@@ -409,18 +471,24 @@ internal fun BetaBadge(text: String) {
 }
 
 /**
- * 把用户送到系统的「默认应用」页。
+ * 把用户送到「能真正设为默认安装器」的页面。
  *
- * Android 没有「设为默认安装器」的 API（不像浏览器/短信有 RoleManager 角色），
- * 只能引导用户自己去选；默认应用页打不开就退回本应用的信息页。
+ * 走 `ACTION_APP_OPEN_BY_DEFAULT_SETTINGS`（本应用的「默认打开」页，带 package data）：
+ * 那里能直接选「始终用本安装器打开 APK」。系统总览页 `ACTION_MANAGE_DEFAULT_APPS_SETTINGS`
+ * 在不少 ROM 上**没有「安装应用」这一项**（ColorOS 就是，用户看到的页面里只有
+ * 桌面/短信/电话/浏览器/数字助理/来电显示/钱包/打开链接），点进去根本设不了，所以往后放。
+ * Android 没有「设为默认安装器」的 API（不像浏览器/短信有 RoleManager 角色），只能引导。
  */
 private fun openDefaultAppsSettings(context: android.content.Context) {
+    val pkgUri = Uri.fromParts("package", context.packageName, null)
     val candidates = listOf(
+        // 本应用的「默认打开方式」：能设成 APK 的默认应用
+        Intent(AndroidSettings.ACTION_APP_OPEN_BY_DEFAULT_SETTINGS, pkgUri),
+        // 有的 ROM 在默认应用总览里放了「安装应用」
         Intent(AndroidSettings.ACTION_MANAGE_DEFAULT_APPS_SETTINGS),
-        Intent(
-            AndroidSettings.ACTION_APPLICATION_DETAILS_SETTINGS,
-            Uri.fromParts("package", context.packageName, null)
-        ),
+        // 退而求其次：至少把「安装未知应用」打开，普通应用模式下也能装
+        Intent(AndroidSettings.ACTION_MANAGE_UNKNOWN_APP_SOURCES, pkgUri),
+        Intent(AndroidSettings.ACTION_APPLICATION_DETAILS_SETTINGS, pkgUri),
         Intent(AndroidSettings.ACTION_MANAGE_APPLICATIONS_SETTINGS)
     )
     for (i in candidates) {
