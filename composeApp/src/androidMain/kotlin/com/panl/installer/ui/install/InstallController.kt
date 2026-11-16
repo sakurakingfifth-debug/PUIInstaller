@@ -90,7 +90,9 @@ sealed interface InstallUiState {
         /** 当前进行到第几个阶段（见 ModuleInstaller.Stage 的序号），界面画步骤条用。 */
         val stage: Int = -1,
         /** 阶段附注，比如检测到的 root 名称、模块 id。 */
-        val stageNote: String? = null
+        val stageNote: String? = null,
+        /** 刷写过程中安装脚本的实时输出（一行一条）。 */
+        val log: List<String> = emptyList()
     ) : InstallUiState
 
     /** 系统把别的应用创建的安装会话丢过来确认。 */
@@ -494,15 +496,58 @@ class InstallController(
         load(uri)
     }
 
-    /** 刷入当前模块：交给全屏刷写页（实时打印安装脚本输出），弹窗这边直接收起。 */
+    /**
+     * 刷入当前模块：**就在当前页面**跑，安装脚本的输出实时往 [InstallUiState.ModuleConfirm.log] 里追加。
+     *
+     * 不要切成独立 Activity —— 那会导致 InstallActivity 被 finish，
+     * 它退出时的 staging 清理会把正在被 ksud 读取的模块包删掉，
+     * 脚本就报 `unzip: can't open .../xxx.zip.zip`（3.8.22 实测踩到过）。
+     */
     fun flashModule() {
         val st = state as? InstallUiState.ModuleConfirm ?: return
         if (st.flashing) return
-        com.panl.installer.ui.ModuleFlashActivity.start(activity, st.module, st.rootMode)
-        com.panl.installer.core.InstallerLog.record(
-            activity, "MODULE", "开始刷入 ${st.module.id.ifBlank { st.module.name }}"
+        state = st.copy(
+            flashing = true,
+            output = null,
+            failed = false,
+            stage = 0,
+            log = listOf("- 开始刷写：${st.module.name.ifBlank { st.module.id }}")
         )
-        activity.finish()
+        activity.lifecycleScope.launch {
+            val result = withContext(Dispatchers.IO) {
+                com.panl.installer.core.ModuleInstaller.install(
+                    st.module.file, st.rootMode, st.module.id,
+                    onStage = { stage, note ->
+                        activity.runOnUiThread {
+                            (state as? InstallUiState.ModuleConfirm)?.let {
+                                state = it.copy(stage = stage.ordinal, stageNote = note)
+                            }
+                        }
+                    },
+                    onLine = { line ->
+                        activity.runOnUiThread {
+                            (state as? InstallUiState.ModuleConfirm)?.let {
+                                state = it.copy(log = it.log + line)
+                            }
+                        }
+                    }
+                )
+            }
+            com.panl.installer.core.InstallerLog.record(
+                activity, "MODULE",
+                "刷入 ${st.module.id.ifBlank { st.module.name }} -> ${if (result.ok) "成功" else "失败"}"
+            )
+            (state as? InstallUiState.ModuleConfirm)?.let {
+                state = it.copy(
+                    flashing = false,
+                    output = result.output,
+                    failed = !result.ok,
+                    log = it.log + listOf(
+                        if (result.ok) "- Done" else "- 失败：${result.output.lineSequence().firstOrNull { l -> l.contains("错误", true) || l.contains("Error", true) || l.contains("失败") }?.take(160) ?: "见上方输出"}"
+                    )
+                )
+            }
+        }
     }
 
     fun startInstall() {

@@ -469,12 +469,6 @@
             android:exported="false"
             android:theme="@style/Theme.PuiInstaller" />
 
-        <!-- 模块刷写页（实时输出） -->
-        <activity
-            android:name=".ui.ModuleFlashActivity"
-            android:exported="false"
-            android:theme="@style/Theme.PuiInstaller.Transparent" />
-
         <!-- 系统更新页（OTA） -->
         <activity
             android:name=".ui.UpdateActivity"
