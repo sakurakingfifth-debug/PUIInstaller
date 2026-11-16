@@ -23,7 +23,11 @@ object RootShell {
      * [timeoutSec] > 0 时最多等这么久，超时就 kill 掉并把已收到的输出带回去 ——
      * 有些模块的脚本会一直等音量键/电源键，没超时就会永远卡住。
      */
-    suspend fun run(command: String, timeoutSec: Long = 0): Pair<Boolean, String> =
+    suspend fun run(
+        command: String,
+        timeoutSec: Long = 0,
+        onLine: ((String) -> Unit)? = null
+    ): Pair<Boolean, String> =
         withContext(Dispatchers.IO) {
             runCatching {
                 val p = ProcessBuilder("su", "-c", command).redirectErrorStream(true).start()
@@ -33,6 +37,7 @@ object RootShell {
                     runCatching {
                         p.inputStream.bufferedReader().forEachLine { line ->
                             synchronized(out) { out.appendLine(line) }
+                            onLine?.invoke(line)
                         }
                     }
                 }.apply { isDaemon = true; start() }

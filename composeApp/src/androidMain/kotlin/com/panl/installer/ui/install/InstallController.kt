@@ -86,7 +86,11 @@ sealed interface InstallUiState {
         val rootMode: com.panl.installer.core.ModuleInstaller.RootMode,
         val flashing: Boolean = false,
         val output: String? = null,
-        val failed: Boolean = false
+        val failed: Boolean = false,
+        /** 当前进行到第几个阶段（见 ModuleInstaller.Stage 的序号），界面画步骤条用。 */
+        val stage: Int = -1,
+        /** 阶段附注，比如检测到的 root 名称、模块 id。 */
+        val stageNote: String? = null
     ) : InstallUiState
 
     /** 系统把别的应用创建的安装会话丢过来确认。 */
@@ -490,23 +494,15 @@ class InstallController(
         load(uri)
     }
 
-    /** 刷入当前模块。 */
+    /** 刷入当前模块：交给全屏刷写页（实时打印安装脚本输出），弹窗这边直接收起。 */
     fun flashModule() {
         val st = state as? InstallUiState.ModuleConfirm ?: return
         if (st.flashing) return
-        state = st.copy(flashing = true, output = null, failed = false)
-        activity.lifecycleScope.launch {
-            val result = withContext(Dispatchers.IO) {
-                com.panl.installer.core.ModuleInstaller.install(
-                    st.module.file, st.rootMode, st.module.id
-                )
-            }
-            com.panl.installer.core.InstallerLog.record(
-                activity, "MODULE",
-                "刷入 ${st.module.id.ifBlank { st.module.name }} -> ${if (result.ok) "成功" else "失败"}"
-            )
-            state = st.copy(flashing = false, output = result.output, failed = !result.ok)
-        }
+        com.panl.installer.ui.ModuleFlashActivity.start(activity, st.module, st.rootMode)
+        com.panl.installer.core.InstallerLog.record(
+            activity, "MODULE", "开始刷入 ${st.module.id.ifBlank { st.module.name }}"
+        )
+        activity.finish()
     }
 
     fun startInstall() {

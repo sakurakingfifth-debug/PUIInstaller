@@ -74,30 +74,48 @@ object ModuleInstaller {
      * 默认 5 分钟超时：需要按音量键/电源键的模块会在脚本里无限等待，
      * 没有超时的话界面就永远停在「正在刷入」。
      */
+    /** 刷入的四个阶段，界面据此显示进度（不再是一个转圈转到底）。 */
+    enum class Stage { DetectRoot, Flash, Verify, Label, Done }
+
     suspend fun install(
         file: File,
         mode: RootMode,
         moduleId: String? = null,
-        timeoutSec: Long = 300
+        timeoutSec: Long = 300,
+        onStage: ((Stage, String?) -> Unit)? = null,
+        onLine: ((String) -> Unit)? = null
     ): Result {
         // 路径里可能有空格，单引号包起来，内部的单引号按 shell 规则转义
         val path = file.absolutePath.replace("'", "'\\''")
+        onStage?.invoke(Stage.DetectRoot, null)
         val bin = binary(mode) ?: return Result(false, "no supported root found")
+        onStage?.invoke(Stage.DetectRoot, label(mode))
         val cmd = when (mode) {
             RootMode.Magisk -> "'$bin' --install-module '$path'"
             RootMode.KernelSU -> "'$bin' module install '$path'"
             RootMode.APatch -> "'$bin' module install '$path'"
             RootMode.None -> return Result(false, "no supported root found")
         }
-        val (ok, out) = RootShell.run(cmd, timeoutSec)
+        onStage?.invoke(Stage.Flash, null)
+        val (ok, out) = RootShell.run(cmd, timeoutSec, onLine)
         Log.i(TAG, "install(${label(mode)}) -> $ok ${out.take(200)}")
         if (!ok) return Result(false, out)
         // module.prop 是 zstd 压缩的包（新版 LSPosed/Vector）读不到 id，
         // 刷完从 /data/adb/modules 里挑最新建的那个目录当 id
+        onStage?.invoke(Stage.Verify, null)
+        onLine?.invoke("")
+        onLine?.invoke("- [PUI] 校验安装结果…")
         val resolvedId = moduleId?.takeIf { it.isNotBlank() } ?: newestModuleId()
-        if (resolvedId == null) return Result(true, out)
+        if (resolvedId == null) {
+            onStage?.invoke(Stage.Done, null)
+            return Result(true, out)
+        }
         // 关键一步：把模块文件的 SELinux 标签归位
-        return Result(true, out + "\n" + fixLabels(resolvedId))
+        onStage?.invoke(Stage.Label, resolvedId)
+        onLine?.invoke("- [PUI] 修复 SELinux 标签：$resolvedId")
+        val labelResult = fixLabels(resolvedId)
+        onStage?.invoke(Stage.Done, null)
+        return Result(true, out + "\n" + labelResult)
     }
 
     /**

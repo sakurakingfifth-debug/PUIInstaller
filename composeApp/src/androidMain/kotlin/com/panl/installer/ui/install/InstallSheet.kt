@@ -1106,6 +1106,90 @@ private fun FailedSheet(
 /**
  * 模块刷入确认。和装 APK 共用同一个浮窗壳子，所以位置、遮罩、背景模糊全部跟着设置走。
  */
+/** 模块刷入的步骤条：检查 ROOT → 刷入 → 校验 → 修 SELinux 标签。 */
+@Composable
+private fun ModuleFlashSteps(st: InstallUiState.ModuleConfirm) {
+    val scheme = MaterialTheme.colorScheme
+    val labels = listOf(
+        tr("检查 ROOT 环境", "Detect root"),
+        tr("刷入模块包", "Flash module"),
+        tr("校验安装结果", "Verify result"),
+        tr("修复 SELinux 标签", "Fix SELinux label")
+    )
+    val current = st.stage
+    val doneAll = !st.flashing && st.output != null
+
+    Spacer(Modifier.height(14.dp))
+    Column(Modifier.fillMaxWidth()) {
+        labels.forEachIndexed { i, label ->
+            val done = doneAll || current > i
+            val active = !doneAll && current == i && st.flashing
+            Row(
+                Modifier
+                    .fillMaxWidth()
+                    .padding(vertical = 3.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Box(
+                    Modifier
+                        .size(16.dp)
+                        .clip(androidx.compose.foundation.shape.CircleShape)
+                        .background(
+                            when {
+                                done -> scheme.primary
+                                active -> scheme.primary.copy(alpha = 0.16f)
+                                else -> scheme.surfaceContainerHighest
+                            }
+                        ),
+                    contentAlignment = Alignment.Center
+                ) {
+                    when {
+                        done -> PuiIconView(PuiIcon.Check, Modifier.size(10.dp), tint = scheme.onPrimary)
+                        active -> androidx.compose.material3.CircularProgressIndicator(
+                            modifier = Modifier.size(10.dp),
+                            strokeWidth = 1.6.dp,
+                            color = scheme.primary
+                        )
+                    }
+                }
+                Spacer(Modifier.width(9.dp))
+                Text(
+                    label,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = when {
+                        done -> scheme.onSurface
+                        active -> scheme.primary
+                        else -> scheme.onSurfaceVariant.copy(alpha = 0.7f)
+                    },
+                    fontWeight = if (active) FontWeight.Medium else FontWeight.Normal
+                )
+            }
+        }
+
+        if (st.stageNote != null && st.flashing) {
+            Text(
+                st.stageNote.orEmpty(),
+                style = MaterialTheme.typography.labelSmall,
+                color = scheme.onSurfaceVariant,
+                modifier = Modifier.padding(start = 25.dp, top = 2.dp)
+            )
+        }
+
+        if (st.flashing) {
+            Spacer(Modifier.height(10.dp))
+            androidx.compose.material3.LinearProgressIndicator(
+                progress = { ((current + 1).coerceIn(1, 4)) / 4f },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(4.dp)
+                    .clip(androidx.compose.foundation.shape.RoundedCornerShape(2.dp)),
+                color = scheme.primary,
+                trackColor = scheme.surfaceContainerHighest
+            )
+        }
+    }
+}
+
 @Composable
 internal fun ModuleSheet(
     st: InstallUiState.ModuleConfirm,
@@ -1226,21 +1310,9 @@ internal fun ModuleSheet(
                             color = scheme.onSurfaceVariant
                         )
                     }
-                    if (st.flashing) {
-                        Spacer(Modifier.height(12.dp))
-                        Row(verticalAlignment = Alignment.CenterVertically) {
-                            androidx.compose.material3.CircularProgressIndicator(
-                                modifier = Modifier.size(16.dp),
-                                strokeWidth = 2.dp,
-                                color = scheme.primary
-                            )
-                            Spacer(Modifier.width(8.dp))
-                            Text(
-                                tr("正在刷入模块…", "Flashing module…"),
-                                style = MaterialTheme.typography.bodyMedium,
-                                color = scheme.primary
-                            )
-                        }
+                    // 刷入流程：四个阶段逐个打勾，不再只转一个圈
+                    if (st.flashing || (st.stage >= 0 && st.output == null) || st.output != null) {
+                        ModuleFlashSteps(st)
                     }
                     st.output?.takeIf { it.isNotBlank() }?.let { out ->
                         Spacer(Modifier.height(10.dp))
