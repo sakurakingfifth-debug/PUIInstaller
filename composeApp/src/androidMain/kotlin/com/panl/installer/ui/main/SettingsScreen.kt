@@ -132,7 +132,11 @@ fun SettingsScreen(topPad: Dp) {
 
     LazyColumn(
         modifier = Modifier
-            .puiCardBackdropBlur(showAbout, (settings.sheetBlurPx / density).dp)
+            // 任何弹窗打开时都把页面糊掉（之前只判断了「关于」，默认安装器那个弹窗就没糊）
+            .puiCardBackdropBlur(
+                showAbout || showInstallerHelp,
+                (settings.sheetBlurPx / density).dp
+            )
             .puiEdgeHaptic(),
         contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = topPad, bottom = 130.dp)
     ) {
