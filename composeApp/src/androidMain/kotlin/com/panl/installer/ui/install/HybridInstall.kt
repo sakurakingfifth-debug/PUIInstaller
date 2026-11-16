@@ -73,7 +73,7 @@ fun HybridInstallHost(controller: InstallController) {
                     .padding(20.dp)
             ) {
                 Text(
-                    tr("选择安装类型", "Choose install type"),
+                    tr("发现目标为双模块", "Dual-mode package detected"),
                     style = MaterialTheme.typography.titleLarge,
                     fontWeight = FontWeight.SemiBold,
                     color = scheme.onSurface
