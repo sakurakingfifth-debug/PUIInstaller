@@ -6,6 +6,8 @@
         <item name="android:colorAccent">@color/pui_magenta</item>
         <item name="android:statusBarColor">@android:color/transparent</item>
         <item name="android:navigationBarColor">@android:color/transparent</item>
+        <!-- 半透明窗口时系统会给导航栏叠一层对比遮罩，浅色模式下就是底部那条灰带 -->
+        <item name="android:enforceNavigationBarContrast">false</item>
         <item name="android:windowLightStatusBar">false</item>
         <item name="android:windowLightNavigationBar">false</item>
         <item name="android:windowLayoutInDisplayCutoutMode">shortEdges</item>
