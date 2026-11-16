@@ -54,19 +54,8 @@ fun HybridInstallHost(controller: InstallController) {
             decorFitsSystemWindows = false
         )
     ) {
-        // 和组件选择弹窗一样：自己开系统模糊，糊掉背后的页面
-        val dialogView = LocalView.current
-        SideEffect {
-            runCatching {
-                val window = (dialogView.parent as? DialogWindowProvider)?.window ?: return@runCatching
-                if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.S) {
-                    window.addFlags(android.view.WindowManager.LayoutParams.FLAG_BLUR_BEHIND)
-                    val lp = window.attributes
-                    lp.blurBehindRadius = (36 * dialogView.resources.displayMetrics.density).toInt()
-                    window.attributes = lp
-                }
-            }
-        }
+        // 弹窗自己开系统模糊，半径跟随设置里的「浮窗模糊」
+        DialogBlurBehind()
 
         Box(
             Modifier
