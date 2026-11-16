@@ -1187,8 +1187,10 @@ internal fun ModuleSheet(
     Column(
         Modifier
             .fillMaxWidth()
+            // 确认态没有日志，卡片就按内容高（之前 min 380dp 会在按钮上方留一大片空白）；
+            // 只有出现日志时才给个 300dp 下限，让日志区有地方显示
             .heightIn(
-                min = if (horizontalPadding > 20.dp) 380.dp else 340.dp,
+                min = if (st.flashing || st.log.isNotEmpty()) 300.dp else 0.dp,
                 max = SHEET_MAX_CONTENT_H_MODULE
             )
             .padding(horizontal = horizontalPadding)
