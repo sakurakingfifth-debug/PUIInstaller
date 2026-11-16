@@ -114,11 +114,14 @@ private fun SplitPickerDialog(
         onDismissRequest = onDismiss,
         properties = DialogProperties(usePlatformDefaultWidth = false)
     ) {
+        // 压暗层和卡片放同一个 Box 里居中：Dialog 关掉平台默认宽度后内容是从左上角开始排的，
+        // 之前直接平铺就会贴到屏幕顶部（用户看到的「位置不对」）
         Box(
             Modifier
                 .fillMaxSize()
-                .background(androidx.compose.ui.graphics.Color.Black.copy(alpha = 0.18f))
-        )
+                .background(androidx.compose.ui.graphics.Color.Black.copy(alpha = 0.18f)),
+            contentAlignment = Alignment.Center
+        ) {
         Column(
             Modifier
                 .fillMaxWidth()
@@ -197,6 +200,7 @@ private fun SplitPickerDialog(
                 // 一个都不选也允许：等于只装 base（有些包的分片本来就可选）
                 PuiButton(text = tr("确定", "OK"), onClick = { onConfirm(selected) })
             }
+        }
         }
     }
 }
