@@ -311,6 +311,20 @@ fun SettingsScreen(topPad: Dp) {
                         showAbout = true
                     }
                 )
+                // 开源地址：点开浏览器看仓库（Release 也在那里）
+                val uriHandler = androidx.compose.ui.platform.LocalUriHandler.current
+                PuiListRow(
+                    icon = null,
+                    iconPainter = painterResource(R.drawable.ic_code_1),
+                    title = tr("GitHub 项目", "GitHub project"),
+                    subtitle = "sakurakingfifth-debug/PUIInstaller",
+                    showDivider = true,
+                    showChevron = true,
+                    onClick = {
+                        tick()
+                        runCatching { uriHandler.openUri("https://github.com/sakurakingfifth-debug/PUIInstaller") }
+                    }
+                )
                 // 默认安装器：系统设置里**没有**「安装应用」这一项（ColorOS 的「默认应用」页只有
                 // 桌面/短信/电话/浏览器…），所以不能直接跳过去。改成弹窗：ROOT 一键处理 + 手动兜底。
                 val isDefaultInstaller = isDefault
