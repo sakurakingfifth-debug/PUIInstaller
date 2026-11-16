@@ -306,6 +306,15 @@ object SourceCleaner {
                 if (!ok) ok = deletePath(real) || ok
                 // 4. ROOT 兜底：聊天软件的缓存在别的应用私有目录里，普通权限永远删不掉
                 if (!ok) ok = deleteViaRoot(real) || ok
+                // 5. real 为 null 也别放弃：按 URI 结构猜路径（文件管理器的 root/... 前缀、
+                //    别的应用的 FileProvider），再用 ROOT 进去删
+                if (!ok) {
+                    for (guess in guessPaths(context, uri)) {
+                        if (deleteViaRoot(guess)) { ok = true; break }
+                    }
+                }
+                // 6. 最后招：在那个应用的私有目录里按「同名 + 同大小」找一遍（Telegram 这种）
+                if (!ok) ok = findByRoot(context, uri) || ok
                 Log.i(TAG, "content uri=$uri data=$dataPath fd=$fdPath deleted=$ok")
                 if (!ok) {
                     InstallerLog.record(
@@ -416,6 +425,104 @@ object SourceCleaner {
         val gone = out.contains("GONE")
         Log.i(TAG, "root delete $path -> code=$code gone=$gone out=${out.take(120)}")
         return gone
+    }
+
+    /**
+     * 按 URI 结构猜真实路径 —— `data` 和 `fd` 都拿不到时的兜底。
+     *
+     * 两类常见情况：
+     * 1. 文件管理器（ColorOS 的 `content://com.coloros.filemanager/root/storage/emulated/0/xxx.apk`）：
+     *    把 `root/`、`tree/` 这类伪前缀去掉，从 `storage`/`sdcard` 开始拼绝对路径；
+     * 2. 别的应用的 FileProvider（Telegram / QQ 之类）：
+     *    authority 一般就是包名加后缀，拼成 `<dataDir>/<uri 里的相对路径>`，几个常见根目录都试一遍。
+     *
+     * 只产出 `.apk/.apks/.xapk/.apkm` 结尾的候选（[deleteViaRoot] 里还会再校验一次）。
+     */
+    private fun guessPaths(context: Context, uri: Uri): List<String> {
+        if (uri.scheme?.lowercase() != "content") return emptyList()
+        val segs = uri.pathSegments.orEmpty()
+        val out = mutableListOf<String>()
+
+        // 1. 绝对路径直接从 URI 里截出来
+        val start = segs.indexOfFirst { it == "storage" || it == "sdcard" }
+        if (start >= 0) out += "/" + segs.drop(start).joinToString("/")
+
+        // 2. 去掉 root/tree/document 这些伪段后再看
+        val trimmed = segs.dropWhile { it == "root" || it == "tree" || it == "document" || it == "file" }
+        if (trimmed.isNotEmpty()) out += "/" + trimmed.joinToString("/")
+
+        // 3. 别的应用的私有目录：authority → 包名，拼 dataDir
+        val authority = uri.authority.orEmpty()
+        val candidates = listOf(
+            authority,
+            authority.removeSuffix(".provider"),
+            authority.removeSuffix(".fileprovider"),
+            authority.removeSuffix(".fileProvider")
+        ).distinct().filter { it.contains('.') }
+        for (pkg in candidates) {
+            val dataDir = runCatching {
+                context.packageManager.getApplicationInfo(pkg, 0).dataDir
+            }.getOrNull() ?: continue
+            val rel = trimmed.joinToString("/")
+            if (rel.isNotBlank()) out += "$dataDir/$rel"
+            // FileProvider 的根可能是 cache/files/external_cache 之一，路径里不一定带这一段
+            if (rel.isNotBlank()) {
+                for (root in listOf("cache", "files", "external_cache", "no_backup")) {
+                    out += "$dataDir/$root/$rel"
+                }
+            }
+        }
+        return out.distinct().filter { isDeletableName(it) }
+    }
+
+    /**
+     * 最后手段：在那个应用的私有目录里按「同名 + 同大小」找一个 apk 删掉。
+     *
+     * Telegram 这类下载到 `cache/` 里往往连原始文件名都不保留（用 hash 命名），
+     * URI 里只剩个 authority。所以用 provider 提供的 DISPLAY_NAME 和 SIZE 去 `find` 匹配，
+     * 只在该应用自己的 dataDir 里搜，不动别处。
+     */
+    private suspend fun findByRoot(context: Context, uri: Uri): Boolean {
+        val authority = uri.authority.orEmpty()
+        val pkgCandidates = listOf(
+            authority,
+            authority.removeSuffix(".provider"),
+            authority.removeSuffix(".fileprovider"),
+            authority.removeSuffix(".fileProvider")
+        ).distinct().filter { it.contains('.') }
+
+        var name: String? = null
+        var size = -1L
+        runCatching {
+            context.contentResolver.query(
+                uri,
+                arrayOf(android.provider.OpenableColumns.DISPLAY_NAME, android.provider.OpenableColumns.SIZE),
+                null, null, null
+            )?.use { c ->
+                if (c.moveToFirst()) {
+                    name = c.getString(0)
+                    size = c.getLong(1)
+                }
+            }
+        }
+        val fileName = name?.takeIf { isDeletableName(it) } ?: return false
+
+        for (pkg in pkgCandidates) {
+            val dataDir = runCatching {
+                context.packageManager.getApplicationInfo(pkg, 0).dataDir
+            }.getOrNull() ?: continue
+            val q = "'" + fileName.replace("'", "'\\''") + "'"
+            val sizeArg = if (size > 0) "-size ${size}c " else ""
+            val cmd = "find '$dataDir' -type f -name $q ${sizeArg}2>/dev/null | head -3"
+            val (_, out) = kotlinx.coroutines.withTimeoutOrNull(15_000) {
+                RootShell.run(cmd)
+            } ?: (false to "")
+            val hit = out.lineSequence().map { it.trim() }
+                .firstOrNull { it.startsWith("/") && isDeletableName(it) } ?: continue
+            Log.i(TAG, "root find hit: $hit")
+            if (deleteViaRoot(hit)) return true
+        }
+        return false
     }
 
     /** content:// → 真实路径。只有拿到 MANAGE_EXTERNAL_STORAGE 才尝试，否则一定失败。 */
