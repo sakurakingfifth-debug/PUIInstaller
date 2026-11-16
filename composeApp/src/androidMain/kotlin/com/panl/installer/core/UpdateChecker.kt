@@ -17,8 +17,14 @@ import java.net.URL
  */
 object UpdateChecker {
 
-    private const val API =
-        "https://api.github.com/repos/sakurakingfifth-debug/PUIInstaller/releases/latest"
+    private const val OWNER = "sakurakingfifth-debug"
+    private const val REPO = "PUIInstaller"
+
+    private const val API = "https://api.github.com/repos/$OWNER/$REPO/releases/latest"
+
+    /** API 被拦（403/限流）时的兜底：github.com 的网页版，不占 API 配额。 */
+    private const val WEB_LATEST = "https://github.com/$OWNER/$REPO/releases/latest"
+    private const val WEB_ASSETS = "https://github.com/$OWNER/$REPO/releases/expanded_assets/"
 
     data class Release(
         /** 原始 tag，例如 v3.7.95 */
@@ -33,7 +39,17 @@ object UpdateChecker {
     )
 
     suspend fun fetchLatest(): Result<Release> = withContext(Dispatchers.IO) {
-        runCatching {
+        val api = runCatching { fetchApi() }
+        if (api.isSuccess) return@withContext api
+        // API 403 的两种情况：代理拦了 api.github.com、或同一 IP 超过 60 次/小时。
+        // 退回 github.com 网页版：/releases/latest 会 302 到 /releases/tag/<tag>，
+        // 再去 expanded_assets/<tag> 里捞 APK 链接 —— 这条路子不消耗 API 配额。
+        val web = runCatching { fetchWeb() }
+        if (web.isSuccess) web else api
+    }
+
+    private fun fetchApi(): Release {
+        return run {
             val conn = (URL(API).openConnection() as HttpURLConnection).apply {
                 connectTimeout = 12_000
                 readTimeout = 15_000
@@ -81,6 +97,50 @@ object UpdateChecker {
             } finally {
                 conn.disconnect()
             }
+        }
+    }
+
+    /**
+     * 网页版兜底。
+     *
+     * 1. `GET /releases/latest`：跟随 302，最终地址里的 `/tag/<tag>` 就是最新版本号；
+     * 2. `GET /releases/expanded_assets/<tag>`：这个片段页里带着资产直链，
+     *    正则捞一个 `.apk` 出来（拿不到就只给发布页，界面上会退化成打开浏览器）。
+     *
+     * 拿不到更新说明（body）——网页版没有结构化字段，而界面也不需要它。
+     */
+    private fun fetchWeb(): Release {
+        val (_, finalUrl) = httpGet(WEB_LATEST)
+        val tag = finalUrl.toString().substringAfterLast("/tag/", "").trim().trim('/')
+        if (tag.isBlank() || tag.contains("?")) error("读不到版本号")
+        val (html, _) = httpGet(WEB_ASSETS + tag)
+        val apkPath = Regex("""(/[^"'\s]+/releases/download/[^"'\s]+\.apk)""").find(html)?.groupValues?.get(1)
+        return Release(
+            tag = tag,
+            version = tag.trimStart('v', 'V'),
+            notes = "",
+            pageUrl = "https://github.com/$OWNER/$REPO/releases/tag/$tag",
+            apkUrl = apkPath?.let { "https://github.com$it" },
+            apkSize = 0
+        )
+    }
+
+    private fun httpGet(url: String): Pair<String, java.net.URL> {
+        val conn = (URL(url).openConnection() as HttpURLConnection).apply {
+            connectTimeout = 12_000
+            readTimeout = 15_000
+            instanceFollowRedirects = true
+            // 网页版要“像浏览器”，GitHub 对非浏览器 UA 的 HTML 也会挑刺
+            setRequestProperty("User-Agent", "Mozilla/5.0 (Linux; Android 14) PUIInstaller")
+            setRequestProperty("Accept", "text/html,application/xhtml+xml")
+        }
+        try {
+            val code = conn.responseCode
+            if (code !in 200..299) error("HTTP $code")
+            val body = conn.inputStream.bufferedReader().use { it.readText() }
+            return body to conn.url
+        } finally {
+            conn.disconnect()
         }
     }
 
