@@ -44,6 +44,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.text.font.FontWeight
@@ -124,6 +125,8 @@ private fun UpdateScreen(onClose: () -> Unit) {
     val density = androidx.compose.ui.platform.LocalDensity.current.density
     val settings = com.panl.installer.core.Settings.get(context)
     val blurH = com.panl.pui.rememberPuiTopBlurHeight()
+    // 用主题实际生效的背景亮度判断明暗，比读设置里的开关靠谱（还有跟随系统的情况）
+    val isDark = scheme.surface.luminance() < 0.5f
 
     Box(
         Modifier
@@ -166,7 +169,10 @@ private fun UpdateScreen(onClose: () -> Unit) {
                     .clip(RoundedCornerShape(24.dp))
             ) {
                 androidx.compose.foundation.Image(
-                    painter = androidx.compose.ui.res.painterResource(R.drawable.ota_banner),
+                    // 亮色用浅绿壁纸、暗色用深紫壁纸
+                    painter = androidx.compose.ui.res.painterResource(
+                        if (isDark) R.drawable.ota_banner else R.drawable.ota_banner_light
+                    ),
                     contentDescription = null,
                     contentScale = androidx.compose.ui.layout.ContentScale.Crop,
                     modifier = Modifier.fillMaxSize()
@@ -175,7 +181,8 @@ private fun UpdateScreen(onClose: () -> Unit) {
                     tr("PUI 安装器", "PUI Installer"),
                     style = MaterialTheme.typography.headlineMedium,
                     fontWeight = FontWeight.Bold,
-                    color = Color.White,
+                    // 浅色壁纸上白字看不清，换成近黑
+                    color = if (isDark) Color.White else Color(0xFF22262B),
                     modifier = Modifier
                         .align(Alignment.BottomStart)
                         .padding(start = 22.dp, bottom = 20.dp, end = 22.dp)
