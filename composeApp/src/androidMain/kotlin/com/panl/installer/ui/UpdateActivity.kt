@@ -9,6 +9,8 @@ import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.asPaddingValues
+import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.Column
@@ -20,6 +22,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.statusBars
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
@@ -53,6 +56,8 @@ import com.panl.installer.i18n.tr
 import com.panl.installer.ui.theme.InstallerTheme
 import com.panl.pui.PuiIcon
 import com.panl.pui.PuiIconView
+import com.panl.pui.puiProgressiveTopBlur
+import com.panl.pui.rememberPuiTopBlurHeight
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -116,51 +121,37 @@ private fun UpdateScreen(onClose: () -> Unit) {
 
     val ready = state as? OtaState.Ready
 
-    Column(
+    val density = androidx.compose.ui.platform.LocalDensity.current.density
+    val settings = com.panl.installer.core.Settings.get(context)
+    val blurH = com.panl.pui.rememberPuiTopBlurHeight()
+
+    Box(
         Modifier
             .fillMaxSize()
             .background(scheme.background)
-            .statusBarsPadding()
     ) {
-        // ── 顶栏 ────────────────────────────────────────────────────────
-        Row(
-            Modifier
-                .fillMaxWidth()
-                .padding(start = 8.dp, end = 16.dp, top = 6.dp, bottom = 4.dp),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Box(
-                Modifier
-                    .size(40.dp)
-                    .clip(CircleShape)
-                    .clickable { onClose() },
-                contentAlignment = Alignment.Center
-            ) {
-                PuiIconView(
-                    PuiIcon.ChevronRight,
-                    Modifier
-                        .size(20.dp)
-                        .rotate(180f),
-                    tint = scheme.onSurface
-                )
-            }
-            Spacer(Modifier.width(4.dp))
-            Text(
-                tr("软件更新", "Software update"),
-                style = MaterialTheme.typography.titleMedium,
-                fontWeight = FontWeight.SemiBold,
-                color = scheme.onSurface
-            )
-        }
+    Column(Modifier.fillMaxSize()) {
 
         // 滚动区 + 底部渐隐：内容不会在按钮上方被「一刀切」，
         // 而是逐渐淡出，暗示还能继续往下滑
         Box(Modifier.weight(1f)) {
+        val statusTop = androidx.compose.foundation.layout.WindowInsets.statusBars
+            .asPaddingValues().calculateTopPadding()
         Column(
             Modifier
                 .fillMaxSize()
+                .then(
+                    // 顶部渐进模糊：滑上来的内容被逐层虚化，半径跟设置里的「顶部模糊」走
+                    if (settings.blurEnabled) {
+                        Modifier.puiProgressiveTopBlur(
+                            height = blurH,
+                            maxRadius = (settings.topBlurPx / density).dp
+                        )
+                    } else Modifier
+                )
                 .verticalScroll(rememberScrollState())
                 .padding(start = 16.dp, end = 16.dp, bottom = 84.dp)
+                .padding(top = statusTop + blurH)
         ) {
             // ── 顶部大图：直接用壁纸，标题压在左下角 ────────────────────
             // 2:1 长矩形：宽高比固定，图用 Crop 裁（源图是正方形，上下会被切掉，
@@ -304,6 +295,40 @@ private fun UpdateScreen(onClose: () -> Unit) {
                 onClick = {
                     runCatching { uriHandler.openUri("https://github.com/sakurakingfifth-debug/PUIInstaller") }
                 }
+            )
+        }
+    }
+
+        // 浮在最上层的标题栏：本身透明，内容滑上来时靠下面的渐进模糊虚化
+        Row(
+            Modifier
+                .align(Alignment.TopStart)
+                .fillMaxWidth()
+                .statusBarsPadding()
+                .padding(start = 8.dp, end = 16.dp, top = 6.dp, bottom = 4.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Box(
+                Modifier
+                    .size(40.dp)
+                    .clip(CircleShape)
+                    .clickable { onClose() },
+                contentAlignment = Alignment.Center
+            ) {
+                PuiIconView(
+                    PuiIcon.ChevronRight,
+                    Modifier
+                        .size(20.dp)
+                        .rotate(180f),
+                    tint = scheme.onSurface
+                )
+            }
+            Spacer(Modifier.width(4.dp))
+            Text(
+                tr("软件更新", "Software update"),
+                style = MaterialTheme.typography.titleMedium,
+                fontWeight = FontWeight.SemiBold,
+                color = scheme.onSurface
             )
         }
     }
