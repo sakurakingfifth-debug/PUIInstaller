@@ -100,7 +100,7 @@ fun HybridInstallHost(controller: InstallController) {
                 HybridOption(
                     title = info.label,
                     subtitle = tr("包名：${info.packageName}", "Package: ${info.packageName}"),
-                    hint = tr("作为普通应用安装（LSPosed 插件照常生效）", "Install as an app (LSPosed module)"),
+                    hint = tr("以LSPosed插件形式安装", "Install as an LSPosed plugin"),
                     icon = PuiIcon.Grid,
                     onClick = {
                         controller.closeHybridPicker()
@@ -110,7 +110,7 @@ fun HybridInstallHost(controller: InstallController) {
                 HybridOption(
                     title = module.name,
                     subtitle = tr("模块 ID：${module.id}", "Module ID: ${module.id}"),
-                    hint = tr("不装应用本体，转成模块交给 root 管理器刷入", "Flash as a module instead of installing the app"),
+                    hint = tr("以Zygisk模块形式刷入", "Flash as a Zygisk module"),
                     icon = PuiIcon.Download,
                     onClick = { controller.installEmbeddedAsModule() }
                 )
