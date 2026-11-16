@@ -1,0 +1,5 @@
+# 安装器 APK 的签名证书指纹（SHA-256，小写无冒号）。
+# 必须和 D:/APK/keys/testkey.x509.pem 一致 —— 这是 AOSP testkey，
+# 设备上 /system_ext/priv-app/PackageInstaller 就是它签的，换了就装不上（签名冲突）。
+# 换密钥时同步改这里，否则 build.sh 会直接失败，避免又一次「签名不正确」。
+a40da80a59d170caa950cf15c18c454d47a39b26989d8b640ecd745ba71bf5dc
