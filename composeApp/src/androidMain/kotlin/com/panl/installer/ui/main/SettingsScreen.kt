@@ -101,6 +101,25 @@ fun SettingsScreen(topPad: Dp) {
     val privileged = remember { PackageUtils.hasInstallPermission(context) }
     var isDefault by remember { mutableStateOf(PackageUtils.isDefaultInstaller(context)) }
     var showInstallerHelp by remember { mutableStateOf(false) }
+    // 检查更新：Idle / Checking / Latest / HasUpdate / Failed
+    var updateState by remember { mutableStateOf("Idle") }
+    var latestRelease by remember { mutableStateOf<com.panl.installer.core.UpdateChecker.Release?>(null) }
+    var updateError by remember { mutableStateOf("") }
+    // 进页面自动查一次：用户打开设置就能看到有没有新版，不用先点一下
+    androidx.compose.runtime.LaunchedEffect(Unit) {
+        updateState = "Checking"
+        com.panl.installer.core.UpdateChecker.fetchLatest()
+            .onSuccess { r ->
+                latestRelease = r
+                val local = appVersion(context)
+                updateState =
+                    if (com.panl.installer.core.UpdateChecker.isNewer(r.version, local)) "HasUpdate" else "Latest"
+            }
+            .onFailure { e ->
+                updateError = e.message?.take(40) ?: "网络错误"
+                updateState = "Failed"
+            }
+    }
     val scope = rememberCoroutineScope()
     var showAbout by remember { mutableStateOf(false) }
 
@@ -323,6 +342,57 @@ fun SettingsScreen(topPad: Dp) {
                     onClick = {
                         tick()
                         runCatching { uriHandler.openUri("https://github.com/sakurakingfifth-debug/PUIInstaller") }
+                    }
+                )
+                // 检查更新：拉 GitHub Release 的最新 tag，和本地 versionName 比
+                val localVersion = appVersion(context)
+                PuiListRow(
+                    icon = null,
+                    iconPainter = painterResource(R.drawable.ic_document_download),
+                    title = tr("检查更新", "Check for updates"),
+                    subtitle = when (updateState) {
+                        "Checking" -> tr("正在检查…", "Checking…")
+                        "Latest" -> tr("已是最新版本 $localVersion", "Up to date · $localVersion")
+                        "HasUpdate" -> tr(
+                            "发现新版本 ${latestRelease?.version}，点此更新",
+                            "New version ${latestRelease?.version} available"
+                        )
+                        "Failed" -> tr("检查失败：$updateError", "Failed: $updateError")
+                        else -> tr("当前版本 $localVersion", "Current version $localVersion")
+                    },
+                    trailingText = when (updateState) {
+                        "HasUpdate" -> tr("有新版", "New")
+                        "Latest" -> tr("最新", "Latest")
+                        "Checking" -> null
+                        else -> null
+                    },
+                    showDivider = true,
+                    showChevron = updateState != "HasUpdate",
+                    onClick = {
+                        tick()
+                        if (updateState == "Checking") return@PuiListRow
+                        val pending = latestRelease
+                        if (updateState == "HasUpdate" && pending != null) {
+                            // 已经查到新版了，再点就直接去下载
+                            val target = pending.apkUrl ?: pending.pageUrl
+                            if (pending.apkUrl == null) updateState = "Idle"
+                            runCatching { uriHandler.openUri(target) }
+                        } else {
+                            updateState = "Checking"
+                            scope.launch {
+                                com.panl.installer.core.UpdateChecker.fetchLatest()
+                                    .onSuccess { r ->
+                                        latestRelease = r
+                                        updateState =
+                                            if (com.panl.installer.core.UpdateChecker.isNewer(r.version, localVersion)) "HasUpdate"
+                                            else "Latest"
+                                    }
+                                    .onFailure { e ->
+                                        updateError = e.message?.take(40) ?: "网络错误"
+                                        updateState = "Failed"
+                                    }
+                            }
+                        }
                     }
                 )
                 // 默认安装器：系统设置里**没有**「安装应用」这一项（ColorOS 的「默认应用」页只有
