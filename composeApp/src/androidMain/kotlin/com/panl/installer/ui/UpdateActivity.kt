@@ -146,7 +146,7 @@ private fun UpdateScreen(onClose: () -> Unit) {
             }
             Spacer(Modifier.width(4.dp))
             Text(
-                tr("系统更新", "System update"),
+                tr("软件更新", "Software update"),
                 style = MaterialTheme.typography.titleMedium,
                 fontWeight = FontWeight.SemiBold,
                 color = scheme.onSurface
