@@ -10,6 +10,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -159,11 +160,13 @@ private fun UpdateScreen(onClose: () -> Unit) {
                 .padding(horizontal = 16.dp)
         ) {
             // ── 顶部大图：直接用壁纸，标题压在左下角 ────────────────────
+            // 2:1 长矩形：宽高比固定，图用 Crop 裁（源图是正方形，上下会被切掉，
+            // 这图本身就是纯渐变，切哪一块都看不出）
             Box(
                 Modifier
                     .fillMaxWidth()
-                    .height(300.dp)
-                    .clip(RoundedCornerShape(28.dp))
+                    .aspectRatio(2f)
+                    .clip(RoundedCornerShape(24.dp))
             ) {
                 androidx.compose.foundation.Image(
                     painter = androidx.compose.ui.res.painterResource(R.drawable.ota_banner),
