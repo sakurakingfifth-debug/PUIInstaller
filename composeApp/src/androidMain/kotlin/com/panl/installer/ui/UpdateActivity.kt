@@ -158,56 +158,28 @@ private fun UpdateScreen(onClose: () -> Unit) {
                 .verticalScroll(rememberScrollState())
                 .padding(horizontal = 16.dp)
         ) {
-            // ── 顶部大图（渐变代替实拍图） ──────────────────────────────
+            // ── 顶部大图：直接用壁纸，标题压在左下角 ────────────────────
             Box(
                 Modifier
                     .fillMaxWidth()
                     .height(300.dp)
                     .clip(RoundedCornerShape(28.dp))
-                    .background(
-                        Brush.linearGradient(
-                            listOf(
-                                Color(0xFF2B1B4A),
-                                Color(0xFF6E2A55),
-                                Color(0xFFBE3455)
-                            )
-                        )
-                    )
             ) {
-                Column(
-                    Modifier
-                        .fillMaxSize()
-                        .padding(24.dp),
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                    verticalArrangement = Arrangement.Center
-                ) {
-                    Text(
-                        tr("PUI 安装器", "PUI Installer"),
-                        style = MaterialTheme.typography.displaySmall,
-                        fontWeight = FontWeight.Bold,
-                        color = Color.White
-                    )
-                    Spacer(Modifier.height(6.dp))
-                    Text(
-                        current,
-                        style = MaterialTheme.typography.titleMedium,
-                        color = Color.White.copy(alpha = 0.85f)
-                    )
-                    Spacer(Modifier.height(28.dp))
-                    val status = when (val s = state) {
-                        is OtaState.Loading -> tr("正在检查更新…", "Checking for updates…")
-                        is OtaState.Ready ->
-                            if (s.hasUpdate) tr("发现新版本 ${s.release.version}", "New version ${s.release.version} available")
-                            else tr("已是最新版本", "Up to date")
-                        is OtaState.Failed -> tr("未联网，无法检查更新", "Offline")
-                    }
-                    Text(
-                        status,
-                        style = MaterialTheme.typography.titleSmall,
-                        color = Color.White,
-                        textAlign = TextAlign.Center
-                    )
-                }
+                androidx.compose.foundation.Image(
+                    painter = androidx.compose.ui.res.painterResource(R.drawable.ota_banner),
+                    contentDescription = null,
+                    contentScale = androidx.compose.ui.layout.ContentScale.Crop,
+                    modifier = Modifier.fillMaxSize()
+                )
+                Text(
+                    tr("PUI 安装器", "PUI Installer"),
+                    style = MaterialTheme.typography.headlineMedium,
+                    fontWeight = FontWeight.Bold,
+                    color = Color.White,
+                    modifier = Modifier
+                        .align(Alignment.BottomStart)
+                        .padding(start = 22.dp, bottom = 20.dp, end = 22.dp)
+                )
             }
 
             Spacer(Modifier.height(14.dp))
