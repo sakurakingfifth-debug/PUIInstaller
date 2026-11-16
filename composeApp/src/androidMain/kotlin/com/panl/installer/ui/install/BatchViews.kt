@@ -1,5 +1,8 @@
 package com.panl.installer.ui.install
 
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.ui.draw.clip
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -69,7 +72,7 @@ fun BatchBody(
                 .verticalScroll(rememberScrollState())
         ) {
             st.items.forEachIndexed { index, item ->
-                BatchRow(item, index, compact)
+                BatchRow(item, index, compact) { controller.openSplitPicker(index) }
                 if (index != st.items.lastIndex) PuiDivider(startIndent = 32.dp)
             }
         }
@@ -184,7 +187,12 @@ private fun batchSubtitle(st: InstallUiState.Batch): String = when (st.phase) {
 }
 
 @Composable
-private fun BatchRow(item: BatchItem, index: Int, compact: Boolean) {
+private fun BatchRow(
+    item: BatchItem,
+    index: Int,
+    compact: Boolean,
+    onPickSplits: () -> Unit = {}
+) {
     val scheme = MaterialTheme.colorScheme
     val accent = when (item.status) {
         BatchStatus.Pending -> scheme.onSurfaceVariant
@@ -235,6 +243,20 @@ private fun BatchRow(item: BatchItem, index: Int, compact: Boolean) {
                     text = detail,
                     style = MaterialTheme.typography.labelSmall,
                     color = if (item.status == BatchStatus.Failed) scheme.error else scheme.onSurfaceVariant
+                )
+            }
+            val apk = item.apk
+            if (apk != null && apk.splits.isNotEmpty()) {
+                val picked = apk.splits.count { it.absolutePath in apk.selectedSplits } + 1
+                val total = apk.splits.size + 1
+                MarqueeText(
+                    text = tr("组件 $picked / $total · 点此选择", "Components $picked / $total · tap to choose"),
+                    style = MaterialTheme.typography.labelSmall,
+                    color = scheme.primary,
+                    modifier = Modifier
+                        .clip(RoundedCornerShape(6.dp))
+                        .clickable(onClick = onPickSplits)
+                        .padding(horizontal = 2.dp, vertical = 2.dp)
                 )
             }
         }

@@ -101,6 +101,8 @@ import com.panl.installer.i18n.tr
  */
 @Composable
 fun InstallScreen(controller: InstallController, onClose: () -> Unit) {
+    // 拆分包组件选择弹窗
+    SplitPickerHost(controller)
     val state = controller.state
     // 错误页的「重新选择文件」：换一个文件重新读
     val reselect = androidx.activity.compose.rememberLauncherForActivityResult(
@@ -117,7 +119,10 @@ fun InstallScreen(controller: InstallController, onClose: () -> Unit) {
             .fillMaxSize()
             .background(MaterialTheme.colorScheme.background)
             // 删除安装包对话框弹出时，背后整页按「浮窗背景模糊」糊掉
-            .puiCardBackdropBlur(controller.deleteDialogVisible, (settings.sheetBlurPx / density).dp)
+            .puiCardBackdropBlur(
+                controller.deleteDialogVisible || controller.splitPickerOpen,
+                (settings.sheetBlurPx / density).dp
+            )
             // 挖孔避让：这个 Activity 关掉了主题里的统一避让（遮罩要铺满），整页这里自己让
             .then(Modifier.puiCutoutPadding())
     ) {
@@ -281,7 +286,7 @@ private fun ReadyBody(
                 bottom = 40.dp
             )
         ) {
-                item { AppHeader(info) }
+                item { AppHeader(info) { controller.openSplitPicker() } }
                 item {
                     Spacer(Modifier.height(18.dp))
                     VersionCompareCard(info)
@@ -320,7 +325,7 @@ private fun ReadyBody(
 }
 
 @Composable
-private fun AppHeader(info: ApkInfo) {
+private fun AppHeader(info: ApkInfo, onPickSplits: () -> Unit = {}) {
     Column(
         Modifier
             .fillMaxWidth()
@@ -355,6 +360,14 @@ private fun AppHeader(info: ApkInfo) {
             info = info,
             showOsdk = Settings.get(LocalContext.current).showOsdk
         )
+        if (info.splits.isNotEmpty()) {
+            Spacer(Modifier.height(6.dp))
+            SplitSummaryRow(
+                info = info,
+                onClick = onPickSplits,
+                modifier = Modifier.padding(horizontal = 8.dp)
+            )
+        }
     }
 }
 

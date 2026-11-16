@@ -102,6 +102,8 @@ import com.panl.installer.i18n.tr
  */
 @Composable
 fun InstallSheet(controller: InstallController, onClose: () -> Unit) {
+    // 拆分包组件选择弹窗（挂在最外层，浮窗/全屏都能弹）
+    SplitPickerHost(controller)
     val context = LocalContext.current
     // 错误页的「重新选择文件」：换一个文件重新读
     val reselect = androidx.activity.compose.rememberLauncherForActivityResult(
@@ -300,7 +302,10 @@ fun InstallSheet(controller: InstallController, onClose: () -> Unit) {
                 }
                 // 删除确认弹出来时，整张卡片先糊掉：不然白底弹窗叠在白底卡片上分不出层次，
                 // 看起来像「弹窗被塞进了卡片里」（用户报的就是这个）
-                .puiCardBackdropBlur(controller.deleteDialogVisible, (settings.sheetBlurPx / density).dp)
+                .puiCardBackdropBlur(
+                    controller.deleteDialogVisible || controller.splitPickerOpen,
+                    (settings.sheetBlurPx / density).dp
+                )
                 // 挖孔避让不在这里做：展开后里面就是 InstallScreen，它自己会让开；
                 // 卡片再让一次就变成双倍偏移，整页会被推到右边去
                 .clip(shape)
@@ -404,7 +409,8 @@ fun InstallSheet(controller: InstallController, onClose: () -> Unit) {
                         info = st.info,
                         atBottom = atBottom,
                         onClose = onClose,
-                        onInstall = { controller.startInstall() }
+                        onInstall = { controller.startInstall() },
+                        onPickSplits = { controller.openSplitPicker() }
                     )
 
                     is InstallUiState.Installing -> InstallingSheet(st, onClose)
@@ -556,7 +562,8 @@ private fun ReadySheet(
     info: ApkInfo,
     atBottom: Boolean,
     onClose: () -> Unit,
-    onInstall: () -> Unit
+    onInstall: () -> Unit,
+    onPickSplits: () -> Unit = {}
 ) {
     val scheme = MaterialTheme.colorScheme
     val title = when (info.relation) {
@@ -593,14 +600,11 @@ private fun ReadySheet(
                 alignment = Alignment.Center
             )
             if (info.splits.isNotEmpty()) {
-                Spacer(Modifier.height(4.dp))
-                Text(
-                    tr(
-                        "拆分包 · 共 ${info.splits.size + 1} 个分片",
-                        "Split bundle · ${info.splits.size + 1} parts"
-                    ),
-                    style = MaterialTheme.typography.bodySmall,
-                    color = scheme.primary
+                Spacer(Modifier.height(6.dp))
+                SplitSummaryRow(
+                    info = info,
+                    onClick = onPickSplits,
+                    modifier = Modifier.padding(horizontal = 8.dp)
                 )
             }
             Spacer(Modifier.height(6.dp))

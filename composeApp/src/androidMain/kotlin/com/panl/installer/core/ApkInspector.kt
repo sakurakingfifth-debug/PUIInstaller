@@ -64,7 +64,9 @@ data class ApkInfo(
     /** AndroidManifest 里的 sharedUserId（拿不到就是 null）。 */
     val sharedUserId: String? = null,
     /** 拆分包（.apks/.xapk/.apkm）解出来的分片；空表示普通单 apk。 */
-    val splits: List<File> = emptyList()
+    val splits: List<File> = emptyList(),
+    /** 拆分包里**勾选要装**的分片（绝对路径），默认全选。base.apk 不在这个集合里，它必装。 */
+    val selectedSplits: Set<String> = splits.map { it.absolutePath }.toSet()
 ) {
     val relation: VersionRelation
         get() {

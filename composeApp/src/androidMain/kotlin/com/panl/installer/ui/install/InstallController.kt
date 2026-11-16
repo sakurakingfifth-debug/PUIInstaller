@@ -407,7 +407,9 @@ class InstallController(
                 ?.copy(
                     sourceLabel = resolveSourceLabel(activity),
                     sourcePackage = resolveSourcePackage(activity),
-                    splits = bundle?.splits.orEmpty()
+                    splits = bundle?.splits.orEmpty(),
+                    // copy() 不会重算默认值，这里要显式把分片全勾上
+                    selectedSplits = bundle?.splits.orEmpty().map { it.absolutePath }.toSet()
                 )
             if (info == null) {
                 state = InstallUiState.Error(
@@ -419,6 +421,8 @@ class InstallController(
             installedInfo = info
             sourceExists = withContext(Dispatchers.IO) { SourceCleaner.exists(activity, uri) }
             state = InstallUiState.Ready(info)
+            // 拆分包直接弹出组件选择：这类包默认全装往往不是用户想要的（多语言/多架构全塞进去）
+            if (info.splits.isNotEmpty()) openSplitPicker()
         }
     }
 
@@ -569,7 +573,7 @@ class InstallController(
                 packageName = info.packageName,
                 allowDowngrade = true,
                 safeMode = settings.safeMode,
-                splits = info.splits
+                splits = info.pickedSplits()
             ) { p ->
                 state = InstallUiState.Installing(tr("正在复制安装包", "Copying the APK"), p)
                 notifyProgress(info.label, Notifications.Stage.COPYING, tr("正在复制安装包", "Copying the APK"), p)
@@ -1039,6 +1043,55 @@ class InstallController(
         }
     }
 
+    // ── 拆分包组件选择 ────────────────────────────────────────────────────
+    /** 组件选择弹窗是否打开。 */
+    var splitPickerOpen by mutableStateOf(false)
+        private set
+
+    /** 这次选的是哪一份包：-1 = 单个安装（当前 Ready），>=0 = 批量列表里的第几项。 */
+    private var splitPickerIndex by mutableStateOf(-1)
+
+    /** 弹窗要展示的包信息。 */
+    val splitPickerTarget: ApkInfo?
+        get() {
+            val st = state
+            return if (splitPickerIndex >= 0 && st is InstallUiState.Batch) {
+                st.items.getOrNull(splitPickerIndex)?.apk
+            } else {
+                (st as? InstallUiState.Ready)?.info
+            }
+        }
+
+    fun openSplitPicker(batchIndex: Int = -1) {
+        splitPickerIndex = batchIndex
+        splitPickerOpen = true
+    }
+
+    fun closeSplitPicker() {
+        splitPickerOpen = false
+    }
+
+    /** 把勾选结果写回对应位置（单个安装改 Ready，批量改列表项的 apk）。 */
+    fun applySplitSelection(selected: Set<String>) {
+        val st = state
+        if (splitPickerIndex >= 0 && st is InstallUiState.Batch) {
+            val items = st.items.toMutableList()
+            val item = items.getOrNull(splitPickerIndex)
+            val apk = item?.apk
+            if (item != null && apk != null) {
+                items[splitPickerIndex] = item.copy(apk = apk.copy(selectedSplits = selected))
+                state = st.copy(items = items)
+            }
+        } else if (st is InstallUiState.Ready) {
+            state = InstallUiState.Ready(st.info.copy(selectedSplits = selected))
+        }
+        closeSplitPicker()
+    }
+
+    /** 真正要写进会话的分片：按勾选过滤。 */
+    private fun ApkInfo.pickedSplits(): List<java.io.File> =
+        splits.filter { it.absolutePath in selectedSplits }
+
     /** 停止：当前这项装完就不再继续（已经开始的会话没法中途取消）。 */
     fun stopBatch() {
         batchStopped = true
@@ -1070,7 +1123,7 @@ class InstallController(
             packageName = info.packageName,
             allowDowngrade = true,
             safeMode = settings.safeMode,
-            splits = info.splits
+            splits = info.pickedSplits()
         ) { }
         if (sessionId == -1) {
             val message = InstallEngine.Bus.outcome?.message ?: tr("创建安装会话失败", "Failed to create the install session")
