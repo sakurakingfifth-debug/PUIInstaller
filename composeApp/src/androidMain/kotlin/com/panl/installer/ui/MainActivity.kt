@@ -18,6 +18,7 @@ import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import com.panl.installer.ui.main.BrandSplash
 import com.panl.installer.ui.main.MainShell
 import com.panl.installer.ui.theme.InstallerTheme
+import com.panl.installer.ui.tile.TileState
 import kotlinx.coroutines.delay
 
 class MainActivity : ComponentActivity() {
@@ -89,5 +90,16 @@ class MainActivity : ComponentActivity() {
                 }
             }
         }
+    }
+
+    override fun onStart() {
+        super.onStart()
+        // 控制中心磁贴靠这个标记点亮（下拉控制中心只触发 onPause，所以用 onStart/onStop）
+        TileState.appVisible = true
+    }
+
+    override fun onStop() {
+        TileState.appVisible = false
+        super.onStop()
     }
 }
