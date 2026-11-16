@@ -540,7 +540,7 @@ fun InstallSheet(controller: InstallController, onClose: () -> Unit) {
 private val SHEET_MAX_CONTENT_H = 470.dp
 
 /** 模块刷入页：日志要铺得开，卡片上限放宽到 520dp（比常规 470 略高一点就够）。 */
-private val SHEET_MAX_CONTENT_H_MODULE = 520.dp
+private val SHEET_MAX_CONTENT_H_MODULE = 560.dp
 
 /**
  * 顶部拖拽条。现在不只是装饰：按住往上拖可以把浮窗拉成全屏样式，
@@ -1125,7 +1125,7 @@ private fun FailedSheet(
  * 不滚动的话卡片会被撑到屏幕外，而固定高度又正好能让浮窗保持一个顺眼的尺寸。
  */
 @Composable
-private fun ModuleFlashLog(st: InstallUiState.ModuleConfirm) {
+private fun ModuleFlashLog(st: InstallUiState.ModuleConfirm, modifier: Modifier = Modifier) {
     val scroll = rememberScrollState()
     // 行数变了就把滚动位置贴到底（等一帧让 maxValue 更新）
     LaunchedEffect(st.log.size) {
@@ -1133,11 +1133,8 @@ private fun ModuleFlashLog(st: InstallUiState.ModuleConfirm) {
         runCatching { scroll.animateScrollTo(scroll.maxValue) }
     }
 
-    Spacer(Modifier.height(12.dp))
     Box(
-        Modifier
-            .fillMaxWidth()
-            .height(210.dp)
+        modifier
             .clip(androidx.compose.foundation.shape.RoundedCornerShape(16.dp))
             // 不再用黑底：跟随主题的浅容器色，和卡片其它部分是一套视觉
             .background(MaterialTheme.colorScheme.surfaceContainerHighest)
@@ -1196,13 +1193,12 @@ internal fun ModuleSheet(
             )
             .padding(horizontal = horizontalPadding)
     ) {
-        // 内容区可滚动、按钮固定在底部：刷完日志可能有几十行，
-        // 不滚动的话按钮会被顶出卡片（用户截图里按钮消失就是这个）
+        // 整页**不滚动**（滚动会把模块描述裁掉一半，用户明确否掉），
+        // 而是让日志区自己收缩：空间够就按内容高，不够就压到 min 再内部滚
         Column(
             Modifier
                 .fillMaxWidth()
                 .weight(1f, fill = false)
-                .verticalScroll(rememberScrollState())
         ) {
         Column(
             Modifier
@@ -1311,9 +1307,18 @@ internal fun ModuleSheet(
                             color = scheme.onSurfaceVariant
                         )
                     }
-                    // 刷入日志：就在卡片里实时滚动，不跳独立页面
+                    // 刷入日志：就在卡片里实时滚动，不跳独立页面。
+                    // weight(fill=false) + heightIn：空间够按内容，不够就压缩（内部滚动），
+                    // 这样整页不需要滚动，模块描述也不会被裁掉
                     if (st.flashing || st.log.isNotEmpty()) {
-                        ModuleFlashLog(st)
+                        Spacer(Modifier.height(12.dp))
+                        ModuleFlashLog(
+                            st,
+                            Modifier
+                                .fillMaxWidth()
+                                .weight(1f, fill = false)
+                                .heightIn(min = 96.dp, max = 210.dp)
+                        )
                     }
                     // 原始输出不再重复贴一遍：上面的控制台已经完整显示，
                     // 再贴一次会把内核/KS 的 ASCII banner 打两遍
