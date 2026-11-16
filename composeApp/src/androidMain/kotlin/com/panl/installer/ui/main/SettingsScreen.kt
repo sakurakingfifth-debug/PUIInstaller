@@ -24,6 +24,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.rememberCoroutineScope
 import kotlinx.coroutines.launch
 import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -105,6 +106,8 @@ fun SettingsScreen(topPad: Dp) {
     var updateState by remember { mutableStateOf("Idle") }
     var latestRelease by remember { mutableStateOf<com.panl.installer.core.UpdateChecker.Release?>(null) }
     var updateError by remember { mutableStateOf("") }
+    // 下载进度 0f~1f，-1f 表示还没开始
+    var updateProgress by remember { mutableFloatStateOf(-1f) }
     // 进页面自动查一次：用户打开设置就能看到有没有新版，不用先点一下
     androidx.compose.runtime.LaunchedEffect(Unit) {
         updateState = "Checking"
@@ -357,6 +360,10 @@ fun SettingsScreen(topPad: Dp) {
                             "发现新版本 ${latestRelease?.version}，点此更新",
                             "New version ${latestRelease?.version} available"
                         )
+                        "Downloading" -> tr(
+                            "正在下载 ${if (updateProgress >= 0f) "${(updateProgress * 100).toInt()}%" else "…"}",
+                            "Downloading ${if (updateProgress >= 0f) "${(updateProgress * 100).toInt()}%" else "…"}"
+                        )
                         "Failed" -> tr("检查失败：$updateError", "Failed: $updateError")
                         else -> tr("当前版本 $localVersion", "Current version $localVersion")
                     },
@@ -373,10 +380,57 @@ fun SettingsScreen(topPad: Dp) {
                         if (updateState == "Checking") return@PuiListRow
                         val pending = latestRelease
                         if (updateState == "HasUpdate" && pending != null) {
-                            // 已经查到新版了，再点就直接去下载
-                            val target = pending.apkUrl ?: pending.pageUrl
-                            if (pending.apkUrl == null) updateState = "Idle"
-                            runCatching { uriHandler.openUri(target) }
+                            // 已经查到新版了：自己下回来，再交给安装器（不走浏览器）
+                            val url = pending.apkUrl
+                            if (url == null) {
+                                // 没挂 APK 资产才退回浏览器
+                                updateState = "Idle"
+                                runCatching { uriHandler.openUri(pending.pageUrl) }
+                            } else if (updateState != "Downloading") {
+                                updateState = "Downloading"
+                                updateProgress = -1f
+                                scope.launch {
+                                    val result = kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) {
+                                        com.panl.installer.core.ApkDownloader(context)
+                                            .download(url) { received, total, _ ->
+                                                if (total > 0) updateProgress = received.toFloat() / total
+                                            }
+                                    }
+                                    when (result) {
+                                        is com.panl.installer.core.ApkDownloader.Result.Success -> {
+                                            // 交给 InstallActivity：content:// + 临时读权限，
+                                            // 直接 file:// 会触发 FileUriExposedException
+                                            val uri = runCatching {
+                                                androidx.core.content.FileProvider.getUriForFile(
+                                                    context,
+                                                    "${context.packageName}.files",
+                                                    result.file
+                                                )
+                                            }.getOrNull()
+                                            if (uri == null) {
+                                                updateError = tr("无法共享下载的文件", "Can't share the file")
+                                                updateState = "Failed"
+                                            } else {
+                                                val intent = Intent(context, com.panl.installer.ui.InstallActivity::class.java).apply {
+                                                    action = Intent.ACTION_VIEW
+                                                    setDataAndType(uri, "application/vnd.android.package-archive")
+                                                    addFlags(
+                                                        Intent.FLAG_GRANT_READ_URI_PERMISSION or
+                                                            Intent.FLAG_ACTIVITY_NEW_TASK
+                                                    )
+                                                }
+                                                runCatching { context.startActivity(intent) }
+                                                updateState = "HasUpdate"
+                                            }
+                                        }
+                                        is com.panl.installer.core.ApkDownloader.Result.Failure -> {
+                                            updateError = result.message.take(40)
+                                            updateState = "Failed"
+                                        }
+                                        else -> updateState = "HasUpdate"
+                                    }
+                                }
+                            }
                         } else {
                             updateState = "Checking"
                             scope.launch {

@@ -101,6 +101,17 @@
         <!-- 默认挂浮窗主题：ActivityManager 在启动时就用清单主题判断任务是否 translucent，
              代码里再 setTheme 已经来不及（会变成黑底、后面界面被隐藏） -->
 
+        <!-- 检查更新下载回来的 APK 交给 InstallActivity 时用 -->
+        <provider
+            android:name="androidx.core.content.FileProvider"
+            android:authorities="${applicationId}.files"
+            android:exported="false"
+            android:grantUriPermissions="true">
+            <meta-data
+                android:name="android.support.FILE_PROVIDER_PATHS"
+                android:resource="@xml/file_paths" />
+        </provider>
+
         <!-- 控制中心磁贴：点一下打开安装器主页面 -->
         <service
             android:name=".ui.tile.InstallerTileService"

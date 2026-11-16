@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 只把下载目录开放给 FileProvider：检查更新下回来的 APK 需要以 content:// 交给 InstallActivity，
+     直接用 file:// 会触发 FileUriExposedException（API 24+）。 -->
+<paths>
+    <cache-path name="updates" path="downloads/" />
+</paths>
