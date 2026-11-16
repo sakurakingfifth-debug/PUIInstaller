@@ -83,7 +83,7 @@ fun BrandSplash() {
             Spacer(Modifier.height(26.dp))
 
             Text(
-                tr("安装器", "Installer"),
+                tr("PUI 安装器", "PUI Installer"),
                 style = MaterialTheme.typography.headlineMedium,
                 fontWeight = FontWeight.SemiBold,
                 color = scheme.onBackground,

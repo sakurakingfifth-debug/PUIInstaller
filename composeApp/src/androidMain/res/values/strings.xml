@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="app_name">安装器</string>
+    <string name="app_name">PUI 安装器</string>
     <!-- 控制中心磁贴的名字 -->
-    <string name="tile_label">安装器</string>
+    <string name="tile_label">PUI 安装器</string>
 </resources>

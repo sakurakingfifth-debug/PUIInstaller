@@ -131,7 +131,7 @@ fun HomeScreen(
         contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = topPad, bottom = 130.dp)
     ) {
         item {
-            PuiPageTitle(tr("安装器", "Installer"))
+            PuiPageTitle(tr("PUI 安装器", "PUI Installer"))
             // 标题下不再挂副标题，只留一点呼吸空间
             Spacer(Modifier.height(14.dp))
         }
