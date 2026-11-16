@@ -128,6 +128,10 @@ data class BatchItem(
     val kind: BatchKind,
     val apk: ApkInfo? = null,
     val module: com.panl.installer.core.ModuleInfo? = null,
+    /** 「APK 即模块」：这个包里还带着 module.prop + zygisk/，可以改成当模块刷。 */
+    val embeddedModule: com.panl.installer.core.ModuleInfo? = null,
+    /** 用户选了「以 Zygisk 模块方式安装」（不装应用本体）。 */
+    val installAsModule: Boolean = false,
     val status: BatchStatus = BatchStatus.Pending,
     /** 失败原因 / 跳过原因，成功时为 null。 */
     val note: String? = null
@@ -993,7 +997,10 @@ class InstallController(
         // 只有复制到缓存的那份才由我们删
         if (staged.copied) batchStaged += file
 
-        if (settings.moduleFlashEnabled) {
+        // .apk 不算模块 zip：它可能自带 module.prop（「APK 即模块」），那就得先按 APK 解析，
+        // 再让用户选装应用还是当模块刷
+        val isApkFile = file.name.endsWith(".apk", true) || file.name.endsWith(".apk.1", true)
+        if (settings.moduleFlashEnabled && !isApkFile) {
             val module = withContext(Dispatchers.IO) { com.panl.installer.core.ModuleInspector.inspect(file) }
             if (module != null) return BatchItem(uri, name, BatchKind.Module, module = module)
         }
@@ -1012,7 +1019,12 @@ class InstallController(
         return if (info == null) {
             BatchItem(uri, name, BatchKind.Unknown, note = tr("不是有效的安装包", "Not a valid APK"))
         } else {
-            BatchItem(uri, name, BatchKind.Apk, apk = info)
+            // 内嵌模块（拆分包不查，分片里不会带模块信息）
+            val embedded =
+                if (bundle == null && settings.moduleFlashEnabled) {
+                    withContext(Dispatchers.IO) { com.panl.installer.core.ModuleInspector.inspect(file) }
+                } else null
+            BatchItem(uri, name, BatchKind.Apk, apk = info, embeddedModule = embedded)
         }
     }
 
@@ -1060,6 +1072,16 @@ class InstallController(
             InstallerLog.record(activity, "BATCH", "批量安装结束：成功 $done / 共 ${items.size}")
             state = InstallUiState.Batch(items.toList(), BatchPhase.Done)
         }
+    }
+
+    /** 批量里切换某一项的安装方式：应用 ⇄ Zygisk 模块。 */
+    fun toggleBatchModuleMode(index: Int) {
+        val st = state as? InstallUiState.Batch ?: return
+        val items = st.items.toMutableList()
+        val item = items.getOrNull(index) ?: return
+        if (item.embeddedModule == null) return
+        items[index] = item.copy(installAsModule = !item.installAsModule)
+        state = st.copy(items = items)
     }
 
     // ── 「APK 即模块」的安装方式选择 ───────────────────────────────────────
@@ -1138,7 +1160,18 @@ class InstallController(
     }
 
     private suspend fun installOne(item: BatchItem, rootMode: com.panl.installer.core.ModuleInstaller.RootMode): Pair<Boolean, String?> =
-        when (item.kind) {
+        when {
+            // 「APK 即模块」且用户选了模块方式：不装本体，直接把同一个文件当模块刷
+            item.installAsModule && item.embeddedModule != null -> {
+                val module = item.embeddedModule
+                val r = withContext(Dispatchers.IO) {
+                    com.panl.installer.core.ModuleInstaller.install(module.file, rootMode, module.id)
+                }
+                InstallerLog.record(activity, "BATCH", "模块 ${module.id} -> ${r.ok}")
+                r.ok to (if (r.ok) null else r.output.take(160).ifBlank { tr("刷入失败", "Flash failed") })
+            }
+
+            else -> when (item.kind) {
             BatchKind.Module -> {
                 val module = item.module ?: return false to tr("模块信息丢失", "Module info lost")
                 val r = withContext(Dispatchers.IO) {
@@ -1151,6 +1184,7 @@ class InstallController(
             BatchKind.Apk -> installApkOf(item)
 
             BatchKind.Unknown -> false to item.note
+            }
         }
 
     /** 装一个 APK：和单个流程同一套会话 + 结果等待，只是不驱动 UI 状态。 */

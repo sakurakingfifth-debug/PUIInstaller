@@ -72,7 +72,13 @@ fun BatchBody(
                 .verticalScroll(rememberScrollState())
         ) {
             st.items.forEachIndexed { index, item ->
-                BatchRow(item, index, compact) { controller.openSplitPicker(index) }
+                BatchRow(
+                    item = item,
+                    index = index,
+                    compact = compact,
+                    onPickSplits = { controller.openSplitPicker(index) },
+                    onToggleMode = { controller.toggleBatchModuleMode(index) }
+                )
                 if (index != st.items.lastIndex) PuiDivider(startIndent = 32.dp)
             }
         }
@@ -191,7 +197,8 @@ private fun BatchRow(
     item: BatchItem,
     index: Int,
     compact: Boolean,
-    onPickSplits: () -> Unit = {}
+    onPickSplits: () -> Unit = {},
+    onToggleMode: () -> Unit = {}
 ) {
     val scheme = MaterialTheme.colorScheme
     val accent = when (item.status) {
@@ -256,6 +263,28 @@ private fun BatchRow(
                     modifier = Modifier
                         .clip(RoundedCornerShape(6.dp))
                         .clickable(onClick = onPickSplits)
+                        .padding(horizontal = 2.dp, vertical = 2.dp)
+                )
+            }
+            // 「APK 即模块」：允许逐项切换装应用 / 当 Zygisk 模块刷
+            if (item.embeddedModule != null) {
+                MarqueeText(
+                    text = if (item.installAsModule) {
+                        tr(
+                            "安装方式：Zygisk 模块（${item.embeddedModule.id}）· 点此改回装应用",
+                            "Mode: Zygisk module (${item.embeddedModule.id}) · tap to install as app"
+                        )
+                    } else {
+                        tr(
+                            "安装方式：应用 · 点此改成 Zygisk 模块",
+                            "Mode: app · tap to flash as Zygisk module"
+                        )
+                    },
+                    style = MaterialTheme.typography.labelSmall,
+                    color = if (item.installAsModule) scheme.primary else scheme.onSurfaceVariant,
+                    modifier = Modifier
+                        .clip(RoundedCornerShape(6.dp))
+                        .clickable(onClick = onToggleMode)
                         .padding(horizontal = 2.dp, vertical = 2.dp)
                 )
             }
