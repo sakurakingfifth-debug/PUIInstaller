@@ -1137,7 +1137,7 @@ private fun ModuleFlashLog(st: InstallUiState.ModuleConfirm) {
     Box(
         Modifier
             .fillMaxWidth()
-            .height(230.dp)
+            .height(210.dp)
             .clip(androidx.compose.foundation.shape.RoundedCornerShape(16.dp))
             // 不再用黑底：跟随主题的浅容器色，和卡片其它部分是一套视觉
             .background(MaterialTheme.colorScheme.surfaceContainerHighest)
@@ -1190,9 +1190,20 @@ internal fun ModuleSheet(
     Column(
         Modifier
             .fillMaxWidth()
-            .heightIn(min = if (horizontalPadding > 20.dp) 380.dp else 340.dp)
+            .heightIn(
+                min = if (horizontalPadding > 20.dp) 380.dp else 340.dp,
+                max = SHEET_MAX_CONTENT_H_MODULE
+            )
             .padding(horizontal = horizontalPadding)
     ) {
+        // 内容区可滚动、按钮固定在底部：刷完日志可能有几十行，
+        // 不滚动的话按钮会被顶出卡片（用户截图里按钮消失就是这个）
+        Column(
+            Modifier
+                .fillMaxWidth()
+                .weight(1f, fill = false)
+                .verticalScroll(rememberScrollState())
+        ) {
         Column(
             Modifier
                 .fillMaxWidth()
@@ -1326,6 +1337,11 @@ internal fun ModuleSheet(
                 }
             }
         }
+
+        }  // end 内容滚动区
+
+        // 滚动区贴到底时日志会顶到按钮上，留 10dp 呼吸位
+        Spacer(Modifier.height(10.dp))
 
         Row(
             Modifier.fillMaxWidth().padding(bottom = 4.dp),
