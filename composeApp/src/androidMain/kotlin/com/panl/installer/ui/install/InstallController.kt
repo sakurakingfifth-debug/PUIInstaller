@@ -423,7 +423,18 @@ class InstallController(
                 if (BundleReader.isBundle(file.name)) BundleReader.extract(activity, file) else null
             }
             bundleDir = bundle?.dir
-            val target = bundle?.base ?: file
+            // 普通压缩包（不是模块、也不是 apks/xapk）：里面塞了 apk 就直接挖出来装
+            var target = bundle?.base ?: file
+            if (bundle == null && !isApkFile) {
+                val inner = withContext(Dispatchers.IO) {
+                    com.panl.installer.core.InnerApk.extract(activity, file)
+                }
+                if (inner != null) {
+                    innerApk = inner
+                    target = inner
+                    InstallerLog.record(activity, "OPEN", "从压缩包取出 ${inner.name}")
+                }
+            }
             val info = withContext(Dispatchers.IO) { ApkInspector.inspect(activity, target) }
                 ?.copy(
                     sourceLabel = resolveSourceLabel(activity),
@@ -488,6 +499,8 @@ class InstallController(
     fun openPicked(uri: Uri) {
         // 上一轮的暂存/解包先清掉，避免叠一堆缓存
         stagedFile?.delete()
+        innerApk?.delete()
+        innerApk = null
         bundleDir?.deleteRecursively()
         stagedFile = null
         bundleDir = null
@@ -745,6 +758,8 @@ class InstallController(
             }
             // 安装成功后：清掉暂存文件，再按设置决定是否删除源安装包
             stagedFile?.delete()
+        innerApk?.delete()
+        innerApk = null
             val shouldDelete = settings.deleteApkAfterInstall
             if (shouldDelete && settings.confirmBeforeDelete) {
                 deleteDialogVisible = true
@@ -1084,7 +1099,16 @@ class InstallController(
             if (BundleReader.isBundle(file.name)) BundleReader.extract(activity, file) else null
         }
         bundle?.let { batchDirs += it.dir }
-        val target = bundle?.base ?: file
+        var target = bundle?.base ?: file
+        if (bundle == null && !isApkFile) {
+            val inner = withContext(Dispatchers.IO) {
+                com.panl.installer.core.InnerApk.extract(activity, file)
+            }
+            if (inner != null) {
+                target = inner
+                inner.parentFile?.let { batchDirs += it }
+            }
+        }
         val info = withContext(Dispatchers.IO) { ApkInspector.inspect(activity, target) }
             ?.copy(
                 sourceLabel = resolveSourceLabel(activity),
@@ -1171,6 +1195,9 @@ class InstallController(
      * 弹出来的音量面板会挡住日志，而且是系统级窗口，应用层没法隐藏，只能这样压掉。
      */
     private var keyGuard: Process? = null
+
+    /** 从普通压缩包里挖出来的 APK（自己解压的，退出时要删）。 */
+    private var innerApk: File? = null
 
     fun closeHybridPicker() {
         hybridPickerOpen = false
@@ -1314,6 +1341,8 @@ class InstallController(
         // 批量流程还在跑的话先掐掉，否则它会在页面没了之后继续装
         batchJob?.cancel()
         stagedFile?.delete()
+        innerApk?.delete()
+        innerApk = null
         bundleDir?.deleteRecursively()
         batchStaged.forEach { runCatching { it.delete() } }
         batchDirs.forEach { runCatching { it.deleteRecursively() } }
