@@ -640,23 +640,25 @@ private fun ReadySheet(
         // 未签名：系统 PMS 一定拒装，提前讲清楚，别等点了安装才报错
         if (info.signers.isEmpty()) {
             Spacer(Modifier.height(8.dp))
-            Row(
+            // 图标放文字上方并整体居中：放在左侧时，文字宽度几乎占满整行，
+            // 会把图标挤到边缘甚至压在一起（3.8.46 的样子）
+            Column(
                 Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.Center,
-                verticalAlignment = Alignment.CenterVertically
+                horizontalAlignment = Alignment.CenterHorizontally
             ) {
                 androidx.compose.foundation.Image(
                     painter = androidx.compose.ui.res.painterResource(R.drawable.ic_info_warning),
                     contentDescription = null,
-                    modifier = Modifier.size(18.dp),
+                    modifier = Modifier.size(20.dp),
                     colorFilter = androidx.compose.ui.graphics.ColorFilter.tint(scheme.error)
                 )
-                Spacer(Modifier.width(6.dp))
+                Spacer(Modifier.height(6.dp))
                 Text(
                     tr("该安装包没有签名；核心破解生效时可直接装，否则会自动补签", "Unsigned — installs directly if core patch is active, otherwise it gets re-signed"),
                     style = MaterialTheme.typography.bodySmall,
                     color = scheme.error,
-                    textAlign = TextAlign.Center
+                    textAlign = TextAlign.Center,
+                    modifier = Modifier.fillMaxWidth()
                 )
             }
         }
