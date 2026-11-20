@@ -406,6 +406,7 @@ class InstallController(
             }
             val file = result.file
             safeRetryDone = false
+            resignRetried = false
             // 模块 zip：里面是 module.prop 而不是 APK，走模块刷入这条状态。
             // 注意要排除 .apk —— 「APK 即模块」的包根目录也有 module.prop，
             // 直接当模块处理就跳过了「装应用 / 当模块」的选择（3.7.97 第一版就是这么错的）
@@ -581,6 +582,30 @@ class InstallController(
         }
     }
 
+    /**
+     * 系统里的签名校验是否已被破解。
+     *
+     * 两条来源：
+     *  1. 本模块（PUI 自带的核心破解）真的在 system 作用域里跑 —— [com.panl.installer.corepatch.CorePatchPrefs.activeInSystem]；
+     *  2. 装了 coderstory 的「核心破解」（com.coderstory.toolkit）—— 它同样把 PMS 的签名校验 hook 掉了，
+     *     只是我们读不到它的开关，所以「装了」就当作可能生效，先按原样装，失败了再补签。
+     */
+    private fun signatureCheckPatched(): Boolean {
+        if (com.panl.installer.corepatch.CorePatchPrefs.activeInSystem) return true
+        return runCatching {
+            activity.packageManager.getPackageInfo("com.coderstory.toolkit", 0) != null
+        }.getOrDefault(false)
+    }
+
+    /** 系统是不是因为「包里没有证书」拒的。 */
+    private fun isNoCertificates(outcome: com.panl.installer.core.InstallEngine.Outcome): Boolean {
+        val m = outcome.message
+        return m.contains("NO_CERTIFICATES", true) ||
+            m.contains("no signatures", true) ||
+            m.contains("Missing certificates", true) ||
+            m.contains("没有签名", true)
+    }
+
     /** 日志封顶：只保留最后 [MAX_LOG] 行，长脚本不至于把整列列表撑爆。 */
     private fun appendLog(old: List<String>, line: String): List<String> =
         if (old.size < MAX_LOG) old + line else old.drop(old.size - MAX_LOG + 1) + line
@@ -622,8 +647,10 @@ class InstallController(
     fun startInstall() {
         val info = (state as? InstallUiState.Ready)?.info ?: return
 
-        // 未签名：PMS 必拒，先补个签名再往下走（签完是新包，签名不是原作者的）
-        if (com.panl.installer.core.ApkResigner.needsResign(info)) {
+        // 未签名 + 系统没被破解：PMS 必拒，先补个签名再往下走。
+        // 但如果核心破解已经在系统框架里生效（本模块 activeInSystem，或装了 coderstory 那套），
+        // 系统会直接放过无签名包 —— 这时**绝不能**补签：换了签名等于把后续更新全废掉。
+        if (com.panl.installer.core.ApkResigner.needsResign(info) && !signatureCheckPatched()) {
             if (resigning) return
             resigning = true
             state = InstallUiState.Preparing(null)
@@ -791,6 +818,35 @@ class InstallController(
                 if (settings.showNotification) {
                     Notifications.showFailed(activity, info.label, outcome.message)
                 }
+                // 系统以「没有证书」拒了：说明这台机器没有可用的核心破解，
+                // 补个签名再试一次（这一次不算失败，先不弹失败通知）
+                if (!resignRetried && info.signers.isEmpty() && isNoCertificates(outcome)) {
+                    resignRetried = true
+                    state = InstallUiState.Installing(
+                        tr("系统拒绝了无签名包，正在补签后重试", "Unsigned APK rejected — re-signing and retrying"),
+                        null
+                    )
+                    val signed = withContext(Dispatchers.IO) {
+                        com.panl.installer.core.ApkResigner.resign(activity, info.file)
+                    }
+                    val reInfo = signed?.let {
+                        withContext(Dispatchers.IO) { com.panl.installer.core.ApkInspector.inspect(activity, it) }
+                    }
+                    if (signed != null && reInfo != null) {
+                        resignedApk = signed
+                        com.panl.installer.core.InstallerLog.record(activity, "SIGN", "系统拒绝无签名包，已补签重试 ${info.file.name}")
+                        installedInfo = reInfo.copy(splits = info.splits, selectedSplits = info.selectedSplits)
+                        state = InstallUiState.Ready(installedInfo!!, null)
+                        startInstall()
+                        return@launch
+                    }
+                    state = InstallUiState.Failed(
+                        info,
+                        tr("该安装包没有签名，补签也没成功", "The APK is unsigned and re-signing failed")
+                    )
+                    return@launch
+                }
+
                 // 系统拦截了这次安装（ROM 的安装校验 / 开发者验证）：
                 // 自动切到安全模式，去掉伪造安装者和测试包，再试一次
                 if (!settings.safeMode && !safeRetryDone && isBlocked(outcome)) {
@@ -1275,6 +1331,9 @@ class InstallController(
 
     /** 正在补签，防止连点重复签。 */
     private var resigning = false
+
+    /** 已经因为「没证书」补签重试过一次，避免死循环。 */
+    private var resignRetried = false
 
     fun closeHybridPicker() {
         hybridPickerOpen = false

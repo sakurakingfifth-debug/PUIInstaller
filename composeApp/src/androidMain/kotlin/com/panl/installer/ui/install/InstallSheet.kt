@@ -652,7 +652,7 @@ private fun ReadySheet(
                 )
                 Spacer(Modifier.width(6.dp))
                 Text(
-                    tr("该安装包没有签名，安装时会自动用本地密钥补签", "Unsigned — it will be re-signed with a local key before installing"),
+                    tr("该安装包没有签名；核心破解生效时可直接装，否则会自动补签", "Unsigned — installs directly if core patch is active, otherwise it gets re-signed"),
                     style = MaterialTheme.typography.bodySmall,
                     color = scheme.error
                 )
