@@ -637,6 +637,28 @@ private fun ReadySheet(
 
         SheetVersionCard(info)
 
+        // 未签名：系统 PMS 一定拒装，提前讲清楚，别等点了安装才报错
+        if (info.signers.isEmpty()) {
+            Spacer(Modifier.height(8.dp))
+            Row(
+                Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.Center,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                PuiIconView(
+                    PuiIcon.Warning,
+                    Modifier.size(16.dp),
+                    tint = scheme.error
+                )
+                Spacer(Modifier.width(6.dp))
+                Text(
+                    tr("该安装包没有签名，系统会拒绝安装", "This APK is unsigned and will be rejected"),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = scheme.error
+                )
+            }
+        }
+
         val signer = info.primarySigner
         if (signer?.isAosp == true) {
             Spacer(Modifier.height(8.dp))

@@ -106,12 +106,19 @@ object ApkInspector {
             PackageManager.GET_SIGNING_CERTIFICATES or
             PackageManager.GET_META_DATA
 
-        val pi: PackageInfo = if (Build.VERSION.SDK_INT >= 33) {
-            pm.getPackageArchiveInfo(file.absolutePath, PackageManager.PackageInfoFlags.of(flags.toLong()))
+        fun archiveInfo(flag: Int): PackageInfo? = if (Build.VERSION.SDK_INT >= 33) {
+            pm.getPackageArchiveInfo(file.absolutePath, PackageManager.PackageInfoFlags.of(flag.toLong()))
         } else {
             @Suppress("DEPRECATION")
-            pm.getPackageArchiveInfo(file.absolutePath, flags)
-        } ?: return null
+            pm.getPackageArchiveInfo(file.absolutePath, flag)
+        }
+
+        // 带 GET_SIGNING_CERTIFICATES 时，**未签名**的 APK 会被 PackageManager 直接解析失败返回 null
+        // （收集证书那步抛异常），于是界面误报「无法解析安装包」。
+        // 这里去掉签名标志再试一次：能解析就说明包本身没问题，只是没签名。
+        val pi: PackageInfo = archiveInfo(flags)
+            ?: archiveInfo(PackageManager.GET_PERMISSIONS or PackageManager.GET_META_DATA)
+            ?: return null
 
         val ai = pi.applicationInfo ?: return null
         // getApplicationIcon 要靠这两个字段去找 APK 里的资源
