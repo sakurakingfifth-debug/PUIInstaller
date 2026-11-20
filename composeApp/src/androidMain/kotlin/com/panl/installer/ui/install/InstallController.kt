@@ -426,11 +426,22 @@ class InstallController(
             // 普通压缩包（不是模块、也不是 apks/xapk）：里面塞了 apk 就直接挖出来装
             var target = bundle?.base ?: file
             if (bundle == null && !isApkFile) {
-                val inner = withContext(Dispatchers.IO) {
-                    com.panl.installer.core.InnerApk.extract(activity, file)
+                // 一次把里面所有能装的都取出来：单个照旧走确认页，多个（含 apk+apks 混搭）
+                // 直接转成批量列表，别静默丢掉其它的
+                val inners = withContext(Dispatchers.IO) {
+                    com.panl.installer.core.InnerApk.list(activity, file)
                 }
+                if (inners.size >= 2) {
+                    InstallerLog.record(activity, "OPEN", "压缩包里有 ${inners.size} 个可装项，转批量")
+                    inners.firstOrNull()?.parentFile?.let { batchDirs += it }
+                    val items = inners.map { inspectStaged(it, it.name) }
+                    state = InstallUiState.Batch(items, BatchPhase.Ready)
+                    return@launch
+                }
+                val inner = inners.firstOrNull()
                 if (inner != null) {
                     innerApk = inner
+                    inner.parentFile?.let { batchDirs += it }
                     target = inner
                     InstallerLog.record(activity, "OPEN", "从压缩包取出 ${inner.name}")
                 }
@@ -1134,7 +1145,19 @@ class InstallController(
         }
         // 只有复制到缓存的那份才由我们删
         if (staged.copied) batchStaged += file
+        return inspectStaged(file, name, uri)
+    }
 
+    /**
+     * 已经是本地文件的项：压缩包里解出来的、批量暂存的都走这里。
+     *
+     * 判定顺序和单个打开一致：模块 → 拆分包 → APK，只差「没有 uri 可回写」。
+     */
+    private suspend fun inspectStaged(
+        file: File,
+        name: String,
+        uri: Uri = Uri.fromFile(file)
+    ): BatchItem {
         // .apk 不算模块 zip：它可能自带 module.prop（「APK 即模块」），那就得先按 APK 解析，
         // 再让用户选装应用还是当模块刷
         val isApkFile = file.name.endsWith(".apk", true) || file.name.endsWith(".apk.1", true)
