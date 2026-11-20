@@ -1152,7 +1152,8 @@ private fun ModuleFlashLog(st: InstallUiState.ModuleConfirm, modifier: Modifier 
     // 行数变了就把滚动位置贴到底（等一帧让 maxValue 更新）
     LaunchedEffect(st.log.size) {
         withFrameNanos { }
-        runCatching { scroll.animateScrollTo(scroll.maxValue) }
+        // 用 scrollTo 而不是 animateScrollTo：输出密集时动画会排队，看着像是卡住
+        runCatching { scroll.scrollTo(scroll.maxValue) }
     }
 
     Box(

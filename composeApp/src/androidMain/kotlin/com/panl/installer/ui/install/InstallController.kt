@@ -543,7 +543,7 @@ class InstallController(
                     onLine = { line ->
                         activity.runOnUiThread {
                             (state as? InstallUiState.ModuleConfirm)?.let {
-                                state = it.copy(log = it.log + line)
+                                state = it.copy(log = appendLog(it.log, line))
                             }
                         }
                     }
@@ -559,7 +559,8 @@ class InstallController(
                     flashing = false,
                     output = result.output,
                     failed = !result.ok,
-                    log = it.log + listOf(
+                    log = appendLog(
+                        it.log,
                         if (result.ok) "- Done" else "- 失败：${result.output.lineSequence().firstOrNull { l -> l.contains("错误", true) || l.contains("Error", true) || l.contains("失败") }?.take(160) ?: "见上方输出"}"
                     )
                 )
@@ -567,16 +568,24 @@ class InstallController(
         }
     }
 
+    /** 日志封顶：只保留最后 [MAX_LOG] 行，长脚本不至于把整列列表撑爆。 */
+    private fun appendLog(old: List<String>, line: String): List<String> =
+        if (old.size < MAX_LOG) old + line else old.drop(old.size - MAX_LOG + 1) + line
+
     /** 需要按键的模块：刷写期间持续关闭系统音量条 / 电源菜单。 */
     private fun startKeyGuard() {
         if (keyGuard != null) return
         runCatching {
+            // 两个保险：应用进程被杀（kill -0 失败）或超过 10 分钟就自己退出，
+            // 否则 su 循环会一直发广播关系统弹窗，耗电还扰民
+            val pid = android.os.Process.myPid()
             keyGuard = ProcessBuilder(
                 "su", "-c",
-                "rm -f /data/local/tmp/pui_keyguard_stop; " +
-                    "while [ ! -f /data/local/tmp/pui_keyguard_stop ]; do " +
+                "rm -f /data/local/tmp/pui_keyguard_stop; i=0; " +
+                    "while [ ! -f /data/local/tmp/pui_keyguard_stop ] && [ \$i -lt 1200 ] " +
+                    "&& kill -0 $pid 2>/dev/null; do " +
                     "am broadcast -a android.intent.action.CLOSE_SYSTEM_DIALOGS >/dev/null 2>&1; " +
-                    "sleep 0.5; done"
+                    "sleep 0.5; i=\$((i+1)); done"
             ).redirectErrorStream(true).start()
             com.panl.installer.core.InstallerLog.record(activity, "MODULE", "已启动按键守护（屏蔽音量条/电源菜单）")
         }.onFailure {
@@ -758,8 +767,8 @@ class InstallController(
             }
             // 安装成功后：清掉暂存文件，再按设置决定是否删除源安装包
             stagedFile?.delete()
-        innerApk?.delete()
-        innerApk = null
+            innerApk?.delete()
+            innerApk = null
             val shouldDelete = settings.deleteApkAfterInstall
             if (shouldDelete && settings.confirmBeforeDelete) {
                 deleteDialogVisible = true
@@ -1352,5 +1361,8 @@ class InstallController(
 
     companion object {
         const val ACTION_CONFIRM_INSTALL = "android.content.pm.action.CONFIRM_INSTALL"
+
+        /** 刷写日志最多留多少行，长脚本不至于把内存和重组压垮。 */
+        private const val MAX_LOG = 400
     }
 }

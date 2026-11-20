@@ -24,9 +24,16 @@ object InnerApk {
 
     /** 取出来的 APK 放在 cache/inner_apk 下，由调用方负责清理。 */
     fun extract(context: Context, zip: File): File? {
-        val dir = File(context.cacheDir, "inner_apk").apply { mkdirs() }
-        // 上一轮留下的先清掉，别越堆越多
-        dir.listFiles()?.forEach { runCatching { it.delete() } }
+        // 每次用独立子目录：批量里两个 zip 里都叫 base.apk 时不会互相覆盖，
+        // 也避免「清空目录」把另一次正在用的文件删掉
+        val root = File(context.cacheDir, "inner_apk").apply { mkdirs() }
+        // 超过一天的直接清掉，别越堆越多
+        val now = System.currentTimeMillis()
+        root.listFiles()?.forEach { f ->
+            if (now - f.lastModified() > 24 * 3600_000L) runCatching { f.deleteRecursively() }
+        }
+        val dir = File(root, System.currentTimeMillis().toString() + "-" + (zip.name.hashCode() and 0xffff))
+            .apply { mkdirs() }
 
         return runCatching {
             java.util.zip.ZipFile(zip).use { zf ->

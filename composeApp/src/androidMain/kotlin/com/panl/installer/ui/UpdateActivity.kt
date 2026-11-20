@@ -58,7 +58,6 @@ import com.panl.installer.ui.theme.InstallerTheme
 import com.panl.pui.PuiIcon
 import com.panl.pui.PuiIconView
 import com.panl.pui.puiProgressiveTopBlur
-import com.panl.pui.rememberPuiTopBlurHeight
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -124,7 +123,6 @@ private fun UpdateScreen(onClose: () -> Unit) {
 
     val density = androidx.compose.ui.platform.LocalDensity.current.density
     val settings = com.panl.installer.core.Settings.get(context)
-    val blurH = com.panl.pui.rememberPuiTopBlurHeight()
     // 用主题实际生效的背景亮度判断明暗，比读设置里的开关靠谱（还有跟随系统的情况）
     val isDark = scheme.surface.luminance() < 0.5f
 
