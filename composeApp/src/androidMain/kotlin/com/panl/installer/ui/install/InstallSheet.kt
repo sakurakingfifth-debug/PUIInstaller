@@ -645,16 +645,18 @@ private fun ReadySheet(
                 horizontalArrangement = Arrangement.Center,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                PuiIconView(
-                    PuiIcon.Warning,
-                    Modifier.size(16.dp),
-                    tint = scheme.error
+                androidx.compose.foundation.Image(
+                    painter = androidx.compose.ui.res.painterResource(R.drawable.ic_info_warning),
+                    contentDescription = null,
+                    modifier = Modifier.size(18.dp),
+                    colorFilter = androidx.compose.ui.graphics.ColorFilter.tint(scheme.error)
                 )
                 Spacer(Modifier.width(6.dp))
                 Text(
                     tr("该安装包没有签名；核心破解生效时可直接装，否则会自动补签", "Unsigned — installs directly if core patch is active, otherwise it gets re-signed"),
                     style = MaterialTheme.typography.bodySmall,
-                    color = scheme.error
+                    color = scheme.error,
+                    textAlign = TextAlign.Center
                 )
             }
         }
@@ -1657,15 +1659,19 @@ private fun SheetVersionCard(info: ApkInfo) {
         }
 
         Spacer(Modifier.height(10.dp))
-        Box(
-            Modifier
-                .fillMaxWidth()
-                .height(0.8.dp)
-                .background(scheme.outlineVariant.copy(alpha = 0.7f))
-        )
-        Spacer(Modifier.height(8.dp))
+        // 更新场景不显示说明行，分割线和间距也一起去掉，
+        // 否则卡片底部会留一条悬空的细线 + 空白
+        if (relation != VersionRelation.UPDATE) {
+            Box(
+                Modifier
+                    .fillMaxWidth()
+                    .height(0.8.dp)
+                    .background(scheme.outlineVariant.copy(alpha = 0.7f))
+            )
+            Spacer(Modifier.height(8.dp))
+        }
 
-        Text(
+        if (relation != VersionRelation.UPDATE) Text(
             text = when (relation) {
                 VersionRelation.NEW -> tr("当前设备未安装该应用，将作为新应用安装", "Not installed on this device — it will be installed as a new app")
                 VersionRelation.UPDATE ->
