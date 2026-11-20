@@ -29,6 +29,8 @@ kotlin {
             implementation("io.github.libxposed:service:101.0.0")
             implementation("androidx.lifecycle:lifecycle-runtime-compose:2.8.7")
             implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.9.0")
+            // 未签名包重签：APK v2/v3 签名直接用 Google 的 apksig（AGP 内部同款，离线可用）
+            implementation("com.android.tools.build:apksig:8.1.2")
         }
     }
 }
@@ -47,8 +49,8 @@ android {
         // versionCode 每次迭代 **+10**（3.7.72 起：109000001 → 109000011 → …；更早是 +1000000），
         // 且必须 ≥ 系统预装的 17700004，否则 PMS 会拒绝覆盖安装
         // （System app cannot be downgraded to older than its preloaded version）。
-        versionCode = 109000701
-        versionName = "3.8.42"
+        versionCode = 109000711
+        versionName = "3.8.43"
     }
 
     compileOptions {

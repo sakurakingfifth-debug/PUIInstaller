@@ -652,7 +652,7 @@ private fun ReadySheet(
                 )
                 Spacer(Modifier.width(6.dp))
                 Text(
-                    tr("该安装包没有签名，系统会拒绝安装", "This APK is unsigned and will be rejected"),
+                    tr("该安装包没有签名，安装时会自动用本地密钥补签", "Unsigned — it will be re-signed with a local key before installing"),
                     style = MaterialTheme.typography.bodySmall,
                     color = scheme.error
                 )

@@ -501,6 +501,8 @@ class InstallController(
         stagedFile?.delete()
         innerApk?.delete()
         innerApk = null
+        resignedApk?.delete()
+        resignedApk = null
         bundleDir?.deleteRecursively()
         stagedFile = null
         bundleDir = null
@@ -608,6 +610,43 @@ class InstallController(
 
     fun startInstall() {
         val info = (state as? InstallUiState.Ready)?.info ?: return
+
+        // 未签名：PMS 必拒，先补个签名再往下走（签完是新包，签名不是原作者的）
+        if (com.panl.installer.core.ApkResigner.needsResign(info)) {
+            if (resigning) return
+            resigning = true
+            state = InstallUiState.Preparing(null)
+            activity.lifecycleScope.launch {
+                val signed = withContext(Dispatchers.IO) {
+                    com.panl.installer.core.ApkResigner.resign(activity, info.file)
+                }
+                val reInfo = signed?.let {
+                    withContext(Dispatchers.IO) { com.panl.installer.core.ApkInspector.inspect(activity, it) }
+                }
+                resigning = false
+                if (signed == null || reInfo == null) {
+                    com.panl.installer.core.InstallerLog.record(activity, "SIGN", "补签失败 ${info.file.name}")
+                    state = InstallUiState.Error(
+                        tr("无法安装未签名包", "Can't install an unsigned APK"),
+                        tr(
+                            "这个包没有签名，系统会拒绝安装；补签也失败了（包结构可能有问题）。",
+                            "This APK is unsigned and the system rejects it; re-signing also failed."
+                        )
+                    )
+                    return@launch
+                }
+                resignedApk = signed
+                com.panl.installer.core.InstallerLog.record(activity, "SIGN", "已补签 ${info.file.name} -> ${signed.name}")
+                // 用签好的这份继续：分片信息沿用原来的
+                installedInfo = reInfo.copy(
+                    splits = info.splits,
+                    selectedSplits = info.selectedSplits
+                )
+                state = InstallUiState.Ready(installedInfo!!, null)
+                startInstall()
+            }
+            return
+        }
 
         // 包名黑名单 / SharedUID 黑名单：命中直接拒
         val uid = info.sharedUserId
@@ -1208,6 +1247,12 @@ class InstallController(
     /** 从普通压缩包里挖出来的 APK（自己解压的，退出时要删）。 */
     private var innerApk: File? = null
 
+    /** 未签名包补签出来的副本（cache/resigned，退出时删）。 */
+    private var resignedApk: File? = null
+
+    /** 正在补签，防止连点重复签。 */
+    private var resigning = false
+
     fun closeHybridPicker() {
         hybridPickerOpen = false
     }
@@ -1284,9 +1329,12 @@ class InstallController(
             // 「APK 即模块」且用户选了模块方式：不装本体，直接把同一个文件当模块刷
             item.installAsModule && item.embeddedModule != null -> {
                 val module = item.embeddedModule
+                // 批量里也可能是要按键的脚本，守护同样要开
+                startKeyGuard()
                 val r = withContext(Dispatchers.IO) {
                     com.panl.installer.core.ModuleInstaller.install(module.file, rootMode, module.id)
                 }
+                stopKeyGuard()
                 InstallerLog.record(activity, "BATCH", "模块 ${module.id} -> ${r.ok}")
                 r.ok to (if (r.ok) null else r.output.take(160).ifBlank { tr("刷入失败", "Flash failed") })
             }
@@ -1294,9 +1342,11 @@ class InstallController(
             else -> when (item.kind) {
             BatchKind.Module -> {
                 val module = item.module ?: return false to tr("模块信息丢失", "Module info lost")
+                startKeyGuard()
                 val r = withContext(Dispatchers.IO) {
                     com.panl.installer.core.ModuleInstaller.install(module.file, rootMode, module.id)
                 }
+                stopKeyGuard()
                 InstallerLog.record(activity, "BATCH", "模块 ${module.id} -> ${r.ok}")
                 r.ok to (if (r.ok) null else r.output.take(160).ifBlank { tr("刷入失败", "Flash failed") })
             }
@@ -1352,6 +1402,8 @@ class InstallController(
         stagedFile?.delete()
         innerApk?.delete()
         innerApk = null
+        resignedApk?.delete()
+        resignedApk = null
         bundleDir?.deleteRecursively()
         batchStaged.forEach { runCatching { it.delete() } }
         batchDirs.forEach { runCatching { it.deleteRecursively() } }
