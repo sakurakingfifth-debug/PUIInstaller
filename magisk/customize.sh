@@ -134,6 +134,67 @@ clean_files() {
     rm -rf /data/resource-cache/* /data/system/package_cache/* 2>/dev/null
 }
 
+
+# ---- 挂载失败兜底 ----
+# 某些 root 实现（现场：SukiSU LKM + ColorOS 17）**不会**把模块里的 system_ext
+# 挂到 /system_ext，system_server 读到的还是厂商原 APK（PMS 仍报 17.0.1）。
+# 更麻烦的是 KernelSU 系默认对普通应用进程 kernel_umount，就算挂上了也会被摘掉，
+# 应用进程再打开系统路径读到厂商 APK → ClassNotFoundException → 闪退。
+#
+# 两段兜底，都只在「挂载确实没生效」时动作，挂载正常的机器上完全是空转：
+#   1. post-fs-data.sh：把模块 APK 文件级 bind mount 到系统路径，让 PMS 先认出来；
+#   2. service.sh 里追加：系统路径仍是厂商 APK 时，用同一份 APK 补一个 /data/app 更新，
+#      这样应用进程从 /data/app 启动，不受 kernel_umount 影响。
+write_fallbacks() {
+    [ -n "$sys_apk" ] && [ -n "$rel" ] && [ -n "$apk_name" ] || return 0
+
+    cat > "$MODPATH/post-fs-data.sh" <<PFS
+#!/system/bin/sh
+# 自动生成：模块里的 system_ext 没被挂上时，用 bind mount 兜底
+MODDIR=\${0%/*}
+TARGET="$sys_apk"
+# 模块里这份 APK 可能被不同 root 实现挪到 system/ 下或顶层 system_ext/，
+# 按名字找最稳（目录很小，find 开销可忽略）
+SRC=\$(find "\$MODDIR" -type f -name "$apk_name" 2>/dev/null | head -n 1)
+[ -f "\$SRC" ] || exit 0
+[ -f "\$TARGET" ] || exit 0
+a=\$(stat -c %s "\$SRC" 2>/dev/null)
+b=\$(stat -c %s "\$TARGET" 2>/dev/null)
+# 大小一致说明挂载已经生效（就是模块里的文件），不用动
+[ -n "\$a" ] && [ "\$a" = "\$b" ] && exit 0
+mount --bind "\$SRC" "\$TARGET" 2>/dev/null || true
+PFS
+    chmod 755 "$MODPATH/post-fs-data.sh"
+
+    cat >> "$MODPATH/service.sh" <<SVC
+
+# ---- 自动补装 /data/app 更新（SukiSU 等会对普通应用 kernel_umount 的场景）----
+(
+    i=0
+    while [ "\$i" -lt 60 ]; do
+        pm path android >/dev/null 2>&1 && break
+        sleep 2
+        i=\$((i + 1))
+    done
+    MODDIR=\$(cd "\$(dirname "\$0")" 2>/dev/null && pwd)
+    APK=\$(find "\$MODDIR" -type f -name "$apk_name" 2>/dev/null | head -n 1)
+    [ -f "\$APK" ] || exit 0
+    # 已经有 /data/app 更新就不用管
+    case "\$(pm path com.android.packageinstaller 2>/dev/null)" in
+        *"/data/app/"*) exit 0 ;;
+    esac
+    SYS="\$(pm path com.android.packageinstaller 2>/dev/null | sed 's/^package://' | head -n 1)"
+    [ -n "\$SYS" ] && [ -f "\$SYS" ] || exit 0
+    a=\$(stat -c %s "\$APK" 2>/dev/null)
+    b=\$(stat -c %s "\$SYS" 2>/dev/null)
+    # 系统路径已经是模块里的 APK（挂载成功）→ 不用补装
+    [ -n "\$a" ] && [ "\$a" = "\$b" ] && exit 0
+    pm install -r -d "\$APK" >/dev/null 2>&1
+) &
+SVC
+    ui_print "- Fallback scripts written (bind mount + auto update)"
+}
+
 run_install() {
     command -v mods_center >/dev/null 2>&1 && mods_center
     check_support
@@ -142,6 +203,7 @@ run_install() {
     install_package
     hide_duplicates
     fix_labels
+    write_fallbacks
     clean_files
     ver=$(grep '^version=' "$MODPATH/module.prop" | cut -d= -f2)
     ui_print "- PUI Installer $ver installed, reboot to take effect"

@@ -265,6 +265,14 @@ adb install -r out/PUIInstaller-2.0.0-17700200.apk
   普通签名下系统会忽略该标志，仍走正常安装流程。
 - **静默能力依赖系统身份**：以普通应用安装时没有 `INSTALL_PACKAGES`，
   会话提交后系统会弹确认（本应用会把系统的确认 Intent 原样转交）。
+- **模块挂载依赖 root 实现（3.8.49 起自带兜底）**：KernelSU 系默认对普通应用进程
+  `kernel_umount`，且部分实现（现场：SukiSU LKM + ColorOS 17）不会把模块里的 `system_ext`
+  挂到 `/system_ext`，重启后 `pm path` 仍是厂商原包、模块等于没装。现在模块会：
+  1. 在 `post-fs-data.sh` 里对系统 APK 做文件级 `mount --bind`，先把 PMS 认成我们的包；
+  2. 开机后若系统路径仍是厂商原包，自动用模块内 APK `pm install -r -d` 补一个
+     `/data/app` 更新 —— 应用进程因此不再依赖模块挂载，也不会因为
+     `kernel_umount` 后读到旧包而 `ClassNotFoundException` 闪退。
+  两段都只在「挂载确实没生效」时动作，挂载正常的机器上是空转。
 
 ---
 
