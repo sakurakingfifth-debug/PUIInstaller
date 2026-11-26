@@ -234,6 +234,30 @@ private fun LogScreen() {
 }
 
 private fun share(context: Context) {
+    // 优先发 tar.gz：长日志走纯文本会被聊天软件折叠/截断，打包后是原样字节
+    val archive = InstallerLog.shareArchive(context)
+    if (archive != null) {
+        val uri = runCatching {
+            androidx.core.content.FileProvider.getUriForFile(
+                context, "${context.packageName}.files", archive
+            )
+        }.getOrNull()
+        if (uri != null) {
+            val send = Intent(Intent.ACTION_SEND).apply {
+                type = "application/gzip"
+                putExtra(Intent.EXTRA_STREAM, uri)
+                putExtra(Intent.EXTRA_SUBJECT, tr("安装器日志", "Installer logs"))
+                // 部分应用只认 ClipData 里的授权，两个都给上
+                clipData = android.content.ClipData.newRawUri(null, uri)
+                addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+            }
+            val ok = runCatching {
+                context.startActivity(Intent.createChooser(send, tr("分享日志", "Share logs")))
+            }.isSuccess
+            if (ok) return
+        }
+    }
+    // 打包失败（缓存不可写之类）再退回纯文本
     val send = Intent(Intent.ACTION_SEND).apply {
         type = "text/plain"
         putExtra(Intent.EXTRA_SUBJECT, tr("安装器日志", "Installer logs"))

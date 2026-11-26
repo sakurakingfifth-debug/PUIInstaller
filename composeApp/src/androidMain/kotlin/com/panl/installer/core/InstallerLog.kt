@@ -90,6 +90,24 @@ object InstallerLog {
     }
 
     /**
+     * 分享用：把「设备信息 + 日志正文」打成一个 tar.gz，返回产物文件。
+     *
+     * 为什么不再直接发纯文本：长日志在聊天软件里会被折叠/截断、也容易被安全策略改写，
+     * 打包后是原样字节，对方下载解开就能看。旧归档顺手清掉，只留最新一份。
+     */
+    fun shareArchive(context: Context): File? = runCatching {
+        val dir = File(context.cacheDir, "logs").apply { mkdirs() }
+        dir.listFiles()
+            ?.filter { it.isFile && it.name.endsWith(".tar.gz") }
+            ?.forEach { it.delete() }
+
+        val ts = SimpleDateFormat("yyyyMMdd-HHmmss", Locale.US).format(java.util.Date())
+        val out = File(dir, "PUI-logs-$ts.tar.gz")
+        val content = shareText(context).toByteArray(Charsets.UTF_8)
+        if (TarGz.write(out, listOf("PUI-logs-$ts.log" to content))) out else null
+    }.getOrNull()
+
+    /**
      * 兜底崩溃日志：任何没被 catch 的异常都会先写一条再交回原来的处理器。
      *
      * 系统应用在 direct boot 阶段被拉起时 filesDir 可能不可写，整段包 runCatching。

@@ -3,4 +3,6 @@
      直接用 file:// 会触发 FileUriExposedException（API 24+）。 -->
 <paths>
     <cache-path name="updates" path="downloads/" />
+    <!-- 分享日志用的 tar.gz 落在 cache/logs -->
+    <cache-path name="logs" path="logs/" />
 </paths>
