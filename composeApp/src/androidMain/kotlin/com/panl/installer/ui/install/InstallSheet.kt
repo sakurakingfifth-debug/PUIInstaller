@@ -664,33 +664,12 @@ private fun ReadySheet(
         }
 
         val signer = info.primarySigner
-        if (signer?.isAosp == true) {
-            Spacer(Modifier.height(8.dp))
-            Column(
-                Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 4.dp),
-                horizontalAlignment = Alignment.CenterHorizontally
-            ) {
-                Icon(
-                    painter = painterResource(R.drawable.ic_info_badge),
-                    contentDescription = null,
-                    tint = scheme.error,
-                    modifier = Modifier.size(18.dp)
-                )
-                Spacer(Modifier.height(4.dp))
-                Text(
-                    tr("该安装包使用 AOSP 公开密钥（${signer.aospKey}）签名", "This APK is signed with the AOSP public key (${signer.aospKey})"),
-                    style = MaterialTheme.typography.bodySmall,
-                    color = scheme.error,
-                    textAlign = TextAlign.Center,
-                    modifier = Modifier.fillMaxWidth()
-                )
-            }
-        }
 
-        // 签名一致性：只在这个包已经装过的时候才有意义（没装过没有可比对象）
+        // 签名一致性：只在这个包已经装过的时候才有意义（没装过没有可比对象）。
+        // AOSP testkey + 一致 这种情况不再提示（3.8.62 起不再标注 AOSP 密钥），
+        // 但「签名不一致」必须留着 —— 那正是装不上的原因。
         info.signatureMatchesInstalled?.let { same ->
+            if (same && signer?.isAosp == true) return@let
             Spacer(Modifier.height(8.dp))
             Row(
                 Modifier.fillMaxWidth(),

@@ -51,8 +51,8 @@ android {
         // versionCode 每次迭代 **+10**（3.7.72 起：109000001 → 109000011 → …；更早是 +1000000），
         // 且必须 ≥ 系统预装的 17700004，否则 PMS 会拒绝覆盖安装
         // （System app cannot be downgraded to older than its preloaded version）。
-        versionCode = 109000891
-        versionName = "3.8.61"
+        versionCode = 109000901
+        versionName = "3.8.62"
     }
 
     compileOptions {

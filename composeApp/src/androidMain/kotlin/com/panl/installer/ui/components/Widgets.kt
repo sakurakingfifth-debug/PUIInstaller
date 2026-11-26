@@ -621,9 +621,6 @@ fun InstallInfoChips(
                 if (!cn.isNullOrBlank()) add(cn to InfoChipTone.Neutral)
             }
         }
-        if (info.signers.any { it.aospKey != null }) {
-            add(tr("AOSP 密钥", "AOSP key") to InfoChipTone.Danger)
-        }
         // LSPosed / Xposed 模块：装完还得去管理器里给它勾作用域，这里先标出来
         if (info.isXposedModule) {
             add(tr("LSP 模块", "LSP module") to InfoChipTone.Neutral)
