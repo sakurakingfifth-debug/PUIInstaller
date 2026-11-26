@@ -32,6 +32,9 @@ import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
+import androidx.compose.ui.layout.onGloballyPositioned
+import androidx.compose.ui.layout.boundsInWindow
+import androidx.compose.ui.graphics.toArgb
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -76,6 +79,10 @@ import com.panl.installer.i18n.tr
 @Composable
 fun AppsScreen(topPad: Dp) {
     val context = LocalContext.current
+    // 应用详情页（卸载/信息页）也从这一行起跳
+    val seamless = com.panl.installer.ui.anim.rememberSeamlessNavigator()
+    val rowRadius = with(androidx.compose.ui.platform.LocalDensity.current) { 14.dp.toPx() }
+    val pageBg = MaterialTheme.colorScheme.background.toArgb()
     val settings = Settings.get(context)
     // 系统应用默认隐藏：关掉时只有「用户应用 / 全部」两格
     val filters = if (settings.showSystemApps) listOf(0, 1, 2) else listOf(0, 2)
@@ -250,11 +257,10 @@ fun AppsScreen(topPad: Dp) {
                     modifier = Modifier.fillMaxSize().puiEdgeHaptic()
                 ) {
                     items(pageList, key = { it.packageName }) { app ->
-                        AppRow(app) {
-                            context.startActivity(
-                                Intent(context, UninstallActivity::class.java)
-                                    .putExtra(UninstallActivity.EXTRA_PACKAGE, app.packageName)
-                            )
+                        AppRow(app) { bounds ->
+                            val intent = Intent(context, UninstallActivity::class.java)
+                                .putExtra(UninstallActivity.EXTRA_PACKAGE, app.packageName)
+                            seamless.open(intent, bounds, rowRadius, pageBg)
                         }
                     }
                     if (pageList.isEmpty()) {
@@ -297,8 +303,9 @@ fun AppsScreen(topPad: Dp) {
 }
 
 @Composable
-private fun AppRow(app: InstalledApp, onClick: () -> Unit) {
+private fun AppRow(app: InstalledApp, onClick: (androidx.compose.ui.geometry.Rect) -> Unit) {
     val context = LocalContext.current
+    var bounds by remember { androidx.compose.runtime.mutableStateOf<androidx.compose.ui.geometry.Rect?>(null) }
     val icon by produceState<Bitmap?>(initialValue = null, app.packageName) {
         value = withContext(Dispatchers.IO) { IconLoader.icon(context, app.packageName) }
     }
@@ -307,10 +314,11 @@ private fun AppRow(app: InstalledApp, onClick: () -> Unit) {
         Row(
             Modifier
                 .fillMaxWidth()
+                .onGloballyPositioned { bounds = it.boundsInWindow() }
                 .clickable(
                     interactionSource = remember { MutableInteractionSource() },
                     indication = null
-                ) { onClick() }
+                ) { bounds?.let(onClick) }
                 .padding(horizontal = 16.dp, vertical = 10.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
