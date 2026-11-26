@@ -866,6 +866,8 @@ class InstallController(
 
             // 装成功了就留一条历史（存的是**当时这个 APK** 的信息）
             InstallHistory.record(activity, info)
+            // 手里的反馈：两下短震，确认装完了（设备没马达/关了触感时静默跳过）
+            com.panl.installer.core.Haptics.installSuccess(activity)
             // 结果通知：实时活动样式下是胶囊原地翻成「完成 + 打开」，
             // 标准样式下就是一条普通通知，两者都带「打开」
             if (settings.showNotification) {
@@ -1296,6 +1298,8 @@ class InstallController(
 
             val done = items.count { it.status == BatchStatus.Done }
             InstallerLog.record(activity, "BATCH", "批量安装结束：成功 $done / 共 ${items.size}")
+            // 整批跑完给一下完成触感（哪怕有失败项，也代表这一轮结束了）
+            com.panl.installer.core.Haptics.installSuccess(activity)
             state = InstallUiState.Batch(items.toList(), BatchPhase.Done)
         }
     }

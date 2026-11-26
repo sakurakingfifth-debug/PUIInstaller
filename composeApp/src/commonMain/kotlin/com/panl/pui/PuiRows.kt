@@ -354,6 +354,8 @@ fun PuiListRow(
     var selfBounds by androidx.compose.runtime.remember {
         androidx.compose.runtime.mutableStateOf<androidx.compose.ui.geometry.Rect?>(null)
     }
+    // 选中/跳转时给一下触感，确认「点到了」
+    val tick = rememberTickHaptic()
     val dim = if (enabled) 1f else 0.45f
     val scheme = MaterialTheme.colorScheme
     Column(
@@ -370,6 +372,7 @@ fun PuiListRow(
                         interactionSource = remember { MutableInteractionSource() },
                         indication = null
                     ) {
+                        tick()
                         val b = selfBounds
                         if (onClickWithBounds != null && b != null) onClickWithBounds(b) else onClick?.invoke()
                     } else Modifier

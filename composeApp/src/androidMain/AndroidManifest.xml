@@ -28,6 +28,8 @@
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.QUERY_ALL_PACKAGES" />
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+    <!-- 安装完成那一下触感（通知类事件，需要显式声明） -->
+    <uses-permission android:name="android.permission.VIBRATE" />
     <!-- 进阶功能「忽略电池优化」：后台管理严格的 ROM 上，实时通知的安装会被掐掉 -->
     <uses-permission android:name="android.permission.REQUEST_IGNORE_BATTERY_OPTIMIZATIONS" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />

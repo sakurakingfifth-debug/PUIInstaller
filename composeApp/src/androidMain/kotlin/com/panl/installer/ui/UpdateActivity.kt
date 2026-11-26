@@ -58,6 +58,7 @@ import com.panl.installer.i18n.tr
 import com.panl.installer.ui.theme.InstallerTheme
 import com.panl.pui.PuiIcon
 import com.panl.pui.PuiIconView
+import com.panl.pui.puiEdgeHaptic
 import com.panl.pui.puiProgressiveTopBlur
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -159,6 +160,8 @@ private fun UpdateScreen(onClose: () -> Unit) {
                     } else Modifier
                 )
                 .verticalScroll(rememberScrollState())
+                // 滚到顶/到底给一下轻触感，和其它页面一致
+                .puiEdgeHaptic()
                 .padding(start = 16.dp, end = 16.dp, bottom = 84.dp)
                 .padding(top = topBarH + 4.dp)
         ) {
