@@ -21,7 +21,7 @@ PUIInstaller/
 
 ---
 
-## 一、为什么包名是 `com.android.packageinstaller`
+## 一、
 
 设备上的系统安装器位于 `/system_ext/priv-app/PackageInstaller/`，签名是 **AOSP testkey**
 （`CN=Android, O=Android`，SHA-256 `a40da80a…`）。这份 APK 用同一把公开测试密钥签名，
@@ -36,7 +36,7 @@ PUIInstaller/
 
 ---
 
-## 二、五个需求怎么落地的
+## 二
 
 ### 1. 桌面图标 + 功能面板
 
@@ -137,47 +137,7 @@ LibChecker 里点应用图标 → 用本安装器打开 → 直接进「应用�
 
 ---
 
-### 7. 浮窗安装界面（背景模糊）
-
-设置 → 安装界面：
-
-| 项 | 选项 | 说明 |
-|---|---|---|
-| 样式 | 浮窗 / 全屏 | 浮窗是底部弹出的卡片，身后界面保留并做背景模糊；全屏是整页样式 |
-| 浮窗位置 | 居中 / 底部 | 贴底时只圆上面两角，居中时四角全圆、四周留 14dp |
-
-实现要点（踩过的坑）：
-
-- **窗口半透明必须在清单里定死**。`ActivityManager` 在启动时就根据清单主题判断任务是否
-  `translucent`，代码里 `setTheme()` 已经来不及 —— 那样会出现「背景全黑、后面的应用被隐藏」。
-  所以 `InstallActivity` 清单主题挂 `Theme.PuiInstaller.Sheet`，全屏模式在 `onCreate` 里
-  再 `setTheme(Theme.PuiInstaller)` 换回不透明。
-- **模糊是系统做的**：`FLAG_BLUR_BEHIND` + `LayoutParams.setBlurBehindRadius(26dp)`，
-  依赖 `ro.surface_flinger.supports_background_blur=1`。系统不支持时只剩一层 18% 黑遮罩。
-- 浮窗与全屏共用同一个 `InstallController` 状态机，只有容器与信息密度不同；
-  浮窗里签名只保留「AOSP 公开密钥」风险提示，完整证书信息在全屏版。
-- 浮窗头部的「⋯」可以直接切换样式与位置；改样式会 `recreate()`（窗口属性不能热改）。
-
----
-
-## 版本号规则
-
-对外 `versionName` 从 **2.0.0** 起迭代：`2.0.1` / `2.1.0` …
-
-`versionCode` 不能跟着从 20000 起：这个包在系统镜像里有预装版本（模块里的 17700004），
-PMS 明确拒绝把系统应用降到预装版本以下（`System app cannot be downgraded to older than
-its preloaded version`）。所以保留 17700000 前缀：
-
-```
-versionCode = 17700000 + major*100 + minor*10 + patch
-2.0.0 → 17700200
-2.0.1 → 17700201
-2.1.0 → 17700210
-```
-
----
-
-### 8. 实时活动（Live Updates）与 ColorOS 流体云
+### 7. 实时活动（Live Updates）与 ColorOS 流体云
 
 安装过程中会发一条**进度型实时活动**，被系统提升后在通知栏顶部常驻、并在状态栏显示胶囊。
 
@@ -189,28 +149,6 @@ versionCode = 17700000 + major*100 + minor*10 + patch
 | 胶囊文字 | `setShortCriticalText`：有进度给 `86%`，不确定时给「安装中」 |
 | 渠道 | 专用 `install_live`（IMPORTANCE_DEFAULT）；结果通知仍走 `install_status`（LOW，发完即走） |
 | 开关 | 设置 → 通知 → 安装进度实时活动 |
-
-实测（ColorOS 17 / Android 17）：
-
-```
-Notification(channel=install_live ... flags=ONGOING_EVENT|ONLY_ALERT_ONCE|PROMOTED_ONGOING)
-```
-
-`PROMOTED_ONGOING` 出现即代表系统已把它当实时活动处理。
-
-**注意：** `Notification.Builder#setRequestPromotedOngoing()` 到 API 37 才进公开 SDK，
-本项目 compileSdk 是 36，所以直接写 extra：
-
-```kotlin
-builder.addExtras(Bundle().apply {
-    putBoolean("android.requestPromotedOngoing", true)   // = EXTRA_REQUEST_PROMOTED_ONGOING
-})
-```
-
-**关于流体云**：ColorOS 16 起，流体云**直接消费 Android 16 的 Live Updates**，
-不需要接 OPPO 私有 SDK —— 按上面这套标准实现即可上云。
-OPPO 开放平台那份文档（id=12658）是 JS 渲染的，抓不到正文；如果个别机型上云不显示，
-大概率是 OPPO 侧对应用做了白名单或额外条件，需要在开放平台申请，代码侧无需改动。
 
 ---
 
@@ -250,45 +188,3 @@ adb install -r out/PUIInstaller-2.0.0-17700200.apk
 ```
 
 ---
-
-## 五、已知边界
-
-- **Intent filter 必须带 mimeType**：`ACTION_INSTALL_PACKAGE` 的 intent 如果带了
-  `type=application/vnd.android.package-archive`，清单里只写 `<data android:scheme="content"/>`
-  是**匹配不上**的（酷安就是这种调用，会抛 `ActivityNotFoundException`，表现是「点安装没反应」）。
-  清单里因此同时保留了「scheme + mimeType」和「仅 scheme」两组 filter。
-- **应用归档（unarchive）**：AOSP 的 `UNARCHIVE_DIALOG` 由原 PackageInstaller 处理，
-  本实现暂未接管；已归档应用恢复时可能提示找不到处理程序。
-- **降级安装**：`SessionParams.setRequestDowngrade` 是 `@SystemApi`，公开 SDK 里没有，
-  代码用反射调用；被隐藏 API 策略拦下时系统会返回 `INSTALL_FAILED_VERSION_DOWNGRADE`。
-- **RAS 一键安装**：`USER_ACTION_NOT_REQUIRED` 只有在商店通过 Google 审核后才生效，
-  普通签名下系统会忽略该标志，仍走正常安装流程。
-- **静默能力依赖系统身份**：以普通应用安装时没有 `INSTALL_PACKAGES`，
-  会话提交后系统会弹确认（本应用会把系统的确认 Intent 原样转交）。
-- **模块挂载依赖 root 实现（3.8.49 起自带兜底）**：KernelSU 系默认对普通应用进程
-  `kernel_umount`，且部分实现（现场：SukiSU LKM + ColorOS 17）不会把模块里的 `system_ext`
-  挂到 `/system_ext`，重启后 `pm path` 仍是厂商原包、模块等于没装。现在模块会：
-  1. 在 `post-fs-data.sh` 里对系统 APK 做文件级 `mount --bind`，先把 PMS 认成我们的包；
-  2. 开机后若系统路径仍是厂商原包，自动用模块内 APK `pm install -r -d` 补一个
-     `/data/app` 更新 —— 应用进程因此不再依赖模块挂载，也不会因为
-     `kernel_umount` 后读到旧包而 `ClassNotFoundException` 闪退。
-  两段都只在「挂载确实没生效」时动作，挂载正常的机器上是空转。
-
----
-
-## 六、代码地图
-
-| 关注点 | 文件 |
-|---|---|
-| APK 解析（label/icon/版本/权限/签名） | `core/ApkInspector.kt` |
-| 签名与 AOSP 密钥识别 | `core/ApkSignature.kt` |
-| 安装 / 卸载会话 | `core/InstallEngine.kt` |
-| 安装包清理 | `core/InstallEngine.kt` 的 `SourceCleaner` |
-| 结果广播与通知 | `core/InstallResultReceiver.kt`、`core/UninstallResultReceiver.kt`、`core/Notifications.kt` |
-| 安装页状态机 | `ui/install/InstallController.kt` |
-| 安装页界面 | `ui/install/InstallScreen.kt` |
-| 卸载 / 应用信息 | `ui/uninstall/UninstallScreen.kt` |
-| 首页 / 应用 / 设置 | `ui/main/*.kt` |
-| 签名检测页 | `ui/SignatureActivity.kt` |
-| 应用商店能力页 | `ui/AppStoreActivity.kt` |
-| 通用卡片与图标 | `ui/components/Widgets.kt` |
