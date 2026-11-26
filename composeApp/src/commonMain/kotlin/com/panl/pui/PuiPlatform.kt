@@ -26,9 +26,16 @@ expect fun rememberWallpaperAccent(
     fallback: Color
 ): Color
 
+/** 应用内需要触感反馈的场景；强度在设置页按场景单独调（0 = 关）。 */
+enum class HapticScene { EDGE, TOGGLE, SELECT, INSTALL }
+
 /** 「刻度」触感：滑块每跨一格用一次。 */
 @Composable
 expect fun rememberTickHaptic(): () -> Unit
+
+/** 按场景取一个触感回调：内部按设置里的强度下发，强度为 0 时不震。 */
+@Composable
+expect fun rememberSceneHaptic(scene: HapticScene): () -> Unit
 
 /** 开关切换触感；[checked] 是切换**前**的状态（决定开 / 关的波形）。 */
 @Composable

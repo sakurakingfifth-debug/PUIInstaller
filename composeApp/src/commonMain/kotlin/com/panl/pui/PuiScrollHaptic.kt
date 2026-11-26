@@ -19,7 +19,7 @@ import androidx.compose.ui.input.nestedscroll.nestedScroll
  */
 @Composable
 fun Modifier.puiEdgeHaptic(enabled: Boolean = true): Modifier {
-    val tick = rememberTickHaptic()
+    val tick = rememberSceneHaptic(HapticScene.EDGE)
     val connection = remember { EdgeHapticConnection() }
     connection.enabled = enabled
     connection.tick = tick

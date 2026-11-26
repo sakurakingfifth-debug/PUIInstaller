@@ -108,7 +108,7 @@ fun PuiSwitch(
     enabled: Boolean = true
 ) {
     val scheme = MaterialTheme.colorScheme
-    val tick = rememberToggleHaptic(checked)
+    val tick = rememberSceneHaptic(HapticScene.TOGGLE)
     val trackW = 44.dp
     val trackH = 26.dp
     val knob = 20.dp

@@ -66,6 +66,16 @@ class Settings private constructor(private val sp: SharedPreferences) {
     /** 卡片（对话框）展开时背景的模糊半径，单位 px（0~120）。 */
     var cardBlurPx: Int by int("card_blur_px", 64)
 
+    // ---- 振动反馈（百分比 0~100，0 = 关闭该场景） ----
+    /** 列表滚到顶/到底。 */
+    var hapticEdge: Int by int("haptic_edge", 55)
+    /** 开关打开/关闭。 */
+    var hapticToggle: Int by int("haptic_toggle", 50)
+    /** 点选列表项/分段控件。 */
+    var hapticSelect: Int by int("haptic_select", 45)
+    /** 安装完成。 */
+    var hapticInstall: Int by int("haptic_install", 85)
+
     /** 关闭遮罩：浮窗 / 弹窗背后不再压那层灰黑。 */
     var noScrim: Boolean by bool("no_scrim", false)
 

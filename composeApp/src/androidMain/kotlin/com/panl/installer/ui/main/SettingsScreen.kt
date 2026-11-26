@@ -238,6 +238,16 @@ fun SettingsScreen(topPad: Dp) {
             Spacer(Modifier.height(18.dp))
             PuiGroup(title = null) {
                 PuiListRow(
+                    icon = PuiIcon.Touch,
+                    title = tr("振动反馈", "Haptic feedback"),
+                    subtitle = tr("按场景调节强度，可关到零", "Per-scene intensity, down to off"),
+                    showDivider = true,
+                    showChevron = true,
+                    onClickWithBounds = { b ->
+                        nav.open(Intent(context, com.panl.installer.ui.HapticActivity::class.java), b, cardRadius, pageBg)
+                    }
+                )
+                PuiListRow(
                     icon = null,
                     iconPainter = painterResource(R.drawable.ic_language_circle),
                     title = tr("语言", "Language"),

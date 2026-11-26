@@ -59,6 +59,14 @@ actual fun rememberTickHaptic(): () -> Unit {
 }
 
 @Composable
+actual fun rememberSceneHaptic(scene: HapticScene): () -> Unit {
+    val ctx = LocalContext.current
+    return remember(ctx, scene) {
+        { com.panl.installer.core.Haptics.play(ctx, scene) }
+    }
+}
+
+@Composable
 actual fun rememberToggleHaptic(checked: Boolean): () -> Unit {
     val view = LocalView.current
     return remember(view, checked) {

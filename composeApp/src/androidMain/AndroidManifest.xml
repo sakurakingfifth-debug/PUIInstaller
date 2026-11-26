@@ -498,6 +498,13 @@
             android:theme="@style/Theme.PuiInstaller.Transparent" />
 
         <activity
+            android:name=".ui.HapticActivity"
+            android:exported="false"
+            android:theme="@style/Theme.PuiInstaller"
+            android:resizeableActivity="true"
+            android:configChanges="orientation|screenSize|smallestScreenSize|screenLayout|keyboardHidden|density" />
+
+        <activity
             android:name=".ui.LanguageActivity"
             android:exported="false"
             android:theme="@style/Theme.PuiInstaller.Transparent" />
