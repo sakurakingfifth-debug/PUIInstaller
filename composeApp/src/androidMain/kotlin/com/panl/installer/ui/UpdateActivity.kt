@@ -121,6 +121,10 @@ private fun UpdateScreen(onClose: () -> Unit) {
 
     val ready = state as? OtaState.Ready
 
+    // 下载更新：进度用于按钮上的百分比，downloading 期间禁用重复点击
+    var downloading by remember { mutableStateOf(false) }
+    var downloadProgress by remember { mutableStateOf<Float?>(null) }
+
     val density = androidx.compose.ui.platform.LocalDensity.current.density
     val settings = com.panl.installer.core.Settings.get(context)
     // 用主题实际生效的背景亮度判断明暗，比读设置里的开关靠谱（还有跟随系统的情况）
@@ -289,13 +293,67 @@ private fun UpdateScreen(onClose: () -> Unit) {
             horizontalArrangement = Arrangement.Center,
             verticalAlignment = Alignment.CenterVertically
         ) {
+            val canDownload = ready?.hasUpdate == true && !ready.release.apkUrl.isNullOrBlank() && !downloading
+
             CircleAction(
                 label = if (checking) tr("检查中…", "Checking…") else tr("检查更新", "Check"),
-                painter = R.drawable.ic_document_download,
+                painter = R.drawable.ic_refresh,
                 filled = true,
                 onClick = { if (!checking) scope.launch { runCheck() } }
             )
-            Spacer(Modifier.width(48.dp))
+            Spacer(Modifier.width(40.dp))
+            CircleAction(
+                label = when {
+                    downloading -> downloadProgress?.let { "${(it * 100).toInt()}%" }
+                        ?: tr("下载中…", "Downloading…")
+                    else -> tr("下载更新", "Download")
+                },
+                painter = R.drawable.ic_document_download,
+                filled = downloading,
+                enabled = canDownload,
+                onClick = {
+                    val url = ready?.release?.apkUrl ?: return@CircleAction
+                    if (downloading) return@CircleAction
+                    scope.launch {
+                        downloading = true
+                        downloadProgress = null
+                        val result = withContext(Dispatchers.IO) {
+                            com.panl.installer.core.ApkDownloader(context).download(url) { received, total, _ ->
+                                if (total > 0) downloadProgress = received.toFloat() / total
+                            }
+                        }
+                        downloading = false
+                        downloadProgress = null
+                        when (result) {
+                            is com.panl.installer.core.ApkDownloader.Result.Success -> {
+                                // 交给安装页：content:// + 临时授权，避免 FileUriExposedException
+                                val uri = androidx.core.content.FileProvider.getUriForFile(
+                                    context, "${context.packageName}.files", result.file
+                                )
+                                val intent = Intent(Intent.ACTION_VIEW).apply {
+                                    setDataAndType(uri, "application/vnd.android.package-archive")
+                                    addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+                                    setClassName(context, "com.panl.installer.ui.InstallActivity")
+                                }
+                                runCatching { context.startActivity(intent) }
+                            }
+
+                            is com.panl.installer.core.ApkDownloader.Result.Failure ->
+                                android.widget.Toast.makeText(context, result.message, android.widget.Toast.LENGTH_LONG).show()
+
+                            com.panl.installer.core.ApkDownloader.Result.NeedsWeb ->
+                                android.widget.Toast.makeText(
+                                    context,
+                                    tr("下载被站点拦截，请到 GitHub 手动下载", "Blocked by the host — download manually from GitHub"),
+                                    android.widget.Toast.LENGTH_LONG
+                                ).show()
+
+                            com.panl.installer.core.ApkDownloader.Result.Cancelled -> Unit
+                        }
+                    }
+                }
+            )
+            Spacer(Modifier.width(40.dp))
             CircleAction(
                 label = "GitHub",
                 painter = R.drawable.ic_code_1,
@@ -367,6 +425,7 @@ private fun CircleAction(
     label: String,
     painter: Int,
     filled: Boolean,
+    enabled: Boolean = true,
     onClick: () -> Unit
 ) {
     val scheme = MaterialTheme.colorScheme
@@ -375,8 +434,14 @@ private fun CircleAction(
             Modifier
                 .size(58.dp)
                 .clip(CircleShape)
-                .background(if (filled) scheme.primary else scheme.surfaceContainerHigh)
-                .clickable(onClick = onClick),
+                .background(
+                    when {
+                        !enabled -> scheme.surfaceContainerHigh.copy(alpha = 0.5f)
+                        filled -> scheme.primary
+                        else -> scheme.surfaceContainerHigh
+                    }
+                )
+                .then(if (enabled) Modifier.clickable(onClick = onClick) else Modifier),
             contentAlignment = Alignment.Center
         ) {
             androidx.compose.foundation.Image(
@@ -384,7 +449,11 @@ private fun CircleAction(
                 contentDescription = label,
                 modifier = Modifier.size(24.dp),
                 colorFilter = androidx.compose.ui.graphics.ColorFilter.tint(
-                    if (filled) scheme.onPrimary else scheme.onSurfaceVariant
+                    when {
+                        !enabled -> scheme.onSurfaceVariant.copy(alpha = 0.4f)
+                        filled -> scheme.onPrimary
+                        else -> scheme.onSurfaceVariant
+                    }
                 )
             )
         }
@@ -392,7 +461,7 @@ private fun CircleAction(
         Text(
             label,
             style = MaterialTheme.typography.labelSmall,
-            color = scheme.onSurfaceVariant
+            color = if (enabled) scheme.onSurfaceVariant else scheme.onSurfaceVariant.copy(alpha = 0.4f)
         )
     }
 }
