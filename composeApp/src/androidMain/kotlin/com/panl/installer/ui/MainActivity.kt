@@ -5,6 +5,7 @@ import android.os.SystemClock
 import android.view.ViewTreeObserver
 import android.view.animation.DecelerateInterpolator
 import androidx.activity.ComponentActivity
+import com.panl.installer.ui.anim.SeamlessActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.animation.Crossfade
@@ -21,7 +22,7 @@ import com.panl.installer.ui.theme.InstallerTheme
 import com.panl.installer.ui.tile.TileState
 import kotlinx.coroutines.delay
 
-class MainActivity : ComponentActivity() {
+class MainActivity : SeamlessActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         // 必须在 super.onCreate 之前：它负责把启动主题换成 postSplashScreenTheme

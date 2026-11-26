@@ -6,6 +6,7 @@ import android.os.Build
 import android.os.Bundle
 import android.view.WindowManager
 import androidx.activity.ComponentActivity
+import com.panl.installer.ui.anim.SeamlessActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.lifecycle.lifecycleScope
@@ -53,7 +54,7 @@ import kotlinx.coroutines.withContext
  */
 private val appScope = CoroutineScope(SupervisorJob() + Dispatchers.Main.immediate)
 
-class InstallActivity : ComponentActivity() {
+class InstallActivity : SeamlessActivity() {
 
     private lateinit var controller: InstallController
 

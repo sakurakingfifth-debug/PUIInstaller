@@ -2,6 +2,7 @@ package com.panl.installer.ui
 
 import android.os.Bundle
 import androidx.activity.ComponentActivity
+import com.panl.installer.ui.anim.SeamlessActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.Image
@@ -100,7 +101,7 @@ import kotlinx.coroutines.launch
  *  - 黑名单：按包名禁止安装；
  *  - SharedUID：按 sharedUserId 禁止安装。
  */
-class InstallerGlobalActivity : ComponentActivity() {
+class InstallerGlobalActivity : SeamlessActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         enableEdgeToEdge()

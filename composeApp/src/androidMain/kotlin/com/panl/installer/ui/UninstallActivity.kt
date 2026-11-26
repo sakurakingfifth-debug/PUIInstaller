@@ -3,6 +3,7 @@ package com.panl.installer.ui
 import android.content.Intent
 import android.os.Bundle
 import androidx.activity.ComponentActivity
+import com.panl.installer.ui.anim.SeamlessActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import com.panl.installer.ui.theme.InstallerTheme
@@ -17,7 +18,7 @@ import com.panl.installer.ui.uninstall.UninstallScreen
  *  - `ACTION_SHOW_APP_INFO`（LibChecker 等工具点应用图标）
  *  - 应用内部的「已安装应用」列表
  */
-class UninstallActivity : ComponentActivity() {
+class UninstallActivity : SeamlessActivity() {
 
     private lateinit var controller: UninstallController
 

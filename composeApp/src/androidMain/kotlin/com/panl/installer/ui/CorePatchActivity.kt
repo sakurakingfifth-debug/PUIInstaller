@@ -2,6 +2,7 @@ package com.panl.installer.ui
 
 import android.os.Bundle
 import androidx.activity.ComponentActivity
+import com.panl.installer.ui.anim.SeamlessActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.background
@@ -49,7 +50,7 @@ import com.panl.pui.rememberPuiTopBlurHeight
  * 开关存在 LSPosed 的远程配置里，system_server 侧的模块直接读同一份，
  * 所以改完不用重启，下一次安装就按新配置走。
  */
-class CorePatchActivity : ComponentActivity() {
+class CorePatchActivity : SeamlessActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         enableEdgeToEdge()

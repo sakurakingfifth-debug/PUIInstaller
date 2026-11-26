@@ -12,6 +12,12 @@ pluginManagement {
 dependencyResolutionManagement {
     repositoriesMode.set(RepositoriesMode.FAIL_ON_PROJECT_REPOS)
     repositories {
+        // 金标联盟「一镜到底」SharedViewKit：只有 gsai.sdk 这一组走它（内测仓库还是 HTTP）
+        maven {
+            url = uri("http://nexus.itgsa.com:5566/repository/sharedViewKit/")
+            isAllowInsecureProtocol = true
+            content { includeGroup("gsai.sdk") }
+        }
         maven("https://maven.aliyun.com/repository/google")
         maven("https://maven.aliyun.com/repository/public")
         google()

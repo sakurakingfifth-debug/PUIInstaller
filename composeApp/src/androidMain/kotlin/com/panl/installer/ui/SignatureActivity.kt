@@ -4,6 +4,7 @@ import android.content.Intent
 import android.net.Uri
 import android.os.Bundle
 import androidx.activity.ComponentActivity
+import com.panl.installer.ui.anim.SeamlessActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.background
@@ -70,7 +71,7 @@ import com.panl.installer.i18n.tr
  *
  * 这是「支持检测 AOSP 签名 key」的独立入口，安装页里的签名卡只是它的摘要版。
  */
-class SignatureActivity : ComponentActivity() {
+class SignatureActivity : SeamlessActivity() {
 
     private var state by mutableStateOf<SigState>(SigState.Idle)
 

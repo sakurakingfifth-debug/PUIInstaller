@@ -4,6 +4,7 @@ import android.content.Context
 import android.content.Intent
 import android.os.Bundle
 import androidx.activity.ComponentActivity
+import com.panl.installer.ui.anim.SeamlessActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.background
@@ -61,7 +62,7 @@ import com.panl.pui.rememberPuiTopBlurHeight
  *
  * 顶栏不放图标 —— 标题跟着列表一起滚（和「安装与界面」那些页一致），返回交给系统手势。
  */
-class LogActivity : ComponentActivity() {
+class LogActivity : SeamlessActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         enableEdgeToEdge()

@@ -2,6 +2,7 @@ package com.panl.installer.ui
 
 import android.os.Bundle
 import androidx.activity.ComponentActivity
+import com.panl.installer.ui.anim.SeamlessActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.animation.AnimatedVisibility
@@ -77,7 +78,7 @@ import com.panl.pui.rememberPuiTopBlurHeight
 import com.panl.pui.rememberTickHaptic
 
 /** 外观与导航栏：主题、配色、模糊、导航栏样式，合并成一个独立页面。 */
-class AppearanceActivity : ComponentActivity() {
+class AppearanceActivity : SeamlessActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         enableEdgeToEdge()

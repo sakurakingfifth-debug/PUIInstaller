@@ -2,6 +2,7 @@ package com.panl.installer.ui
 
 import android.os.Bundle
 import androidx.activity.ComponentActivity
+import com.panl.installer.ui.anim.SeamlessActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.background
@@ -39,7 +40,7 @@ import com.panl.pui.puiProgressiveTopBlur
 import com.panl.pui.rememberPuiTopBlurHeight
 
 /** 语言选择：独立页面，选完立即生效并返回。 */
-class LanguageActivity : ComponentActivity() {
+class LanguageActivity : SeamlessActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         enableEdgeToEdge()

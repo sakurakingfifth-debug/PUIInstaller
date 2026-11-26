@@ -16,6 +16,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
+import com.panl.installer.ui.anim.rememberSeamlessNavigator
 import androidx.compose.runtime.Composable
 import com.panl.installer.R
 import androidx.compose.ui.res.painterResource
@@ -97,6 +98,9 @@ import com.panl.installer.ui.InstallerGlobalActivity
 @Composable
 fun SettingsScreen(topPad: Dp) {
     val context = LocalContext.current
+    val nav = rememberSeamlessNavigator()
+    val cardRadius = with(androidx.compose.ui.platform.LocalDensity.current) { 22.dp.toPx() }
+    val pageBg = MaterialTheme.colorScheme.background.toArgb()
     val settings = Settings.get(context)
     val density = LocalDensity.current.density
     val privileged = remember { PackageUtils.hasInstallPermission(context) }
@@ -158,7 +162,7 @@ fun SettingsScreen(topPad: Dp) {
                     subtitle = tr("ROOT及LSPosed功能专区", "ROOT & LSPosed features"),
                     showDivider = false,
                     showChevron = true,
-                    onClick = { context.startActivity(Intent(context, AdvancedActivity::class.java)) }
+                    onClickWithBounds = { b -> nav.open(Intent(context, AdvancedActivity::class.java), b, cardRadius, pageBg) }
                 )
             }
             Spacer(Modifier.height(10.dp))
@@ -173,7 +177,7 @@ fun SettingsScreen(topPad: Dp) {
                     subtitle = tr("主题、模糊、导航栏", "Theme, blur, navigation bar"),
                     showDivider = false,
                     showChevron = true,
-                    onClick = { context.startActivity(Intent(context, AppearanceActivity::class.java)) }
+                    onClickWithBounds = { b -> nav.open(Intent(context, AppearanceActivity::class.java), b, cardRadius, pageBg) }
                 )
             }
             // 和下面的「安装」分组拉开距离，否则分组标题会贴着卡片
@@ -189,9 +193,7 @@ fun SettingsScreen(topPad: Dp) {
                     subtitle = tr("安装策略、界面样式、通知", "Install policy, UI style, notifications"),
                     showDivider = false,
                     showChevron = true,
-                    onClick = {
-                        context.startActivity(Intent(context, InstallSettingsActivity::class.java))
-                    }
+                    onClickWithBounds = { b -> nav.open(Intent(context, InstallSettingsActivity::class.java), b, cardRadius, pageBg) }
                 )
                 PuiListRow(
                     icon = null,
@@ -203,9 +205,7 @@ fun SettingsScreen(topPad: Dp) {
                     ),
                     showDivider = false,
                     showChevron = true,
-                    onClick = {
-                        context.startActivity(Intent(context, InstallerGlobalActivity::class.java))
-                    }
+                    onClickWithBounds = { b -> nav.open(Intent(context, InstallerGlobalActivity::class.java), b, cardRadius, pageBg) }
                 )
             }
         }
@@ -246,7 +246,7 @@ fun SettingsScreen(topPad: Dp) {
                     },
                     showDivider = false,
                     showChevron = true,
-                    onClick = { context.startActivity(Intent(context, LanguageActivity::class.java)) }
+                    onClickWithBounds = { b -> nav.open(Intent(context, LanguageActivity::class.java), b, cardRadius, pageBg) }
                 )
             }
         }
@@ -289,7 +289,7 @@ fun SettingsScreen(topPad: Dp) {
                     subtitle = tr("RAS 要求与自检", "RAS requirements and checks"),
                     showDivider = true,
                     showChevron = true,
-                    onClick = { context.startActivity(Intent(context, AppStoreActivity::class.java)) }
+                    onClickWithBounds = { b -> nav.open(Intent(context, AppStoreActivity::class.java), b, cardRadius, pageBg) }
                 )
                 PuiListRow(
                     icon = null,
@@ -298,7 +298,7 @@ fun SettingsScreen(topPad: Dp) {
                     subtitle = tr("安装器异常与错误记录", "Installer exceptions and errors"),
                     showDivider = true,
                     showChevron = true,
-                    onClick = { context.startActivity(Intent(context, LogActivity::class.java)) }
+                    onClickWithBounds = { b -> nav.open(Intent(context, LogActivity::class.java), b, cardRadius, pageBg) }
                 )
                 PuiListRow(
                     icon = null,

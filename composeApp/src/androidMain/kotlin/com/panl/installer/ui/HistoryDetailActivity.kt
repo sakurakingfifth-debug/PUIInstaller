@@ -2,6 +2,7 @@ package com.panl.installer.ui
 
 import android.os.Bundle
 import androidx.activity.ComponentActivity
+import com.panl.installer.ui.anim.SeamlessActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.background
@@ -54,7 +55,7 @@ import com.panl.pui.rememberPuiTopBlurHeight
  *
  * 和日志页一样不放顶栏图标，返回交给系统手势；顶部有模糊，底部内容渐隐。
  */
-class HistoryDetailActivity : ComponentActivity() {
+class HistoryDetailActivity : SeamlessActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         enableEdgeToEdge()

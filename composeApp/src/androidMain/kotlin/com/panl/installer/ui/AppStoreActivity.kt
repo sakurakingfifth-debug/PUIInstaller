@@ -7,6 +7,7 @@ import android.net.Uri
 import android.os.Build
 import android.os.Bundle
 import androidx.activity.ComponentActivity
+import com.panl.installer.ui.anim.SeamlessActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.background
@@ -63,7 +64,7 @@ import com.panl.installer.i18n.tr
  * 页面把「代码侧能做的部分」列成自检清单：权限声明、必需 Intent、应用信息展示、静默安装能力。
  * 审核、目录上报、年费这些运营侧的事情不在代码里，单独列在流程说明。
  */
-class AppStoreActivity : ComponentActivity() {
+class AppStoreActivity : SeamlessActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         enableEdgeToEdge()

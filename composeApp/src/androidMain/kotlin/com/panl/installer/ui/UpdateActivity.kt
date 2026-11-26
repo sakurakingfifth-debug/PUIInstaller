@@ -4,6 +4,7 @@ import android.content.Context
 import android.content.Intent
 import android.os.Bundle
 import androidx.activity.ComponentActivity
+import com.panl.installer.ui.anim.SeamlessActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.background
@@ -69,7 +70,7 @@ import kotlinx.coroutines.withContext
  * 下面是更新日志：有新版显示新版的日志，已是最新就显示 GitHub 上当前版本的日志，
  * 完全没网就整块隐藏 —— 空着一个「更新日志」标题比不显示更难看。
  */
-class UpdateActivity : ComponentActivity() {
+class UpdateActivity : SeamlessActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         enableEdgeToEdge()

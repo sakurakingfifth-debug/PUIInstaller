@@ -2,6 +2,8 @@ package com.panl.pui
 
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.foundation.background
+import androidx.compose.ui.layout.onGloballyPositioned
+import androidx.compose.ui.layout.boundsInWindow
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
@@ -21,6 +23,7 @@ import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
+import androidx.compose.runtime.setValue
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
@@ -339,19 +342,37 @@ fun PuiListRow(
     trailingText: String? = null,
     trailing: (@Composable () -> Unit)? = null,
     showChevron: Boolean = false,
-    onClick: (() -> Unit)? = null
+    onClick: (() -> Unit)? = null,
+    /** 外部修饰符：调用方用它挂 onGloballyPositioned 取卡片位置（无缝动画的起点） */
+    modifier: androidx.compose.ui.Modifier = androidx.compose.ui.Modifier,
+    /**
+     * 带位置的回调：行自己记着自己在哪里，点击时把矩形抛给调用方做「一镜到底」。
+     * 传了它就不再用 [onClick]，避免两个回调打架。
+     */
+    onClickWithBounds: ((androidx.compose.ui.geometry.Rect) -> Unit)? = null
 ) {
+    var selfBounds by androidx.compose.runtime.remember {
+        androidx.compose.runtime.mutableStateOf<androidx.compose.ui.geometry.Rect?>(null)
+    }
     val dim = if (enabled) 1f else 0.45f
     val scheme = MaterialTheme.colorScheme
-    Column {
+    Column(
+        modifier.then(
+            // 自己记位置：无缝动画要以「被点的那一行」为起点
+            Modifier.onGloballyPositioned { selfBounds = it.boundsInWindow() }
+        )
+    ) {
         Row(
             Modifier
                 .fillMaxWidth()
                 .then(
-                    if (onClick != null && enabled) Modifier.clickable(
+                    if ((onClick != null || onClickWithBounds != null) && enabled) Modifier.clickable(
                         interactionSource = remember { MutableInteractionSource() },
                         indication = null
-                    ) { onClick() } else Modifier
+                    ) {
+                        val b = selfBounds
+                        if (onClickWithBounds != null && b != null) onClickWithBounds(b) else onClick?.invoke()
+                    } else Modifier
                 )
                 .padding(horizontal = 16.dp, vertical = 14.dp),
             verticalAlignment = Alignment.CenterVertically

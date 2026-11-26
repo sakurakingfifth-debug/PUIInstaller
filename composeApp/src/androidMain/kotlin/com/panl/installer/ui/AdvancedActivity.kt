@@ -3,6 +3,7 @@ package com.panl.installer.ui
 import android.content.Intent
 import android.os.Bundle
 import androidx.activity.ComponentActivity
+import com.panl.installer.ui.anim.SeamlessActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.background
@@ -17,6 +18,8 @@ import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
+import com.panl.installer.ui.anim.rememberSeamlessNavigator
+import androidx.compose.ui.graphics.toArgb
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -65,7 +68,7 @@ import com.panl.pui.rememberPuiTopBlurHeight
  * 做成二级页而不是直接堆在设置里，是因为这些开关属于「折腾」范畴，
  * 和日常的安装设置分开更清楚。
  */
-class AdvancedActivity : ComponentActivity() {
+class AdvancedActivity : SeamlessActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         enableEdgeToEdge()
@@ -82,6 +85,9 @@ class AdvancedActivity : ComponentActivity() {
 private fun AdvancedScreen(activity: ComponentActivity) {
     val scheme = MaterialTheme.colorScheme
     val context = LocalContext.current
+    val nav = rememberSeamlessNavigator()
+    val cardRadius = with(androidx.compose.ui.platform.LocalDensity.current) { 22.dp.toPx() }
+    val pageBg = MaterialTheme.colorScheme.background.toArgb()
     val settings = Settings.get(context)
     val density = LocalDensity.current.density
     // 标题跟着列表一起滚，模糊带只盖住状态栏这一条
@@ -173,9 +179,7 @@ private fun AdvancedScreen(activity: ComponentActivity) {
                         subtitle = tr("需要 LSPosed", "Requires LSPosed"),
                         showDivider = false,
                         showChevron = true,
-                        onClick = {
-                            context.startActivity(Intent(context, CorePatchActivity::class.java))
-                        }
+                        onClickWithBounds = { b -> nav.open(Intent(context, CorePatchActivity::class.java), b, cardRadius, pageBg) }
                     )
                 }
             }

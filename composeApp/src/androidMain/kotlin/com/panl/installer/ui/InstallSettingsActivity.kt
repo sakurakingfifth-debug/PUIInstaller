@@ -2,6 +2,7 @@ package com.panl.installer.ui
 
 import android.os.Bundle
 import androidx.activity.ComponentActivity
+import com.panl.installer.ui.anim.SeamlessActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.Image
@@ -60,7 +61,7 @@ import com.panl.pui.rememberPuiTopBlurHeight
  * 原来设置页里「安装」和「安装界面」两张卡合并成这一页：
  * 上半部分是安装策略（删包、校验、OSDK），下半部分是界面样式和通知。
  */
-class InstallSettingsActivity : ComponentActivity() {
+class InstallSettingsActivity : SeamlessActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         enableEdgeToEdge()

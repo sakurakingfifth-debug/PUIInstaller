@@ -15,6 +15,11 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
+import com.panl.installer.ui.anim.rememberSeamlessNavigator
+import androidx.compose.ui.layout.boundsInWindow
+import androidx.compose.ui.layout.onGloballyPositioned
+import androidx.compose.ui.graphics.toArgb
+import androidx.compose.ui.geometry.Rect
 import androidx.compose.runtime.Composable
 import com.panl.installer.R
 import androidx.compose.ui.res.painterResource
@@ -91,6 +96,9 @@ fun HomeScreen(
     }
 
     val tick = rememberTickHaptic()
+    val nav = rememberSeamlessNavigator()
+    val cardRadius = with(androidx.compose.ui.platform.LocalDensity.current) { 22.dp.toPx() }
+    val pageBg = MaterialTheme.colorScheme.background.toArgb()
 
     // 首页只留「跳转入口」：三个设置页 + 关于。具体功能都在对应的页面里。
     val features = listOf(
@@ -99,19 +107,19 @@ fun HomeScreen(
             title = tr("进阶功能", "Advanced"),
             subtitle = tr("ROOT及LSPosed功能专区", "ROOT & LSPosed features"),
             badge = { BetaBadge(tr("Beta版本", "Beta")) },
-            onClick = { context.startActivity(Intent(context, AdvancedActivity::class.java)) }
+            intent = Intent(context, AdvancedActivity::class.java)
         ),
         Feature(
             icon = PuiIcon.Palette,
             title = tr("外观与导航栏", "Appearance and navigation bar"),
             subtitle = tr("主题、模糊、导航栏", "Theme, blur, navigation bar"),
-            onClick = { context.startActivity(Intent(context, AppearanceActivity::class.java)) }
+            intent = Intent(context, AppearanceActivity::class.java)
         ),
         Feature(
             iconRes = R.drawable.ic_edit_2,
             title = tr("安装与界面", "Install and UI"),
             subtitle = tr("安装策略、界面样式、通知", "Install policy, UI style, notifications"),
-            onClick = { context.startActivity(Intent(context, InstallSettingsActivity::class.java)) }
+            intent = Intent(context, InstallSettingsActivity::class.java)
         ),
         Feature(
             iconRes = R.drawable.ic_info_sparkle,
@@ -186,7 +194,10 @@ fun HomeScreen(
         item {
             PuiGroup(title = null) {
                 features.forEachIndexed { index, feature ->
+                    // 每行自己记位置，点击时用这块矩形做一镜到底的起点
+                    var rowBounds by remember(feature) { mutableStateOf<Rect?>(null) }
                     PuiListRow(
+                        modifier = Modifier.onGloballyPositioned { rowBounds = it.boundsInWindow() },
                         icon = feature.icon,
                         iconPainter = feature.iconRes?.let { painterResource(it) },
                         title = feature.title,
@@ -194,7 +205,11 @@ fun HomeScreen(
                         subtitle = feature.subtitle,
                         showDivider = index != features.lastIndex,
                         showChevron = true,
-                        onClick = feature.onClick
+                        onClick = {
+                            val target = feature.intent
+                            if (target != null) nav.open(target, rowBounds, cardRadius, pageBg)
+                            else feature.onClick()
+                        }
                     )
                 }
             }
@@ -235,7 +250,9 @@ private data class Feature(
     val badge: (@Composable () -> Unit)? = null,
     val title: String,
     val subtitle: String,
-    val onClick: () -> Unit
+    /** 非空时点击走无缝动画跳转；为空则执行 [onClick]（比如弹出关于对话框） */
+    val intent: android.content.Intent? = null,
+    val onClick: () -> Unit = {}
 )
 
 private const val APK_MIME = "application/vnd.android.package-archive"
