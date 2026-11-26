@@ -334,9 +334,9 @@ fun SettingsScreen(topPad: Dp) {
                     subtitle = tr("查看版本、更新日志与下载", "Version, release notes and download"),
                     showDivider = true,
                     showChevron = true,
-                    onClick = {
-                        tick()
-                        com.panl.installer.ui.UpdateActivity.start(context)
+                    // 走 nav：这样 OTA 页退出时也能原路缩回这一行（之前直接 startActivity，没有落点）
+                    onClickWithBounds = { b ->
+                        nav.open(Intent(context, com.panl.installer.ui.UpdateActivity::class.java), b, cardRadius, pageBg)
                     }
                 )
                 // 默认安装器：系统设置里**没有**「安装应用」这一项（ColorOS 的「默认应用」页只有
