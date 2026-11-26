@@ -34,12 +34,22 @@ object SeamlessNav {
         val version = runCatching { ViewAnimationManager.isViewAnimationSupported() }
             .onFailure { Log.w(TAG, "probe failed", it) }
             .getOrDefault(0)
-        Log.i(TAG, "isViewAnimationSupported=$version")
+        // kit 内部靠厂商实现（com.androidex.*）落地，缺了它 protocol 照样返回 100 但什么都不会动
+        val vendor = runCatching {
+            Class.forName("com.androidex.animation.sharedview.ViewAnimationManager")
+            true
+        }.getOrDefault(false)
+        Log.i(TAG, "isViewAnimationSupported=$version vendorImpl=$vendor")
         version > 0
     }
 
-    /** 返回动画用的兜底类型：落点不可见/位置变化过大时最稳。 */
-    private const val BACK_ANIM = ViewAnimationType.VIEW_ANIM_FOLLOW_SYSTEM
+    /**
+     * 返回落点：跳转时把「从哪张卡片出发」记下来，退出时才能原路回去。
+     *
+     * key 是目标 Activity 的类名 —— 我们自己页面之间都是显式 Intent，一定有 component。
+     */
+    private data class ReturnTarget(val bounds: Rect, val radiusPx: Float, val color: Int)
+    private val returnTargets = java.util.concurrent.ConcurrentHashMap<String, ReturnTarget>()
 
     private val noopListener = object : ViewAnimationListener {
         override fun onAnimationStart(animMode: Int) = Unit
@@ -77,6 +87,12 @@ object SeamlessNav {
             )
         }.onFailure { Log.w(TAG, "makeViewAnimationOptions(bitmap) failed", it) }.getOrNull()
 
+        // 记下这张卡片的位置：目标页退出时要按它回弹（不记的话退出只能走系统默认动画）
+        intent.component?.className?.let { cls ->
+            returnTargets[cls] = ReturnTarget(Rect(bounds), radiusPx, color)
+        }
+
+        Log.i(TAG, "open bitmap=${thumb != null} bounds=$bounds radius=$radiusPx options=${options != null}")
         runCatching {
             if (options != null) context.startActivity(intent, options.toBundle())
             else context.startActivity(intent)
@@ -124,11 +140,24 @@ object SeamlessNav {
      */
     fun back(activity: Activity) {
         if (supported) {
+            val target = returnTargets[activity.javaClass.name]
+            val config = ViewAnimationConfig()
+            if (target != null) {
+                // 有落点：带上位置/圆角/底色，让 kit 原路缩回那张卡片。
+                // **不要**再设 backAnimType —— 默认就是反向，设成 FOLLOW_SYSTEM 反而退化成系统动画（3.8.51 的坑）
+                config.setBounds(target.bounds)
+                    .setRadius(target.radiusPx)
+                    .setColor(target.color)
+            } else {
+                // 不知道从哪来的（通知、分享、外部 intent）：淡出最稳
+                config.setBackAnimType(ViewAnimationType.VIEW_ANIM_FADE_OUT)
+            }
+            val bundle = config.toBundle()
+            // 兜底类型：落点被遮挡/找不到时不要硬弹回，直接淡出
+            bundle.putInt(ViewAnimationManager.EXTRA_FALLBACK_ANIM_TYPE, ViewAnimationType.VIEW_ANIM_FADE_OUT)
             runCatching {
-                ViewAnimationManager.overrideViewAnimationTransition(
-                    activity,
-                    ViewAnimationConfig().setBackAnimType(BACK_ANIM).toBundle()
-                )
+                ViewAnimationManager.overrideViewAnimationTransition(activity, bundle)
+                Log.i(TAG, "back override: target=${target != null}")
             }.onFailure { Log.w(TAG, "override transition failed", it) }
         }
         activity.finish()
